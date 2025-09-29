@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuFin - Home</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo-container">
+                <img src="../assets/logos/" alt="QuFin Logo" class="logo-img"> <!-- Replace 'logo.png' with actual logo path -->
+                <a href="../index.html" class="logo"></a>
+            </div>
+            <nav id="navMenu" class="nav-menu">
+                <ul>
+                    <li class="nav-item">
+                        <a href="home.html" class="nav-link"><i class="fas fa-home"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="product.html" class="nav-link"><i class="fas fa-box"></i>Product</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">AI Score Grid</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Forex</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Energies</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Metals</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Futures</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Commodities</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="pricing.html" class="nav-link"><i class="fas fa-dollar-sign"></i>Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="aiscoregrid.html" class="nav-link"><i class="fas fa-chart-line"></i>AI Score Grid</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Forex Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Equity Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Commodity Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Crypto Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Country Scores</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="aistrategies.html" class="nav-link"><i class="fas fa-cogs"></i>AI Strategies</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Long/Short Equity</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Market Neutral</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Global Macro</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Arbitrage</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Quantitative</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="globaldata.html" class="nav-link"><i class="fas fa-globe"></i>Global Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="resources.html" class="nav-link"><i class="fas fa-book"></i>Resources</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Market Simulator</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">AI Explainability</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Macro Data Decoder</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Economic Calendar</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i>Reports</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="auth-section">
+                <button id="authToggle" class="auth-toggle"><i class="fas fa-user"></i>Login</button>
+            </div>
+            <button id="mobileToggle" class="mobile-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <div id="authModal" class="auth-modal">
+        <div class="auth-container">
+            <button class="auth-close"><i class="fas fa-times"></i></button>
+            <div class="auth-tabs">
+                <div class="auth-tab active">Login</div>
+                <div class="auth-tab">Sign Up</div>
+            </div>
+            <div class="auth-forms">
+                <div class="auth-form active">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password">
+                    </div>
+                    <button class="auth-submit">Login</button>
+                </div>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Enter your password">
+                    </div>
+                    <button class="auth-submit">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="hero">
+            <div class="container hero-content">
+                <h1 class="hero-title">AI-Powered Trading Intelligence for the Modern Investor</h1>
+                <p class="hero-subtitle">Leverage quantum-inspired algorithms and alternative data signals to uncover market opportunities that others miss.</p>
+                <div class="hero-cta">
+                    <a href="#" class="btn btn-primary">Start Free Trial</a>
+                    <a href="#" class="btn btn-secondary">Explore Features</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Why Choose QuFin?</h2>
+                    <p>We combine cutting-edge technology with deep financial expertise to give you an unmatched edge in the markets.</p>
+                </div>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <i class="fas fa-chart-line feature-icon"></i>
+                        <h3 class="feature-title">AI Score Grid</h3>
+                        <p class="feature-desc">Our proprietary scoring system evaluates thousands of data points to rate investment opportunities.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-bolt feature-icon"></i>
+                        <h3 class="feature-title">Quantum Market Simulator</h3>
+                        <p class="feature-desc">Test strategies in different quantum-influenced market environments with realistic simulations.</p>
+                    </div>
+                    <div class="feature-card">
+                        <i class="fas fa-search feature-icon"></i>
+                        <h3 class="feature-title">Alternative Data Signals</h3>
+                        <p class="feature-desc">From satellite imagery to social sentiment, we transform unconventional data into actionable insights.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h3>QuFin</h3>
+                <p>AI-powered trading intelligence platform providing cutting-edge analytics and alternative data signals.</p>
+            </div>
+            <div class="footer-col">
+                <h3>Products</h3>
+                <ul class="footer-links">
+                    <li><a href="#">AI Score Grid</a></li>
+                    <li><a href="#">Market Data</a></li>
+                    <li><a href="#">Trading Strategies</a></li>
+                    <li><a href="#">Backtesting</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Learning Academy</a></li>
+                    <li><a href="#">Market Reports</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Webinars</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Company</h3>
+                <ul class="footer-links">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2023 QuFin. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="../main.js"></script>
+</body>
+</html>
