@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QuFin: AI-powered trading intelligence platform leveraging quantum-inspired algorithms and alternative data for unmatched market insights.">
+    <meta name="keywords" content="QuFin, AI trading, financial analytics, quantum algorithms, alternative data, market intelligence, trading signals">
+    <meta property="og:title" content="QuFin - AI-Powered Trading Intelligence">
+    <meta property="og:description" content="Harness quantum algorithms and machine learning for unparalleled market insights. Start your journey with QuFin today.">
+    <meta property="og:image" content="assets/images/qufin-og-image.jpg">
+    <meta property="og:url" content="https://www.qufin.ai">
+    <meta name="robots" content="index, follow">
+    <title>QuFin - AI-Powered Trading Intelligence for the Quantum Age</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/fontawesome-free-7.0.1/css/all.min.css">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.22.10/babel.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://d3js.org/topojson.v3.min.js"></script>
+    
+    <style>
+        :root {
+            --quantum-blue: #0ea5e9;
+            --ai-purple: #8b5cf6;
+            --data-green: #10b981;
+            --risk-orange: #f59e0b;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-text: #f1f5f9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+        
+        .dark body {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+        
+        .video-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            opacity: 0.7;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(5, 55, 78, 0.8) 0%, rgba(14, 165, 233, 0.6) 50%, rgba(139, 92, 246, 0.6) 100%);
+            z-index: 1;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .feature-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .dark .feature-card {
+            background: var(--dark-card);
+            border-color: #334155;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .dark .feature-card:hover {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        }
+        
+        .ai-product-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-left: 4px solid var(--quantum-blue);
+            transition: all 0.3s ease;
+        }
+        
+        .dark .ai-product-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+        }
+        
+        .ai-product-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .accuracy {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--data-green);
+        }
+        
+        .speed {
+            background: rgba(14, 165, 233, 0.1);
+            color: var(--quantum-blue);
+        }
+        
+        .risk {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--risk-orange);
+        }
+        
+        .market-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .dark .market-metric {
+            border-bottom-color: #334155;
+        }
+        
+        .market-metric:last-child {
+            border-bottom: none;
+        }
+        
+        .positive {
+            color: #10b981;
+        }
+        
+        .negative {
+            color: #ef4444;
+        }
+        
+        .mega-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 12px 12px;
+            padding: 24px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        .dark .mega-menu {
+            background: var(--dark-card);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .nav-item:hover .mega-menu {
+            display: block;
+        }
+        
+        .nav-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .nav-category h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--quantum-blue);
+        }
+        
+        .nav-category ul {
+            list-style: none;
+        }
+        
+        .nav-category li {
+            margin-bottom: 8px;
+        }
+        
+        .nav-category a {
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .dark .nav-category a {
+            color: #94a3b8;
+        }
+        
+        .nav-category a:hover {
+            color: var(--quantum-blue);
+        }
+        
+        .world-map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .dark .world-map-container {
+            background: #1e293b;
+        }
+        
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .map-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .dark .map-btn {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+        
+        .map-btn:hover {
+            background: #f1f5f9;
+            transform: translateY(-1px);
+        }
+        
+        .dark .map-btn:hover {
+            background: #475569;
+        }
+        
+        .map-btn.active {
+            background: var(--quantum-blue);
+            color: white;
+            border-color: var(--quantum-blue);
+        }
+        
+        .country-tooltip {
+            position: absolute;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            border-radius: 8px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 250px;
+            line-height: 1.5;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .signal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: #f8fafc;
+        }
+        
+        .dark .signal-item {
+            background: #334155;
+        }
+        
+        .signal-item.buy {
+            border-left: 4px solid #10b981;
+        }
+        
+        .signal-item.sell {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .signal-item.hold {
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .confidence-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        
+        .dark .confidence-bar {
+            background: #475569;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .buy .confidence-fill {
+            background: #10b981;
+        }
+        
+        .sell .confidence-fill {
+            background: #ef4444;
+        }
+        
+        .hold .confidence-fill {
+            background: #f59e0b;
+        }
+        
+        .skeleton-loader {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 4px;
+        }
+        
+        .dark .skeleton-loader {
+            background: linear-gradient(90deg, #334155 25%, #475569 50%, #334155 75%);
+            background-size: 200% 100%;
+        }
+        
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--quantum-blue), var(--ai-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        @media (max-width: 768px) {
+            .mega-menu {
+                position: static;
+                box-shadow: none;
+                border-radius: 0;
+                padding: 16px;
+            }
+            
+            .nav-categories {
+                grid-template-columns: 1fr;
+            }
+            
+            .hero-metrics {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+        
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-modal.open {
+            display: flex;
+        }
+        
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .dark .auth-container {
+            background: var(--dark-card);
+        }
+        
+        .theme-toggle-btn {
+            padding: 8px;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #0f172a;
+        }
+        
+        .dark .theme-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+        }
+        
+        .data-pipeline {
+            position: relative;
+            height: 300px;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .dark .data-pipeline {
+            background: #1e293b;
+        }
+        
+        .pipeline-node {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            z-index: 2;
+        }
+        
+        .pipeline-connection {
+            position: absolute;
+            height: 4px;
+            background: #0ea5e9;
+            z-index: 1;
+        }
+        
+        .pipeline-animation {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #8b5cf6;
+            border-radius: 50%;
+            z-index: 3;
+            animation: flow 8s linear infinite;
+        }
+        
+        @keyframes flow {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(100%); }
+        }
+    </style>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        secondary: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100">
+    <div id="root"></div>
+
+    <script type="text/babel" data-presets="react">
+        // Video Background Data - Replace with your actual video paths
+        const videoData = {
+            home: "./assets/videos/Homepage-cover_1920_1080.mp4",
+            analytics: "assets/videos/",
+            products: "assets/videos/products-background.mp4",
+            global: "assets/videos/global-background.mp4"
+        };
+
+        // Enhanced Navigation Data
+        const navigationData = [
+            { 
+                name: 'AI Analytics', 
+                href: '#', 
+                icon: 'fa-chart-line',
+                megaMenu: true,
+                categories: [
+                    {
+                        title: 'Market Intelligence',
+                        items: ['AI Score Grid', 'Quantum Signals', 'Predictive Models', 'Sentiment Analysis']
+                    },
+                    {
+                        title: 'Data Analytics',
+                        items: ['Alternative Data', 'Economic Indicators', 'Sector Analysis', 'Risk Assessment']
+                    },
+                    {
+                        title: 'Visualization',
+                        items: ['Global Heatmaps', 'Portfolio Analytics', 'Performance Metrics', 'Custom Dashboards']
+                    }
+                ]
+            },
+            { 
+                name: 'Trading Intelligence', 
+                href: '#', 
+                icon: 'fa-robot',
+                megaMenu: true,
+                categories: [
+                    {
+                        title: 'Strategy Tools',
+                        items: ['Strategy Builder', 'Backtesting Engine', 'Portfolio Optimization', 'Risk Analytics']
+                    },
+                    {
+                        title: 'Execution',
+                        items: ['Algorithmic Trading', 'Signal Generation', 'Order Management', 'Performance Tracking']
+                    },
+                    {
+                        title: 'Analysis',
+                        items: ['Technical Analysis', 'Fundamental Analysis', 'Quantitative Models', 'Market Regimes']
+                    }
+                ]
+            },
+            { 
+                name: 'AI Products', 
+                href: '#', 
+                icon: 'fa-cube',
+                megaMenu: true,
+                categories: [
+                    {
+                        title: 'Core Products',
+                        items: ['CurrenQ™', 'EnergAI™', 'MetalAI™', 'FuturAI™', 'CryptAI™']
+                    },
+                    {
+                        title: 'Advanced Tools',
+                        items: ['NeuroLock™', 'Strategy DNA™', 'Signal Sieve™', 'Capital Guard™', 'Glass Book™']
+                    },
+                    {
+                        title: 'Data Products',
+                        items: ['Commoditas™', 'Equivestia™', 'Indicem™', 'TradeFit Quotient™', 'Corelation Matrix™']
+                    }
+                ]
+            },
+            { 
+                name: 'Global Data', 
+                href: '#', 
+                icon: 'fa-globe',
+                megaMenu: true,
+                categories: [
+                    {
+                        title: 'Regions',
+                        items: ['Americas', 'Europe', 'Asia Pacific', 'Middle East', 'Africa']
+                    },
+                    {
+                        title: 'Economic Data',
+                        items: ['Macro Indicators', 'Financial Markets', 'Commodities', 'Currencies', 'Interest Rates']
+                    },
+                    {
+                        title: 'Alternative Data',
+                        items: ['Satellite Imagery', 'Social Sentiment', 'Supply Chain', 'Consumer Behavior', 'Geopolitical']
+                    }
+                ]
+            },
+            { 
+                name: 'Resources', 
+                href: '#', 
+                icon: 'fa-book',
+                megaMenu: true,
+                categories: [
+                    {
+                        title: 'Learning',
+                        items: ['AI Trading Academy', 'Webinars', 'Documentation', 'API Guides', 'Case Studies']
+                    },
+                    {
+                        title: 'Community',
+                        items: ['Traders Forum', 'Research Papers', 'Market Insights', 'Expert Analysis', 'Newsletters']
+                    },
+                    {
+                        title: 'Support',
+                        items: ['Help Center', 'Contact Support', 'Service Status', 'Feature Requests', 'System Requirements']
+                    }
+                ]
+            }
+        ];
+
+        // AI Products Data
+        const aiProducts = [
+            {
+                name: 'Quantum Forecast Engine',
+                description: 'Advanced time-series prediction using quantum-inspired algorithms',
+                icon: 'fa-chart-line',
+                metrics: { accuracy: '96.3%', speed: 'Real-time', category: 'forecasting' },
+                status: 'active',
+                features: ['Multi-timeframe analysis', 'Anomaly detection', 'Pattern recognition']
+            },
+            {
+                name: 'NeuroLock Risk Manager',
+                description: 'AI-powered risk assessment and portfolio protection',
+                icon: 'fa-shield-alt',
+                metrics: { accuracy: '94.7%', speed: '<100ms', category: 'risk' },
+                status: 'active',
+                features: ['Portfolio stress testing', 'Correlation analysis', 'Risk-adjusted optimization']
+            },
+            {
+                name: 'Signal Sieve',
+                description: 'Filters market noise to identify high-probability trading signals',
+                icon: 'fa-filter',
+                metrics: { accuracy: '92.1%', speed: 'Real-time', category: 'signals' },
+                status: 'active',
+                features: ['Multi-factor filtering', 'Signal validation', 'Confidence scoring']
+            },
+            {
+                name: 'Strategy DNA',
+                description: 'Genetic algorithm optimization for trading strategy development',
+                icon: 'fa-dna',
+                metrics: { accuracy: '95.8%', speed: 'Batch', category: 'optimization' },
+                status: 'active',
+                features: ['Parameter optimization', 'Strategy backtesting', 'Performance analytics']
+            },
+            {
+                name: 'Capital Guard',
+                description: 'Dynamic position sizing and drawdown control',
+                icon: 'fa-lock',
+                metrics: { accuracy: '98.2%', speed: 'Real-time', category: 'protection' },
+                status: 'active',
+                features: ['Dynamic position sizing', 'Drawdown control', 'Risk exposure monitoring']
+            },
+            {
+                name: 'Glass Book Analytics',
+                description: 'Market microstructure and order flow analysis',
+                icon: 'fa-book-open',
+                metrics: { accuracy: '91.5%', speed: '<50ms', category: 'analytics' },
+                status: 'active',
+                features: ['Order flow analysis', 'Liquidity mapping', 'Market impact modeling']
+            }
+        ];
+
+        // Market Data
+        const marketData = [
+            { name: 'S&P 500', value: '4,567.89', change: '+1.24%', changeType: 'positive' },
+            { name: 'NASDAQ', value: '14,253.27', change: '+2.03%', changeType: 'positive' },
+            { name: 'BTC/USD', value: '$63,452.34', change: '+3.72%', changeType: 'positive' },
+            { name: 'Gold', value: '$1,987.50', change: '-0.45%', changeType: 'negative' },
+            { name: 'Crude Oil', value: '$78.45', change: '-0.87%', changeType: 'negative' },
+            { name: 'EUR/USD', value: '1.0845', change: '+0.12%', changeType: 'positive' }
+        ];
+
+        // Trading Signals
+        const tradingSignals = [
+            { asset: 'AAPL', signal: 'BUY', confidence: 87, timeframe: '1D' },
+            { asset: 'TSLA', signal: 'SELL', confidence: 72, timeframe: '3D' },
+            { asset: 'BTC/USD', signal: 'BUY', confidence: 91, timeframe: '1W' },
+            { asset: 'EUR/USD', signal: 'HOLD', confidence: 65, timeframe: '4H' },
+            { asset: 'Gold', signal: 'BUY', confidence: 78, timeframe: '2D' }
+        ];
+
+        // Country Economic Scores (Enhanced)
+        const countryScores = {
+            "USA": { score: 85, gdp: 85, inflation: 70, employment: 90 },
+            "CAN": { score: 78, gdp: 75, inflation: 80, employment: 85 },
+            "GBR": { score: 82, gdp: 80, inflation: 75, employment: 85 },
+            "DEU": { score: 83, gdp: 82, inflation: 78, employment: 88 },
+            "FRA": { score: 79, gdp: 78, inflation: 72, employment: 82 },
+            "CHN": { score: 80, gdp: 85, inflation: 75, employment: 80 },
+            "JPN": { score: 81, gdp: 78, inflation: 82, employment: 85 },
+            "AUS": { score: 79, gdp: 76, inflation: 78, employment: 84 },
+            "BRA": { score: 72, gdp: 70, inflation: 65, employment: 75 },
+            "IND": { score: 73, gdp: 75, inflation: 68, employment: 70 }
+        };
+
+        // Data Sources
+        const dataSources = [
+            { name: 'FRED', description: 'Federal Reserve Economic Data', icon: 'fa-landmark' },
+            { name: 'World Bank', description: 'Global development data', icon: 'fa-globe-americas' },
+            { name: 'IMF', description: 'International Monetary Fund', icon: 'fa-chart-bar' },
+            { name: 'OECD', description: 'Organization for Economic Cooperation', icon: 'fa-chart-pie' },
+            { name: 'UN Data', description: 'United Nations statistical database', icon: 'fa-database' },
+            { name: 'ONS UK', description: 'Office for National Statistics UK', icon: 'fa-flag-uk' }
+        ];
+
+        // Video Background Component
+        function VideoBackground({ videoKey }) {
+            const videoRef = React.useRef(null);
+            
+            React.useEffect(() => {
+                if (videoRef.current) {
+                    videoRef.current.play().catch(e => console.log("Video autoplay prevented:", e));
+                }
+            }, [videoKey]);
+            
+            return React.createElement(
+                'div',
+                { className: 'video-background-container absolute top-0 left-0 w-full h-full overflow-hidden' },
+                React.createElement(
+                    'video',
+                    {
+                        ref: videoRef,
+                        className: 'video-background',
+                        autoPlay: true,
+                        loop: true,
+                        muted: true,
+                        playsInline: true
+                    },
+                    React.createElement('source', { src: videoData[videoKey], type: 'video/mp4' }),
+                    'Your browser does not support the video tag.'
+                ),
+                React.createElement('div', { className: 'video-overlay' })
+            );
+        }
+
+        // AI Product Card Component
+        function AIProductCard({ product }) {
+            const [expanded, setExpanded] = React.useState(false);
+            
+            return React.createElement(
+                'div', 
+                { 
+                    className: 'ai-product-card rounded-lg p-6 transition-all duration-300 cursor-pointer',
+                    onClick: () => setExpanded(!expanded)
+                },
+                React.createElement(
+                    'div',
+                    { className: 'flex items-start justify-between mb-4' },
+                    React.createElement(
+                        'div',
+                        { className: 'w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center' },
+                        React.createElement('i', { className: `fas ${product.icon} text-blue-500 text-xl` })
+                    ),
+                    React.createElement(
+                        'span',
+                        { className: `px-2 py-1 rounded text-xs font-medium ${product.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'}` },
+                        product.status === 'active' ? 'Active' : 'In Development'
+                    )
+                ),
+                React.createElement(
+                    'h3',
+                    { className: 'font-semibold text-lg mb-2' },
+                    product.name
+                ),
+                React.createElement(
+                    'p',
+                    { className: 'text-gray-600 dark:text-gray-400 text-sm mb-4' },
+                    product.description
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'flex flex-wrap gap-2 mb-4' },
+                    React.createElement(
+                        'span',
+                        { className: 'metric-badge accuracy' },
+                        React.createElement('i', { className: 'fas fa-bullseye mr-1' }),
+                        `${product.metrics.accuracy} Accuracy`
+                    ),
+                    React.createElement(
+                        'span',
+                        { className: 'metric-badge speed' },
+                        React.createElement('i', { className: 'fas fa-bolt mr-1' }),
+                        product.metrics.speed
+                    )
+                ),
+                expanded && React.createElement(
+                    'div',
+                    { className: 'mt-4 pt-4 border-t border-gray-200 dark:border-gray-700' },
+                    React.createElement(
+                        'h4',
+                        { className: 'font-medium mb-2' },
+                        'Key Features:'
+                    ),
+                    React.createElement(
+                        'ul',
+                        { className: 'text-sm text-gray-600 dark:text-gray-400 space-y-1' },
+                        product.features.map((feature, index) => 
+                            React.createElement(
+                                'li',
+                                { key: index, className: 'flex items-center' },
+                                React.createElement('i', { className: 'fas fa-check text-green-500 mr-2 text-xs' }),
+                                feature
+                            )
+                        )
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'text-center mt-2' },
+                    React.createElement(
+                        'button',
+                        { 
+                            className: 'text-blue-500 text-sm font-medium',
+                            onClick: (e) => {
+                                e.stopPropagation();
+                                alert(`Demo requested for ${product.name}`);
+                            }
+                        },
+                        expanded ? 'Show Less' : 'Learn More'
+                    )
+                )
+            );
+        }
+
+        // Market Metric Component
+        function MarketMetric({ metric }) {
+            return React.createElement(
+                'div',
+                { className: 'market-metric' },
+                React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                        'p',
+                        { className: 'font-medium' },
+                        metric.name
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'text-right' },
+                    React.createElement(
+                        'p',
+                        { className: 'font-medium' },
+                        metric.value
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: `text-sm ${metric.changeType === 'positive' ? 'positive' : 'negative'}` },
+                        metric.change
+                    )
+                )
+            );
+        }
+
+        // Trading Signal Component
+        function TradingSignal({ signal }) {
+            return React.createElement(
+                'div',
+                { className: `signal-item ${signal.signal.toLowerCase()}` },
+                React.createElement(
+                    'div',
+                    null,
+                    React.createElement(
+                        'p',
+                        { className: 'font-medium' },
+                        signal.asset
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: 'text-xs text-gray-500 dark:text-gray-400' },
+                        signal.timeframe
+                    )
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'text-right' },
+                    React.createElement(
+                        'p',
+                        { className: `font-semibold ${signal.signal === 'BUY' ? 'text-green-600' : signal.signal === 'SELL' ? 'text-red-600' : 'text-yellow-600'}` },
+                        signal.signal
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: 'text-xs text-gray-500 dark:text-gray-400' },
+                        `${signal.confidence}% confidence`
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'confidence-bar w-16 mt-1' },
+                        React.createElement(
+                            'div',
+                            { 
+                                className: 'confidence-fill',
+                                style: { width: `${signal.confidence}%` }
+                            }
+                        )
+                    )
+                )
+            );
+        }
+
+        // Data Pipeline Visualization Component
+        function DataPipeline() {
+            return React.createElement(
+                'div',
+                { className: 'data-pipeline relative' },
+                // Pipeline nodes
+                React.createElement(
+                    'div',
+                    { className: 'pipeline-node bg-blue-500', style: { top: '50%', left: '10%', transform: 'translateY(-50%)' } },
+                    React.createElement('i', { className: 'fas fa-cloud-download-alt' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'pipeline-node bg-purple-500', style: { top: '50%', left: '30%', transform: 'translateY(-50%)' } },
+                    React.createElement('i', { className: 'fas fa-cogs' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'pipeline-node bg-green-500', style: { top: '50%', left: '50%', transform: 'translateY(-50%)' } },
+                    React.createElement('i', { className: 'fas fa-brain' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'pipeline-node bg-orange-500', style: { top: '50%', left: '70%', transform: 'translateY(-50%)' } },
+                    React.createElement('i', { className: 'fas fa-chart-line' })
+                ),
+                React.createElement(
+                    'div',
+                    { className: 'pipeline-node bg-red-500', style: { top: '50%', left: '90%', transform: 'translateY(-50%)' } },
+                    React.createElement('i', { className: 'fas fa-rocket' })
+                ),
+                // Pipeline connections
+                React.createElement(
+                    'div',
+                    { 
+                        className: 'pipeline-connection', 
+                        style: { top: '50%', left: '15%', width: '15%', transform: 'translateY(-2px)' } 
+                    }
+                ),
+                React.createElement(
+                    'div',
+                    { 
+                        className: 'pipeline-connection', 
+                        style: { top: '50%', left: '35%', width: '15%', transform: 'translateY(-2px)' } 
+                    }
+                ),
+                React.createElement(
+                    'div',
+                    { 
+                        className: 'pipeline-connection', 
+                        style: { top: '50%', left: '55%', width: '15%', transform: 'translateY(-2px)' } 
+                    }
+                ),
+                React.createElement(
+                    'div',
+                    { 
+                        className: 'pipeline-connection', 
+                        style: { top: '50%', left: '75%', width: '15%', transform: 'translateY(-2px)' } 
+                    }
+                ),
+                // Data flow animation
+                React.createElement(
+                    'div',
+                    { 
+                        className: 'pipeline-animation', 
+                        style: { top: '50%', left: '10%', transform: 'translateY(-50%)' } 
+                    }
+                ),
+                // Labels
+                React.createElement(
+                    'div',
+                    { className: 'absolute bottom-4 left-0 right-0 flex justify-between px-4' },
+                    ['Data Ingestion', 'Processing', 'AI Analysis', 'Insights', 'Execution'].map((label, index) => 
+                        React.createElement(
+                            'span',
+                            { key: index, className: 'text-xs font-medium text-center' },
+                            label
+                        )
+                    )
+                )
+            );
+        }
+
+        // Navigation Component
+        function Navigation() {
+            const [activeMenu, setActiveMenu] = React.useState(null);
+            const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+            const [authModalOpen, setAuthModalOpen] = React.useState(false);
+            const [darkMode, setDarkMode] = React.useState(false);
+            
+            React.useEffect(() => {
+                // Check if dark mode is enabled
+                if (document.documentElement.classList.contains('dark')) {
+                    setDarkMode(true);
+                }
+            }, []);
+            
+            const toggleDarkMode = () => {
+                setDarkMode(!darkMode);
+                document.documentElement.classList.toggle('dark');
+            };
+            
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(
+                    'nav',
+                    { className: 'bg-white dark:bg-slate-800 shadow-sm relative z-50' },
+                    React.createElement(
+                        'div',
+                        { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                        React.createElement(
+                            'div',
+                            { className: 'flex justify-between h-16' },
+                            // Logo and main navigation
+                            React.createElement(
+                                'div',
+                                { className: 'flex' },
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex-shrink-0 flex items-center' },
+                                    React.createElement(
+                                        'a',
+                                        { href: '#', className: 'flex items-center' },
+                                        React.createElement(
+                                            'div',
+                                            { className: 'w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3' },
+                                            React.createElement('i', { className: 'fas fa-brain text-white' })
+                                        ),
+                                        React.createElement(
+                                            'span',
+                                            { className: 'text-xl font-bold gradient-text' },
+                                            'QuFin.ai'
+                                        )
+                                    )
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'hidden md:ml-6 md:flex md:space-x-8' },
+                                    navigationData.map((item, index) => 
+                                        React.createElement(
+                                            'div',
+                                            { 
+                                                key: index, 
+                                                className: 'nav-item relative',
+                                                onMouseEnter: () => setActiveMenu(index),
+                                                onMouseLeave: () => setActiveMenu(null)
+                                            },
+                                            React.createElement(
+                                                'a',
+                                                { 
+                                                    href: item.href, 
+                                                    className: 'inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 hover:border-gray-300 dark:hover:border-gray-500 transition-colors duration-200'
+                                                },
+                                                React.createElement('i', { className: `fas ${item.icon} mr-2` }),
+                                                item.name
+                                            ),
+                                            item.megaMenu && activeMenu === index && React.createElement(
+                                                'div',
+                                                { className: 'mega-menu' },
+                                                React.createElement(
+                                                    'div',
+                                                    { className: 'nav-categories' },
+                                                    item.categories.map((category, catIndex) => 
+                                                        React.createElement(
+                                                            'div',
+                                                            { key: catIndex, className: 'nav-category' },
+                                                            React.createElement(
+                                                                'h4',
+                                                                { className: 'text-sm font-semibold uppercase tracking-wide mb-3' },
+                                                                category.title
+                                                            ),
+                                                            React.createElement(
+                                                                'ul',
+                                                                { className: 'space-y-2' },
+                                                                category.items.map((subItem, subIndex) => 
+                                                                    React.createElement(
+                                                                        'li',
+                                                                        { key: subIndex },
+                                                                        React.createElement(
+                                                                            'a',
+                                                                            { 
+                                                                                href: '#', 
+                                                                                className: 'text-sm transition-colors duration-200 hover:text-blue-500 dark:hover:text-blue-400'
+                                                                            },
+                                                                            subItem
+                                                                        )
+                                                                    )
+                                                                )
+                                                            )
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            // Right side items
+                            React.createElement(
+                                'div',
+                                { className: 'flex items-center space-x-4' },
+                                React.createElement(
+                                    'button',
+                                    { 
+                                        className: 'theme-toggle-btn',
+                                        onClick: toggleDarkMode,
+                                        title: darkMode ? 'Switch to light mode' : 'Switch to dark mode'
+                                    },
+                                    React.createElement('i', { className: darkMode ? 'fa-solid fa-sun text-yellow-400' : 'fa-solid fa-moon text-blue-400' })
+                                ),
+                                React.createElement(
+                                    'button',
+                                    { 
+                                        className: 'hidden md:inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200',
+                                        onClick: () => setAuthModalOpen(true)
+                                    },
+                                    React.createElement('i', { className: 'fas fa-user mr-2' }),
+                                    'Login'
+                                ),
+                                // Mobile menu button
+                                React.createElement(
+                                    'div',
+                                    { className: 'md:hidden flex items-center' },
+                                    React.createElement(
+                                        'button',
+                                        { 
+                                            className: 'inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500',
+                                            onClick: () => setMobileMenuOpen(!mobileMenuOpen)
+                                        },
+                                        React.createElement('i', { className: mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars' })
+                                    )
+                                )
+                            )
+                        ),
+                        // Mobile menu
+                        mobileMenuOpen && React.createElement(
+                            'div',
+                            { className: 'md:hidden' },
+                            React.createElement(
+                                'div',
+                                { className: 'px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-50 dark:bg-slate-700 rounded-lg mt-2' },
+                                navigationData.map((item, index) => 
+                                    React.createElement(
+                                        'div',
+                                        { key: index },
+                                        React.createElement(
+                                            'a',
+                                            { 
+                                                href: item.href, 
+                                                className: 'block px-3 py-2 rounded-md text-base font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-600'
+                                            },
+                                            React.createElement('i', { className: `fas ${item.icon} mr-2` }),
+                                            item.name
+                                        ),
+                                        item.megaMenu && React.createElement(
+                                            'div',
+                                            { className: 'pl-6 mt-2 space-y-1' },
+                                            item.categories.map((category, catIndex) => 
+                                                React.createElement(
+                                                    'div',
+                                                    { key: catIndex },
+                                                    React.createElement(
+                                                        'p',
+                                                        { className: 'px-3 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide' },
+                                                        category.title
+                                                    ),
+                                                    category.items.map((subItem, subIndex) => 
+                                                        React.createElement(
+                                                            'a',
+                                                            { 
+                                                                key: subIndex,
+                                                                href: '#', 
+                                                                className: 'block px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400'
+                                                            },
+                                                            subItem
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                        )
+                                    )
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'pt-4 pb-3 border-t border-gray-200 dark:border-gray-600' },
+                                    React.createElement(
+                                        'button',
+                                        { 
+                                            className: 'w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200',
+                                            onClick: () => setAuthModalOpen(true)
+                                        },
+                                        React.createElement('i', { className: 'fas fa-user mr-2' }),
+                                        'Login / Sign Up'
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                // Auth Modal
+                authModalOpen && React.createElement(
+                    'div',
+                    { className: 'auth-modal open' },
+                    React.createElement(
+                        'div',
+                        { className: 'auth-container' },
+                        React.createElement(
+                            'button',
+                            { 
+                                className: 'absolute top-4 right-4 text-gray-400 hover:text-gray-500',
+                                onClick: () => setAuthModalOpen(false)
+                            },
+                            React.createElement('i', { className: 'fas fa-times' })
+                        ),
+                        React.createElement(
+                            'h2',
+                            { className: 'text-2xl font-bold text-center mb-6' },
+                            'Welcome to QuFin.ai'
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'space-y-4' },
+                            React.createElement(
+                                'div',
+                                null,
+                                React.createElement(
+                                    'label',
+                                    { htmlFor: 'email', className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' },
+                                    'Email Address'
+                                ),
+                                React.createElement('input', { 
+                                    type: 'email', 
+                                    id: 'email', 
+                                    className: 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white',
+                                    placeholder: 'you@example.com'
+                                })
+                            ),
+                            React.createElement(
+                                'div',
+                                null,
+                                React.createElement(
+                                    'label',
+                                    { htmlFor: 'password', className: 'block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1' },
+                                    'Password'
+                                ),
+                                React.createElement('input', { 
+                                    type: 'password', 
+                                    id: 'password', 
+                                    className: 'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white',
+                                    placeholder: 'Your password'
+                                })
+                            ),
+                            React.createElement(
+                                'button',
+                                { 
+                                    className: 'w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200'
+                                },
+                                'Sign In'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'text-center' },
+                                React.createElement(
+                                    'a',
+                                    { href: '#', className: 'text-sm text-blue-600 hover:text-blue-500 dark:text-blue-400' },
+                                    'Forgot your password?'
+                                )
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'relative my-4' },
+                                React.createElement('div', { className: 'absolute inset-0 flex items-center' },
+                                    React.createElement('div', { className: 'w-full border-t border-gray-300 dark:border-gray-600' })
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'relative flex justify-center text-sm' },
+                                    React.createElement('span', { className: 'px-2 bg-white dark:bg-gray-800 text-gray-500' }, 'Or continue with')
+                                )
+                            ),
+                            React.createElement(
+                                'button',
+                                { 
+                                    className: 'w-full flex justify-center items-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors duration-200'
+                                },
+                                React.createElement('i', { className: 'fab fa-google text-red-500 mr-2' }),
+                                'Sign in with Google'
+                            )
+                        ),
+                        React.createElement(
+                            'p',
+                            { className: 'mt-6 text-center text-sm text-gray-600 dark:text-gray-400' },
+                            "Don't have an account? ",
+                            React.createElement(
+                                'a',
+                                { href: '#', className: 'font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400' },
+                                'Sign up for free'
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // Hero Section Component
+        function HeroSection() {
+            return React.createElement(
+                'section',
+                { className: 'relative h-screen flex items-center justify-center overflow-hidden' },
+                React.createElement(VideoBackground, { videoKey: 'home' }),
+                React.createElement(
+                    'div',
+                    { className: 'hero-content text-center px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto' },
+                    React.createElement(
+                        'h1',
+                        { className: 'text-4xl md:text-6xl font-bold mb-6' },
+                        React.createElement(
+                            'span',
+                            { className: 'text-white' },
+                            'AI-Powered Trading Intelligence for the '
+                        ),
+                        React.createElement(
+                            'span',
+                            { className: 'gradient-text' },
+                            'Quantum Age'
+                        )
+                    ),
+                    React.createElement(
+                        'p',
+                        { className: 'text-xl text-white mb-8 max-w-3xl mx-auto' },
+                        'Harness quantum algorithms and machine learning for unparalleled market insights. QuFin delivers predictive analytics, risk assessment, and trading signals with unmatched accuracy.'
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'flex flex-col sm:flex-row gap-4 justify-center' },
+                        React.createElement(
+                            'button',
+                            { 
+                                className: 'px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 transform hover:scale-105'
+                            },
+                            React.createElement('i', { className: 'fas fa-rocket mr-2' }),
+                            'Start Free Trial'
+                        ),
+                        React.createElement(
+                            'button',
+                            { 
+                                className: 'px-8 py-3 bg-white/20 backdrop-blur-sm text-white font-semibold rounded-lg border border-white/30 hover:bg-white/30 transition-all duration-300'
+                            },
+                            React.createElement('i', { className: 'fas fa-play-circle mr-2' }),
+                            'Watch Demo'
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'hero-metrics mt-12 flex justify-center gap-8 text-white' },
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'div',
+                                { className: 'text-3xl font-bold' },
+                                '96.3%'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'text-sm opacity-80' },
+                                'Prediction Accuracy'
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'div',
+                                { className: 'text-3xl font-bold' },
+                                '<100ms'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'text-sm opacity-80' },
+                                'Processing Speed'
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'text-center' },
+                            React.createElement(
+                                'div',
+                                { className: 'text-3xl font-bold' },
+                                '24/7'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'text-sm opacity-80' },
+                                'Market Monitoring'
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // AI Products Section Component
+        function AIProductsSection() {
+            return React.createElement(
+                'section',
+                { className: 'py-20 bg-gray-50 dark:bg-slate-800' },
+                React.createElement(
+                    'div',
+                    { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                    React.createElement(
+                        'div',
+                        { className: 'text-center mb-16' },
+                        React.createElement(
+                            'h2',
+                            { className: 'text-3xl md:text-4xl font-bold mb-4' },
+                            'Our AI-Powered Product Suite'
+                        ),
+                        React.createElement(
+                            'p',
+                            { className: 'text-lg text-gray-600 dark:text-gray-400 max-w-3xl mx-auto' },
+                            'QuFin offers a comprehensive suite of AI tools designed to give you the competitive edge in today\'s fast-paced financial markets.'
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8' },
+                        aiProducts.map((product, index) => 
+                            React.createElement(AIProductCard, { key: index, product: product })
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'text-center mt-12' },
+                        React.createElement(
+                            'button',
+                            { 
+                                className: 'px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300'
+                            },
+                            'Explore All Products'
+                        )
+                    )
+                )
+            );
+        }
+
+        // Data Infrastructure Section Component
+        function DataInfrastructureSection() {
+            return React.createElement(
+                'section',
+                { className: 'py-20' },
+                React.createElement(
+                    'div',
+                    { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                    React.createElement(
+                        'div',
+                        { className: 'grid grid-cols-1 lg:grid-cols-2 gap-12 items-center' },
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(
+                                'h2',
+                                { className: 'text-3xl md:text-4xl font-bold mb-6' },
+                                'Advanced Data Infrastructure'
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-lg text-gray-600 dark:text-gray-400 mb-6' },
+                                'Our robust data pipeline processes terabytes of information daily from trusted sources worldwide, transforming raw data into actionable intelligence.'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'space-y-4' },
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex items-start' },
+                                    React.createElement(
+                                        'div',
+                                        { className: 'w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0 mr-4' },
+                                        React.createElement('i', { className: 'fas fa-database text-blue-500' })
+                                    ),
+                                    React.createElement(
+                                        'div',
+                                        null,
+                                        React.createElement(
+                                            'h3',
+                                            { className: 'font-semibold text-lg mb-1' },
+                                            'Multi-Source Data Integration'
+                                        ),
+                                        React.createElement(
+                                            'p',
+                                            { className: 'text-gray-600 dark:text-gray-400' },
+                                            'Aggregating data from FRED, World Bank, IMF, OECD, UN Data, and other reliable sources.'
+                                        )
+                                    )
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex items-start' },
+                                    React.createElement(
+                                        'div',
+                                        { className: 'w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 mr-4' },
+                                        React.createElement('i', { className: 'fas fa-bolt text-green-500' })
+                                    ),
+                                    React.createElement(
+                                        'div',
+                                        null,
+                                        React.createElement(
+                                            'h3',
+                                            { className: 'font-semibold text-lg mb-1' },
+                                            'Real-Time Processing'
+                                        ),
+                                        React.createElement(
+                                            'p',
+                                            { className: 'text-gray-600 dark:text-gray-400' },
+                                            'High-frequency data processing with sub-millisecond latency for time-sensitive decisions.'
+                                        )
+                                    )
+                                ),
+                                React.createElement(
+                                    'div',
+                                    { className: 'flex items-start' },
+                                    React.createElement(
+                                        'div',
+                                        { className: 'w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center flex-shrink-0 mr-4' },
+                                        React.createElement('i', { className: 'fas fa-shield-alt text-purple-500' })
+                                    ),
+                                    React.createElement(
+                                        'div',
+                                        null,
+                                        React.createElement(
+                                            'h3',
+                                            { className: 'font-semibold text-lg mb-1' },
+                                            'Enterprise-Grade Security'
+                                        ),
+                                        React.createElement(
+                                            'p',
+                                            { className: 'text-gray-600 dark:text-gray-400' },
+                                            'Bank-level encryption and compliance with global financial regulations.'
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(DataPipeline),
+                            React.createElement(
+                                'div',
+                                { className: 'mt-8 grid grid-cols-2 gap-4' },
+                                dataSources.map((source, index) => 
+                                    React.createElement(
+                                        'div',
+                                        { 
+                                            key: index,
+                                            className: 'flex items-center p-3 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-100 dark:border-slate-700'
+                                        },
+                                        React.createElement(
+                                            'div',
+                                            { className: 'w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center mr-3' },
+                                            React.createElement('i', { className: `fas ${source.icon} text-gray-600 dark:text-gray-400` })
+                                        ),
+                                        React.createElement(
+                                            'div',
+                                            null,
+                                            React.createElement(
+                                                'p',
+                                                { className: 'font-medium' },
+                                                source.name
+                                            ),
+                                            React.createElement(
+                                                'p',
+                                                { className: 'text-sm text-gray-500 dark:text-gray-400' },
+                                                source.description
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // Market Overview Section Component
+        function MarketOverviewSection() {
+            return React.createElement(
+                'section',
+                { className: 'py-20 bg-gray-50 dark:bg-slate-800' },
+                React.createElement(
+                    'div',
+                    { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                    React.createElement(
+                        'div',
+                        { className: 'text-center mb-12' },
+                        React.createElement(
+                            'h2',
+                            { className: 'text-3xl md:text-4xl font-bold mb-4' },
+                            'Real-Time Market Overview'
+                        ),
+                        React.createElement(
+                            'p',
+                            { className: 'text-lg text-gray-600 dark:text-gray-400' },
+                            'Stay informed with our AI-curated market intelligence and trading signals'
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'grid grid-cols-1 lg:grid-cols-2 gap-8' },
+                        React.createElement(
+                            'div',
+                            { className: 'bg-white dark:bg-slate-700 rounded-xl shadow-lg p-6' },
+                            React.createElement(
+                                'h3',
+                                { className: 'text-xl font-bold mb-4 flex items-center' },
+                                React.createElement('i', { className: 'fas fa-chart-bar text-blue-500 mr-2' }),
+                                'Key Market Metrics'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'space-y-2' },
+                                marketData.map((metric, index) => 
+                                    React.createElement(MarketMetric, { key: index, metric: metric })
+                                )
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            { className: 'bg-white dark:bg-slate-700 rounded-xl shadow-lg p-6' },
+                            React.createElement(
+                                'h3',
+                                { className: 'text-xl font-bold mb-4 flex items-center' },
+                                React.createElement('i', { className: 'fas fa-bell text-orange-500 mr-2' }),
+                                'AI Trading Signals'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'space-y-2' },
+                                tradingSignals.map((signal, index) => 
+                                    React.createElement(TradingSignal, { key: index, signal: signal })
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        // Footer Component
+        function Footer() {
+            return React.createElement(
+                'footer',
+                { className: 'bg-slate-800 text-white pt-16 pb-8' },
+                React.createElement(
+                    'div',
+                    { className: 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8' },
+                    React.createElement(
+                        'div',
+                        { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12' },
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(
+                                'div',
+                                { className: 'flex items-center mb-4' },
+                                React.createElement(
+                                    'div',
+                                    { className: 'w-10 h-10 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mr-3' },
+                                    React.createElement('i', { className: 'fas fa-brain text-white' })
+                                ),
+                                React.createElement(
+                                    'span',
+                                    { className: 'text-xl font-bold' },
+                                    'QuFin.ai'
+                                )
+                            ),
+                            React.createElement(
+                                'p',
+                                { className: 'text-slate-300 mb-4' },
+                                'Harnessing quantum algorithms and AI to deliver unparalleled trading intelligence and market insights.'
+                            ),
+                            React.createElement(
+                                'div',
+                                { className: 'flex space-x-4' },
+                                React.createElement(
+                                    'a',
+                                    { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                    React.createElement('i', { className: 'fab fa-twitter' })
+                                ),
+                                React.createElement(
+                                    'a',
+                                    { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                    React.createElement('i', { className: 'fab fa-linkedin' })
+                                ),
+                                React.createElement(
+                                    'a',
+                                    { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                    React.createElement('i', { className: 'fab fa-github' })
+                                ),
+                                React.createElement(
+                                    'a',
+                                    { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                    React.createElement('i', { className: 'fab fa-youtube' })
+                                )
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(
+                                'h3',
+                                { className: 'text-lg font-semibold mb-4' },
+                                'Products'
+                            ),
+                            React.createElement(
+                                'ul',
+                                { className: 'space-y-2' },
+                                ['Quantum Forecast Engine', 'NeuroLock Risk Manager', 'Signal Sieve', 'Strategy DNA', 'Capital Guard', 'Glass Book Analytics'].map((product, index) => 
+                                    React.createElement(
+                                        'li',
+                                        { key: index },
+                                        React.createElement(
+                                            'a',
+                                            { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                            product
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(
+                                'h3',
+                                { className: 'text-lg font-semibold mb-4' },
+                                'Resources'
+                            ),
+                            React.createElement(
+                                'ul',
+                                { className: 'space-y-2' },
+                                ['Documentation', 'API Reference', 'Tutorials', 'Blog', 'Research Papers', 'Market Insights'].map((resource, index) => 
+                                    React.createElement(
+                                        'li',
+                                        { key: index },
+                                        React.createElement(
+                                            'a',
+                                            { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                            resource
+                                        )
+                                    )
+                                )
+                            )
+                        ),
+                        React.createElement(
+                            'div',
+                            null,
+                            React.createElement(
+                                'h3',
+                                { className: 'text-lg font-semibold mb-4' },
+                                'Company'
+                            ),
+                            React.createElement(
+                                'ul',
+                                { className: 'space-y-2' },
+                                ['About Us', 'Careers', 'Contact', 'Privacy Policy', 'Terms of Service', 'Security'].map((item, index) => 
+                                    React.createElement(
+                                        'li',
+                                        { key: index },
+                                        React.createElement(
+                                            'a',
+                                            { href: '#', className: 'text-slate-300 hover:text-white transition-colors' },
+                                            item
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    ),
+                    React.createElement(
+                        'div',
+                        { className: 'pt-8 border-t border-slate-700 text-center text-slate-400' },
+                        React.createElement(
+                            'p',
+                            null,
+                            '© 2023 QuFin.ai. All rights reserved. Quantum Financial Intelligence.'
+                        )
+                    )
+                )
+            );
+        }
+
+        // Main App Component
+        function App() {
+            return React.createElement(
+                React.Fragment,
+                null,
+                React.createElement(Navigation),
+                React.createElement(HeroSection),
+                React.createElement(AIProductsSection),
+                React.createElement(DataInfrastructureSection),
+                React.createElement(MarketOverviewSection),
+                React.createElement(Footer)
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</body>
+</html>
