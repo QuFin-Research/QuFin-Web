@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuFin - Global Data</title>
+    <link rel="stylesheet" href="../main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container header-container">
+            <div class="logo-container">
+                <img src="../logo.png" alt="QuFin Logo" class="logo-img">
+                <a href="../index.html" class="logo">Qu<span class="logo-accent">Fin</span></a>
+            </div>
+            <nav id="navMenu" class="nav-menu">
+                <ul>
+                    <li class="nav-item">
+                        <a href="home.html" class="nav-link"><i class="fas fa-home"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="product.html" class="nav-link"><i class="fas fa-box"></i>Product</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">AI Score Grid</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Forex</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Energies</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Metals</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Futures</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Commodities</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="pricing.html" class="nav-link"><i class="fas fa-dollar-sign"></i>Pricing</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="aiscoregrid.html" class="nav-link"><i class="fas fa-chart-line"></i>AI Score Grid</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Forex Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Equity Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Commodity Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Crypto Scores</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Country Scores</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="aistrategies.html" class="nav-link"><i class="fas fa-cogs"></i>AI Strategies</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Long/Short Equity</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Market Neutral</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Global Macro</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Arbitrage</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Quantitative</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="globaldata.html" class="nav-link"><i class="fas fa-globe"></i>Global Data</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="resources.html" class="nav-link"><i class="fas fa-book"></i>Resources</a>
+                        <ul class="dropdown">
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Market Simulator</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">AI Explainability</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Macro Data Decoder</a></li>
+                            <li class="dropdown-item"><a href="#" class="dropdown-link">Economic Calendar</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a href="reports.html" class="nav-link"><i class="fas fa-file-alt"></i>Reports</a>
+                    </li>
+                </ul>
+            </nav>
+            <div class="auth-section">
+                <button id="authToggle" class="auth-toggle"><i class="fas fa-user"></i>Login</button>
+            </div>
+            <button id="mobileToggle" class="mobile-toggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </header>
+
+    <div id="authModal" class="auth-modal">
+        <div class="auth-container">
+            <button class="auth-close"><i class="fas fa-times"></i></button>
+            <div class="auth-tabs">
+                <div class="auth-tab active">Login</div>
+                <div class="auth-tab">Sign Up</div>
+            </div>
+            <div class="auth-forms">
+                <div class="auth-form active">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" placeholder="Enter your password">
+                    </div>
+                    <button class="auth-submit">Login</button>
+                </div>
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" placeholder="Enter your email">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" placeholder="Enter your password">
+                    </div>
+                    <button class="auth-submit">Sign Up</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <main>
+        <div class="global-data">
+            <div class="container">
+                <div class="section-title">
+                    <h2>Global Market Data</h2>
+                    <p>Comprehensive financial data and economic indicators from around the world</p>
+                </div>
+                <div class="data-grid">
+                    <div class="data-card">
+                        <div class="data-flag">🇺🇸</div>
+                        <h3 class="data-name">United States</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+1.8%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">3.7%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">3.2%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="data-flag">🇪🇺</div>
+                        <h3 class="data-name">European Union</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+0.9%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">6.5%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">2.9%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="data-flag">🇨🇳</div>
+                        <h3 class="data-name">China</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+5.2%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">5.0%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">0.1%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="data-flag">🇯🇵</div>
+                        <h3 class="data-name">Japan</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+1.6%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">2.6%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">3.2%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="data-flag">🇬🇧</div>
+                        <h3 class="data-name">United Kingdom</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+0.5%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">4.3%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">4.6%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <div class="data-flag">🇨🇦</div>
+                        <h3 class="data-name">Canada</h3>
+                        <div class="data-stats">
+                            <div class="data-stat">
+                                <div class="data-value">+1.2%</div>
+                                <div class="data-label">GDP Growth</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">5.7%</div>
+                                <div class="data-label">Unemployment</div>
+                            </div>
+                            <div class="data-stat">
+                                <div class="data-value">3.8%</div>
+                                <div class="data-label">Inflation</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h3>QuFin</h3>
+                <p>AI-powered trading intelligence platform providing cutting-edge analytics and alternative data signals.</p>
+            </div>
+            <div class="footer-col">
+                <h3>Products</h3>
+                <ul class="footer-links">
+                    <li><a href="#">AI Score Grid</a></li>
+                    <li><a href="#">Market Data</a></li>
+                    <li><a href="#">Trading Strategies</a></li>
+                    <li><a href="#">Backtesting</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Resources</h3>
+                <ul class="footer-links">
+                    <li><a href="#">Learning Academy</a></li>
+                    <li><a href="#">Market Reports</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Webinars</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Company</h3>
+                <ul class="footer-links">
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Careers</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Privacy Policy</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            © 2023 QuFin. All rights reserved.
+        </div>
+    </footer>
+
+    <script src="../main.js"></script>
+</body>
+</html>
