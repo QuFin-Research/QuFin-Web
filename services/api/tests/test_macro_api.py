@@ -38,6 +38,8 @@ def fred_handler(request: httpx.Request):
     series_id = request.url.params["series_id"]
     if series_id != "UNRATE":
         return httpx.Response(400, json={"error_message": "The series does not exist."})
+    if request.url.path.endswith("/vintagedates"):
+        return httpx.Response(200, json={"count": 2, "vintage_dates": ["2026-09-05", "2026-10-03"]})
     if request.url.path.endswith("/observations"):
         return httpx.Response(200, json={"count": len(VINTAGES), "observations": VINTAGES})
     return httpx.Response(
@@ -147,3 +149,24 @@ def test_store_as_of_directly(db_session, ingested):
 
     store = MacroStore(db_session)
     assert [v.value for v in store.as_of("UNRATE", date(2026, 10, 2))] == [4.3]
+
+
+def test_market_series_history_before_the_archive_is_dated_by_release_lag():
+    from datetime import timedelta
+
+    from app.jobs.ingest_fred import date_pre_archive_periods
+    from app.stores.macro import OPEN_END, Vintage
+
+    archive = date(2005, 6, 28)
+    old = [Vintage(date(2005, 6, d), archive, OPEN_END, 3.0) for d in (1, 2, 27)]
+    # After archiving began each day was released the next day.
+    new = [
+        Vintage(archive + timedelta(days=i), archive + timedelta(days=i + 1), OPEN_END, 3.1)
+        for i in range(1, 30)
+    ]
+    dated = {v.period: v.realtime_start for v in date_pre_archive_periods(old + new)}
+    assert dated[date(2005, 6, 1)] == date(2005, 6, 2)
+    assert dated[date(2005, 6, 2)] == date(2005, 6, 3)
+    # Released after the archive date by the lag rule, so it keeps the archive date.
+    assert dated[date(2005, 6, 27)] == date(2005, 6, 28)
+    assert dated[archive + timedelta(days=1)] == archive + timedelta(days=2)

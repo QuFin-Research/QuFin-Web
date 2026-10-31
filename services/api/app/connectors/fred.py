@@ -11,8 +11,8 @@ import logging
 import ssl
 import time
 from collections.abc import Callable
-from dataclasses import dataclass
-from datetime import date, datetime
+from dataclasses import dataclass, replace
+from datetime import date, datetime, timedelta
 
 import httpx
 import truststore
@@ -26,6 +26,10 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 ALL_VINTAGES_START = "1776-07-04"
 ALL_VINTAGES_END = "9999-12-31"
 PAGE_LIMIT = 100_000
+VINTAGE_DATES_LIMIT = 10_000
+# ALFRED rejects an observations request whose real-time period spans more than 2,000 vintage
+# dates, and its count can include a date its vintage list does not, so stay well under.
+MAX_VINTAGES_PER_REQUEST = 1_900
 RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 
@@ -125,21 +129,58 @@ class FredClient:
             last_updated=_parse_last_updated(s.get("last_updated")),
         )
 
+    def vintage_dates(self, series_id: str) -> list[date]:
+        """Every date on which ALFRED recorded a new release of the series, oldest first."""
+        result: list[date] = []
+        while True:
+            body = self._get(
+                "/series/vintagedates",
+                {"series_id": series_id, "limit": VINTAGE_DATES_LIMIT, "offset": len(result)},
+            )
+            page = body.get("vintage_dates") or []
+            result.extend(date.fromisoformat(d) for d in page)
+            if not page or len(result) >= int(body.get("count", 0)):
+                return result
+
     def vintages(self, series_id: str, observation_start: date | None = None) -> list[Vintage]:
-        """Every published value of every period since `observation_start`, all vintages."""
+        """Every published value of every period since `observation_start`, all vintages.
+
+        ALFRED serves at most MAX_VINTAGES_PER_REQUEST vintage dates per request (daily market
+        series have thousands), so the real-time axis is fetched in windows and rows that a
+        window boundary split are joined again.
+        """
+        dates = self.vintage_dates(series_id)
+        windows = [
+            (
+                ALL_VINTAGES_START if i == 0 else dates[i].isoformat(),
+                ALL_VINTAGES_END
+                if i + MAX_VINTAGES_PER_REQUEST >= len(dates)
+                else (dates[i + MAX_VINTAGES_PER_REQUEST] - timedelta(days=1)).isoformat(),
+            )
+            for i in range(0, max(len(dates), 1), MAX_VINTAGES_PER_REQUEST)
+        ]
+        rows: list[Vintage] = []
+        for realtime_start, realtime_end in windows:
+            rows.extend(
+                self._observations(series_id, realtime_start, realtime_end, observation_start)
+            )
+        return _join_split_rows(rows) if len(windows) > 1 else rows
+
+    def _observations(
+        self, series_id: str, realtime_start: str, realtime_end: str, observation_start: date | None
+    ) -> list[Vintage]:
         params: dict[str, str | int] = {
             "series_id": series_id,
-            "realtime_start": ALL_VINTAGES_START,
-            "realtime_end": ALL_VINTAGES_END,
+            "realtime_start": realtime_start,
+            "realtime_end": realtime_end,
             "limit": PAGE_LIMIT,
         }
         if observation_start is not None:
             params["observation_start"] = observation_start.isoformat()
 
         result: list[Vintage] = []
-        offset = 0
         while True:
-            body = self._get("/series/observations", {**params, "offset": offset})
+            body = self._get("/series/observations", {**params, "offset": len(result)})
             page = body.get("observations") or []
             result.extend(
                 Vintage(
@@ -150,9 +191,25 @@ class FredClient:
                 )
                 for o in page
             )
-            offset += len(page)
-            if not page or offset >= int(body.get("count", 0)):
+            if not page or len(result) >= int(body.get("count", 0)):
                 return result
+
+
+def _join_split_rows(rows: list[Vintage]) -> list[Vintage]:
+    """ALFRED clips real-time periods to the requested window; undo that at window edges."""
+    joined: list[Vintage] = []
+    for row in sorted(rows, key=lambda v: (v.period, v.realtime_start)):
+        last = joined[-1] if joined else None
+        if (
+            last is not None
+            and last.period == row.period
+            and last.value == row.value
+            and last.realtime_end + timedelta(days=1) == row.realtime_start
+        ):
+            joined[-1] = replace(last, realtime_end=row.realtime_end)
+        else:
+            joined.append(row)
+    return joined
 
 
 def _error_message(res: httpx.Response) -> str:
