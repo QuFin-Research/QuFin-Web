@@ -1,5 +1,6 @@
 'use client';
 
+import { SampleDataBadge } from '@/components/sample-data';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -155,9 +156,13 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Your decision</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          Your decision
+          <SampleDataBadge />
+        </CardTitle>
         <CardDescription>
-          Set your plan, see how it would have performed, then log it to your journal.
+          Set your plan, see how it would have performed, then log it to your journal. The
+          performance test runs on sample prices and signals.
         </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-col gap-5'>

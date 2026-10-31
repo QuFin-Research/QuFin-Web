@@ -6,7 +6,7 @@ from typing import Annotated, Literal
 from pydantic import Field, field_validator
 
 from app.data.sample import HISTORY_DAYS
-from app.schemas.base import ApiModel
+from app.schemas.base import ORIGIN_DESCRIPTION, ApiModel, DataOrigin
 from app.schemas.market import Direction
 
 StrategyKind = Literal["all-signals", "high-conviction", "buy-hold"]
@@ -73,6 +73,7 @@ class BacktestStats(ApiModel):
 
 class StrategyBacktestResult(ApiModel):
     kind: Literal["strategy"] = "strategy"
+    data: DataOrigin = Field(description=ORIGIN_DESCRIPTION)
     symbol: str
     as_of: str
     equity: list[EquityPoint]
@@ -93,6 +94,7 @@ class CurvePoint(ApiModel):
 
 class DecisionRuleBacktestResult(ApiModel):
     kind: Literal["decision-rule"] = "decision-rule"
+    data: DataOrigin = Field(description=ORIGIN_DESCRIPTION)
     symbol: str
     as_of: str
     trades: list[RuleTrade]

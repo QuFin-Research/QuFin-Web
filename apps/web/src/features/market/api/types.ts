@@ -1,3 +1,5 @@
+import type { DataOrigin } from '@/components/sample-data';
+
 export type AssetClass = 'FX' | 'Metals' | 'Energy' | 'Crypto';
 
 export type Asset = {
@@ -44,6 +46,8 @@ export type SignalDriver = {
 };
 
 export type AssetSnapshot = {
+  /** Where these numbers come from; 'sample' is not market data */
+  data: DataOrigin;
   asset: Asset;
   lastPrice: number;
   changePct: number;

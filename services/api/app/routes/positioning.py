@@ -53,6 +53,7 @@ def list_positioning(store: Store, today: Today, as_of: AsOf = None) -> list[Pos
                 symbol=contract.symbol,
                 contract_code=contract.code,
                 market_name=reports[-1].market_name,
+                caveat=contract.caveat,
                 latest=_point(points[-1]),
                 weekly_change=points[-1].net - points[-2].net if len(points) > 1 else None,
                 freshness=_freshness(cot_status(reports, as_of or today).freshness),
@@ -82,6 +83,7 @@ def get_positioning(
         contract_code=contract.code,
         market_name=reports[-1].market_name,
         as_of=as_of,
+        caveat=contract.caveat,
         freshness=_freshness(cot_status(reports, as_of or today).freshness),
         points=[_point(p) for p in points],
     )

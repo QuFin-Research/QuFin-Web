@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
@@ -12,3 +14,13 @@ class ApiModel(BaseModel):
         extra="forbid",
         frozen=True,
     )
+
+
+# Where the numbers in a response come from. "sample": generated for development by
+# app/data/sample.py, not market data and not a trading signal. Every data endpoint states it
+# (or carries `freshness` for live sources); tests/test_provenance.py enforces that.
+DataOrigin = Literal["live", "sample"]
+ORIGIN_DESCRIPTION = (
+    "Where these numbers come from. 'sample' means generated for development: not market "
+    "data and not a trading signal"
+)

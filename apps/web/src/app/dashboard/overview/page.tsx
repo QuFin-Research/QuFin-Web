@@ -24,7 +24,7 @@ export default function OverviewPage() {
   return (
     <PageContainer
       pageTitle='Market overview'
-      pageDescription={`Signals and macro scores as of the ${formatDate(AS_OF)} close. Research and decision support, not investment advice.`}
+      pageDescription={`Signals and prices are sample data (as of ${formatDate(AS_OF)}), not market data. The US macro scorecard is live. Research and decision support, not investment advice.`}
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<Skeleton className='h-[600px] w-full rounded-xl' />}>

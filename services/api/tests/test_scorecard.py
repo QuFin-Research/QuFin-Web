@@ -190,3 +190,10 @@ def test_bias_backtest_finds_no_bias_where_a_plain_sum_would(db_session, monkeyp
     assert abs(labour.mean_difference) <= MAX_MEAN_BIAS
     assert labour.naive_mean_difference < -MAX_MEAN_BIAS  # what the rescaling prevents
     assert report.passed
+
+
+def test_growth_is_scored_in_real_terms_only():
+    # Nominal dollar series grow with prices; scoring them would read inflation as growth.
+    nominal = {"RSAFS", "PI", "NEWORDER", "ACOGNO"}
+    assert not nominal & set(scorecard_catalog.SCORED)
+    assert {"GDPC1", "RRSFS", "W875RX1"} <= set(scorecard_catalog.SCORED)

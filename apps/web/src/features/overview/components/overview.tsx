@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { SampleDataBadge } from '@/components/sample-data';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +61,10 @@ export function OverviewKpis() {
       {kpis.map((kpi) => (
         <Card key={kpi.label} size='sm'>
           <CardHeader>
-            <CardDescription>{kpi.label}</CardDescription>
+            <CardDescription className='flex items-center justify-between gap-2'>
+              {kpi.label}
+              <SampleDataBadge />
+            </CardDescription>
             <CardTitle className='font-mono text-2xl tabular-nums'>{kpi.value}</CardTitle>
           </CardHeader>
           <CardContent className='text-muted-foreground text-xs'>{kpi.hint}</CardContent>
@@ -79,7 +83,10 @@ export function SignalsTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Today&apos;s signals</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          Today&apos;s signals
+          <SampleDataBadge />
+        </CardTitle>
         <CardDescription>
           5-day directional outlook, sorted by conviction. Select an asset to decide and backtest.
         </CardDescription>

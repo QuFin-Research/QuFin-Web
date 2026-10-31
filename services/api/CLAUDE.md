@@ -32,6 +32,22 @@ series, existing or new:
    Michigan survey (UMCSENT) is free only for research or strictly internal use; a platform,
    dashboard or investment advisory needs a licence from umsurvey@umich.edu. Moody's data
    (BAA10Y) carries a similar proprietary notice. Record such limits in the catalog.
+8. **Every number states its origin.** Each data endpoint returns `data` ("live" or "sample")
+   or `freshness`; `tests/test_provenance.py` fails otherwise. Sample numbers are labelled on
+   every page whether or not the user is signed in, and nothing invented (signals, alerts,
+   notifications) is ever shown as if it were real. See `docs/data-provenance.md`.
+9. **Release dates come from the source's real calendar**, including holidays, shutdowns and
+   incidents (`app/data/cot_calendar.py` for the CFTC). Where a date is not published, derive
+   it from the source's stated rule and mark it derived; when in doubt, err late, never early.
+10. **Verify meaning at the source before scoring.** For every scored indicator, confirm its
+    definition, sign, units and adjustment from the producer's own notes, and record the reason
+    in `app/data/scorecard_catalog.py`. Growth is scored in real terms only (nominal dollars
+    read inflation as growth).
+11. **Flag partial coverage.** A contract or series that covers only part of its market (e.g.
+    NYMEX Brent, while most Brent trades on ICE) carries a caveat that the API and page show.
+12. **Assumptions are listed and checked, not trusted.** Before adding or changing any data
+    path, list every assumption (mapping, sign, unit, release timing, licence, coverage),
+    verify each against the primary source, and report any that could not be verified.
 
 ## Scorecard correction mechanism (non-negotiable)
 

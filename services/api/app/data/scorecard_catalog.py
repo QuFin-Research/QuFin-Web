@@ -12,6 +12,11 @@ timeliness weight; all start equal until a reviewed reason says otherwise.
 
 Series in the macro catalog but not here are stored and shown, but not scored (their meaning
 for a pillar is ambiguous or duplicated, e.g. the prime rate tracks fed funds one for one).
+
+Growth is scored in real terms only: a nominal dollar series grows with prices, so inflation
+would read as growth (nominal retail sales and personal income ran hot in 2021-22). Retail
+sales and personal income use their inflation-adjusted versions; core capital goods orders
+(NEWORDER) have no real version on FRED, so they are not scored.
 """
 
 from dataclasses import dataclass
@@ -31,9 +36,8 @@ SCORED: dict[str, ScoreSpec] = {
     # Growth
     "GDPC1": ScoreSpec("yoy"),
     "INDPRO": ScoreSpec("yoy"),
-    "RSAFS": ScoreSpec("yoy"),
-    "PI": ScoreSpec("yoy"),
-    "NEWORDER": ScoreSpec("yoy"),
+    "RRSFS": ScoreSpec("yoy"),
+    "W875RX1": ScoreSpec("yoy"),
     "PERMIT": ScoreSpec("yoy"),
     "NOCDFSA066MSFRBPHI": ScoreSpec("level"),
     # Inflation

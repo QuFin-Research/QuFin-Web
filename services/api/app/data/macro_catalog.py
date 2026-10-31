@@ -100,8 +100,10 @@ CATALOG: tuple[CatalogSeries, ...] = (
     # --- Coincident: move with the economy -----------------------------------------------
     _us("GDPC1", "growth", "coincident"),  # Real GDP, quarterly
     _us("INDPRO", "growth", "coincident"),  # Industrial production
-    _us("RSAFS", "growth", "coincident"),  # Retail sales
-    _us("PI", "growth", "coincident"),  # Personal income
+    _us("RRSFS", "growth", "coincident"),  # Real retail sales (CPI-adjusted)
+    _us("W875RX1", "growth", "coincident"),  # Real personal income less transfers
+    _us("RSAFS", "growth"),  # Retail sales, nominal (shown, not scored)
+    _us("PI", "growth"),  # Personal income, nominal (shown, not scored)
     _us("PAYEMS", "labour", "coincident"),  # Nonfarm payrolls
     # --- Lagging: turn after the economy -------------------------------------------------
     _us("UEMPMEAN", "labour", "lagging"),  # Average weeks unemployed

@@ -6,19 +6,17 @@ Open data (Socrata API), no key needed: https://publicreporting.cftc.gov/
 import ssl
 import time
 from collections.abc import Callable
-from datetime import date, timedelta
+from datetime import date
 
 import httpx
 import truststore
 
+from app.data.cot_calendar import release_date
 from app.stores.positioning import CotReport
 
 LEGACY_FUTURES_URL = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
 PAGE_LIMIT = 5000
 RETRY_STATUSES = {429, 500, 502, 503, 504}
-# Positions are as of Tuesday and published the following Friday. Holiday weeks and
-# government shutdowns delay releases; three days is the normal schedule.
-RELEASE_LAG = timedelta(days=3)
 
 FIELDS = {
     "open_interest": "open_interest_all",
@@ -41,7 +39,8 @@ def parse_report(row: dict) -> CotReport:
     return CotReport(
         contract_code=row["cftc_contract_market_code"].strip(),
         report_date=report_date,
-        release_date=report_date + RELEASE_LAG,
+        # Holidays, shutdowns and incidents delayed some releases: see app/data/cot_calendar.py.
+        release_date=release_date(report_date),
         market_name=row.get("market_and_exchange_names", "").strip(),
         **{name: int(float(row.get(column) or 0)) for name, column in FIELDS.items()},
     )

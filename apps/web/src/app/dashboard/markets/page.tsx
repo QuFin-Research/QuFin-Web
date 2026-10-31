@@ -17,7 +17,7 @@ export default function MarketsPage() {
   return (
     <PageContainer
       pageTitle='Markets'
-      pageDescription='Pick an asset to review its signal, plan a trade and backtest your decision.'
+      pageDescription='Pick an asset to review its signal, plan a trade and backtest your decision. Prices and signals are sample data, not market data.'
     >
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<Skeleton className='h-[520px] w-full rounded-xl' />}>

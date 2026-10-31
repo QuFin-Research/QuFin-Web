@@ -1,4 +1,5 @@
 import KBar from '@/components/kbar';
+import { SampleDataBanner } from '@/components/sample-data';
 import AppSidebar from '@/components/layout/app-sidebar';
 import Header from '@/components/layout/header';
 import { InfoSidebar } from '@/components/layout/info-sidebar';
@@ -34,6 +35,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <AppSidebar />
           <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
             <Header />
+            <SampleDataBanner />
             <InfobarProvider defaultOpen={false}>
               {children}
               <InfoSidebar side='right' />

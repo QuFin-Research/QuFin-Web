@@ -19,7 +19,9 @@ export const useJournalStore = create<JournalState>()(
         const decision: Decision = {
           ...input,
           id: crypto.randomUUID(),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          // The offline app only has sample prices and signals.
+          data: 'sample'
         };
         set((state) => ({ decisions: [decision, ...state.decisions] }));
         return decision;

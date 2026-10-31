@@ -9,7 +9,7 @@ export default function BacktestPage() {
   return (
     <PageContainer
       pageTitle='Backtest lab'
-      pageDescription='Test how QuFin signals would have traded an asset, with your own costs and rules.'
+      pageDescription='Test how QuFin signals would have traded an asset, with your own costs and rules. Runs on sample prices and signals, not market data.'
     >
       <BacktestLab />
     </PageContainer>

@@ -165,6 +165,9 @@ export function PositioningView() {
                         <span className='text-muted-foreground block max-w-56 truncate text-xs'>
                           {s.marketName}
                         </span>
+                        {s.caveat && (
+                          <span className='text-bear block text-xs'>Partial view of the market</span>
+                        )}
                       </button>
                     </TableCell>
                     <TableCell
@@ -206,6 +209,9 @@ export function PositioningView() {
             </CardTitle>
             <CardDescription>
               Each week&apos;s COT index uses only the reports published up to that week.
+              {selected.caveat && (
+                <span className='text-bear block pt-1'>{selected.caveat}</span>
+              )}
             </CardDescription>
           </div>
           <NativeSelect

@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.schemas.base import ApiModel
+from app.schemas.base import ORIGIN_DESCRIPTION, ApiModel, DataOrigin
 
 AssetClass = Literal["FX", "Metals", "Energy", "Crypto"]
 Direction = Literal["long", "short"]
@@ -50,6 +50,7 @@ class SignalDriver(ApiModel):
 
 
 class AssetSnapshot(ApiModel):
+    data: DataOrigin = Field(description=ORIGIN_DESCRIPTION)
     asset: Asset
     last_price: float
     change_pct: float

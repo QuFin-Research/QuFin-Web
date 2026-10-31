@@ -6,7 +6,7 @@ from typing import Annotated, Self
 from pydantic import Field, field_validator, model_validator
 
 from app.schemas.backtest import SymbolStr
-from app.schemas.base import ApiModel
+from app.schemas.base import ApiModel, DataOrigin
 from app.schemas.market import Direction
 
 PositivePrice = Annotated[float, Field(gt=0, allow_inf_nan=False)]
@@ -50,3 +50,7 @@ class DecisionCreate(ApiModel):
 class Decision(DecisionCreate):
     id: str
     created_at: datetime
+    data: DataOrigin = Field(
+        description="Origin of the market data (signal, backtest) the decision was logged on. "
+        "'sample' means generated for development: not market data and not a trading signal"
+    )

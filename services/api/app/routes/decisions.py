@@ -32,7 +32,7 @@ def create_decision(
 ) -> Decision:
     if repo.get_asset(data.symbol) is None:
         raise HTTPException(status_code=422, detail="Unknown symbol")
-    return store.add(data)
+    return store.add(data, repo.origin)
 
 
 @router.delete("/{decision_id}", status_code=204)
