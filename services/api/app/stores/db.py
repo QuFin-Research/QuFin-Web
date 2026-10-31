@@ -21,7 +21,7 @@ class Base(DeclarativeBase):
 
 def import_models() -> None:
     """Import every model module so its tables are registered on Base.metadata."""
-    from app.stores import decisions, macro, users  # noqa: F401
+    from app.stores import decisions, macro, positioning, users  # noqa: F401
 
 
 def as_utc(value: datetime) -> datetime:

@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import RateLimiter
-from app.routes import auth, backtests, decisions, macro, market
+from app.routes import auth, backtests, decisions, macro, market, positioning
 from app.stores.db import get_engine
 from app.stores.migrate import upgrade_to_head
 
@@ -77,6 +77,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(market.router)
     app.include_router(macro.router)
+    app.include_router(positioning.router)
     app.include_router(backtests.router)
     app.include_router(decisions.router)
     return app
