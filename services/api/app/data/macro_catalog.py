@@ -1,6 +1,12 @@
 """Macro series QuFin tracks, grouped by the scorecard dimension each one informs.
 
 US first (FRED/ALFRED); other economies follow as their sources are connected.
+
+Business-cycle timing follows the Conference Board's leading, coincident and lagging indexes,
+using the published components (or the closest public series where a component is
+proprietary: ISM new orders -> Philadelphia Fed new orders, the Leading Credit Index -> the
+Chicago Fed's financial conditions index). The S&P 500 component is left to a price source:
+FRED keeps only ten years of it and no vintages.
 """
 
 from dataclasses import dataclass
@@ -8,6 +14,7 @@ from datetime import date
 from typing import Literal
 
 Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment"]
+Cycle = Literal["leading", "coincident", "lagging"]
 
 # Enough history for the walk-forward windows without pulling every vintage since 1939.
 DEFAULT_OBSERVATION_START = date(2000, 1, 1)
@@ -19,37 +26,61 @@ class CatalogSeries:
     source: Literal["fred"]
     country: str
     dimension: Dimension
+    cycle: Cycle | None = None
     # Market rates are not revised beyond rare error corrections, so periods from before
     # ALFRED started archiving the series can be dated by their usual release lag instead
     # of being dropped. Not for series that get rebased or reweighted.
     market: bool = False
 
 
+def _us(
+    id: str, dimension: Dimension, cycle: Cycle | None = None, *, market: bool = False
+) -> CatalogSeries:
+    return CatalogSeries(id, "fred", "US", dimension, cycle, market)
+
+
 CATALOG: tuple[CatalogSeries, ...] = (
-    # Growth
-    CatalogSeries("GDPC1", "fred", "US", "growth"),  # Real GDP, quarterly
-    CatalogSeries("INDPRO", "fred", "US", "growth"),  # Industrial production
-    CatalogSeries("RSAFS", "fred", "US", "growth"),  # Retail sales
-    # Inflation
-    CatalogSeries("CPIAUCSL", "fred", "US", "inflation"),  # CPI, all items
-    CatalogSeries("PCEPILFE", "fred", "US", "inflation"),  # Core PCE price index
-    CatalogSeries("T10YIE", "fred", "US", "inflation", market=True),  # 10y breakeven inflation
-    # Labour
-    CatalogSeries("UNRATE", "fred", "US", "labour"),  # Unemployment rate
-    CatalogSeries("PAYEMS", "fred", "US", "labour"),  # Nonfarm payrolls
-    CatalogSeries("ICSA", "fred", "US", "labour"),  # Initial jobless claims, weekly
-    # Policy, rates and liquidity
-    CatalogSeries("FEDFUNDS", "fred", "US", "policy"),  # Effective fed funds rate
-    CatalogSeries("DGS2", "fred", "US", "policy", market=True),  # 2-year Treasury yield
-    CatalogSeries("DGS10", "fred", "US", "policy", market=True),  # 10-year Treasury yield
-    CatalogSeries("DFII10", "fred", "US", "policy", market=True),  # 10-year real (TIPS) yield
-    CatalogSeries("WALCL", "fred", "US", "policy", market=True),  # Fed balance sheet, weekly
-    CatalogSeries("M2SL", "fred", "US", "policy"),  # M2 money supply
-    # Sentiment and financial conditions
-    CatalogSeries("UMCSENT", "fred", "US", "sentiment"),  # Michigan consumer sentiment
-    CatalogSeries("BAA10Y", "fred", "US", "sentiment", market=True),  # Baa credit spread
+    # --- Leading: turn before the economy ------------------------------------------------
+    _us("AWHMAN", "labour", "leading"),  # Average weekly hours, manufacturing
+    _us("ICSA", "labour", "leading"),  # Initial jobless claims, weekly
+    _us("ACOGNO", "growth", "leading"),  # New orders, consumer goods
+    _us("NEWORDER", "growth", "leading"),  # New orders, core capital goods
+    _us("NOCDFSA066MSFRBPHI", "growth", "leading"),  # Philadelphia Fed new orders
+    _us("PERMIT", "growth", "leading"),  # Building permits
+    _us("HOUST", "growth", "leading"),  # Housing starts
+    _us("T10YFF", "policy", "leading", market=True),  # 10-year yield minus fed funds
+    _us("T10Y3M", "policy", "leading", market=True),  # 10-year minus 3-month yield
+    _us("NFCI", "sentiment", "leading"),  # Chicago Fed financial conditions, weekly
+    _us("UMCSENT", "sentiment", "leading"),  # Michigan consumer sentiment
+    # --- Coincident: move with the economy -----------------------------------------------
+    _us("GDPC1", "growth", "coincident"),  # Real GDP, quarterly
+    _us("INDPRO", "growth", "coincident"),  # Industrial production
+    _us("RSAFS", "growth", "coincident"),  # Retail sales
+    _us("PI", "growth", "coincident"),  # Personal income
+    _us("PAYEMS", "labour", "coincident"),  # Nonfarm payrolls
+    # --- Lagging: turn after the economy -------------------------------------------------
+    _us("UEMPMEAN", "labour", "lagging"),  # Average weeks unemployed
+    _us("UNRATE", "labour", "lagging"),  # Unemployment rate
+    _us("ISRATIO", "growth", "lagging"),  # Business inventories to sales
+    _us("ULCMFG", "inflation", "lagging"),  # Unit labour costs, manufacturing, quarterly
+    _us("CUSR0000SAS", "inflation", "lagging"),  # CPI, services
+    _us("CPILFESL", "inflation", "lagging"),  # Core CPI
+    _us("MPRIME", "policy", "lagging"),  # Bank prime loan rate
+    _us("BUSLOANS", "policy", "lagging"),  # Commercial and industrial loans
+    _us("TOTALSL", "policy", "lagging"),  # Consumer credit outstanding
+    # --- Not classified by cycle -----------------------------------------------------------
+    _us("CPIAUCSL", "inflation"),  # CPI, all items
+    _us("PCEPILFE", "inflation"),  # Core PCE price index
+    _us("T10YIE", "inflation", market=True),  # 10-year breakeven inflation
+    _us("FEDFUNDS", "policy"),  # Effective fed funds rate
+    _us("DGS2", "policy", market=True),  # 2-year Treasury yield
+    _us("DGS10", "policy", market=True),  # 10-year Treasury yield
+    _us("DFII10", "policy", market=True),  # 10-year real (TIPS) yield
+    _us("WALCL", "policy", market=True),  # Fed balance sheet, weekly
+    _us("M2SL", "policy"),  # M2 money supply
+    _us("BAA10Y", "sentiment", market=True),  # Baa credit spread
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
-    CatalogSeries("DTWEXBGS", "fred", "US", "sentiment"),
+    _us("DTWEXBGS", "sentiment"),
 )
 
 BY_ID = {s.id: s for s in CATALOG}

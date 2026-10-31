@@ -90,8 +90,12 @@ ALFRED does: each row is one published value of one period, valid from `realtime
 `/revisions` shows how a figure changed from its first print.
 
 Series come from FRED/ALFRED (St. Louis Fed). The tracked US series and the scorecard dimension
-each informs are in `app/data/macro_catalog.py`. To load them you need a free FRED API key
-(<https://fred.stlouisfed.org/docs/api/api_key.html>), set as `QUFIN_FRED_API_KEY` in `.env`:
+each informs are in `app/data/macro_catalog.py`. Each series is also tagged by business-cycle
+timing (leading, coincident or lagging), following the Conference Board's three indexes with
+public stand-ins for their proprietary components (Philadelphia Fed new orders for ISM new
+orders, the Chicago Fed NFCI for the Leading Credit Index). To load them you need a free FRED
+API key (<https://fred.stlouisfed.org/docs/api/api_key.html>), set as `QUFIN_FRED_API_KEY` in
+`.env`:
 
 ```bash
 uv run python -m app.cli ingest-fred                      # the whole catalog, since 2000

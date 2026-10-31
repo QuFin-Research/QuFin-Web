@@ -31,6 +31,8 @@ class MacroSeriesRow(Base):
     seasonal_adjustment: Mapped[str] = mapped_column(String(64))
     country: Mapped[str] = mapped_column(String(2), index=True)
     dimension: Mapped[str] = mapped_column(String(16), index=True)
+    # Business-cycle timing: leading, coincident or lagging; None when it is neither.
+    cycle: Mapped[str | None] = mapped_column(String(16), nullable=True)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -63,6 +65,7 @@ class SeriesMeta:
     country: str
     dimension: str
     last_updated: datetime | None
+    cycle: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,6 +97,7 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         seasonal_adjustment=row.seasonal_adjustment,
         country=row.country,
         dimension=row.dimension,
+        cycle=row.cycle,
         last_updated=as_utc(row.last_updated) if row.last_updated else None,
     )
 
@@ -128,6 +132,7 @@ class MacroStore:
         series.seasonal_adjustment = meta.seasonal_adjustment
         series.country = meta.country
         series.dimension = meta.dimension
+        series.cycle = meta.cycle
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
         self.session.add(series)
