@@ -60,6 +60,14 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         shortcut: ['r', 'r'],
         items: []
+      },
+      {
+        title: 'Positioning',
+        url: '/dashboard/positioning',
+        icon: 'teams',
+        isActive: false,
+        shortcut: ['p', 'p'],
+        items: []
       }
     ]
   },

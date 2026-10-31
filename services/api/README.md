@@ -57,6 +57,8 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `GET` | `/v1/macro/series` | Macro series in the point-in-time store, with coverage |
 | `GET` | `/v1/macro/series/{id}?asOf=&start=&end=` | The series as published on `asOf` (latest when omitted) |
 | `GET` | `/v1/macro/series/{id}/revisions?period=` | Every published value of one period, first release first |
+| `GET` | `/v1/positioning?asOf=` | Latest CFTC speculative positioning for every asset |
+| `GET` | `/v1/positioning/{symbol}?weeks=&asOf=` | Weekly positioning history with the COT index |
 
 Market data and scorecards are public for now (sample data); they move behind sign-in when
 licensed data arrives.
@@ -100,6 +102,23 @@ Each run reloads the full vintage history of each series in one transaction, so 
 repeat; schedule it daily once deployed. The client trusts the operating system's certificate
 store (`truststore`), so it works behind a TLS-inspecting proxy that the machine trusts. The key
 never appears in logs or error messages.
+
+### CFTC positioning
+
+Weekly Commitments of Traders reports (legacy, futures only) from the CFTC's open data API, no
+key needed. `app/data/positioning_catalog.py` maps each QuFin asset to its futures contract
+(the CME yen contract is flipped for USDJPY).
+
+```bash
+uv run python -m app.cli ingest-cftc           # all assets since 2015; later runs fetch new weeks
+uv run python -m app.cli ingest-cftc XAUUSD --full
+```
+
+Reports hold Tuesday's positions and are public from Friday, so each row also stores a release
+date (report date + 3 days; holiday weeks and shutdowns can delay it) and `asOf` filters on it.
+Metrics: large speculators' net contracts, net as a % of open interest, the weekly change, and
+the COT index, which places the net position in its trailing 3-year range (0 = most bearish,
+100 = most bullish) using only reports published up to that week.
 
 ### Backtests
 
@@ -171,11 +190,11 @@ app/
   domain/            snapshots, regime, hit rate; backtest engine
   data/macro_catalog.py  macro series QuFin tracks, by country and scorecard dimension
   core/              settings, auth dependencies, password/token security, rate limiting
-  connectors/        external data sources (FRED/ALFRED)
+  connectors/        external data sources (FRED/ALFRED, CFTC)
   jobs/              ingestion jobs
-  stores/            users, sessions, decisions and point-in-time macro data (SQLAlchemy)
+  stores/            users, sessions, decisions, macro vintages and COT reports (SQLAlchemy)
   routes/            HTTP endpoints
-  cli.py             `migrate` and `ingest-fred` commands
+  cli.py             `migrate`, `ingest-fred` and `ingest-cftc` commands
 migrations/          Alembic revisions
 tests/               pytest, including parity with the TypeScript code
 scripts/             web-parity-fixture.mts
@@ -206,7 +225,7 @@ Python and V8.
 ## Not yet
 
 - Scorecards computed from the point-in-time macro store instead of sample data
-- CFTC positioning and EIA energy connectors; non-US macro sources
+- Positioning as a live signal driver on the asset pages; EIA energy and non-US macro sources
 - A scheduler for daily ingestion; TimescaleDB hypertables once price data is stored
 - Email verification, password reset and MFA; a breached-password check on sign-up
 - Shared rate-limit store (Redis or the reverse proxy) once there is more than one worker

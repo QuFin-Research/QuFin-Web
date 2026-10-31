@@ -21,7 +21,7 @@ def test_upgrade_is_idempotent():
     upgrade_to_head(engine)
     with engine.connect() as conn:
         version = conn.execute(text("select version_num from alembic_version")).scalar()
-    assert version == "0002"
+    assert version == "0003"
 
 
 def test_database_from_before_migrations_is_adopted():
@@ -41,6 +41,6 @@ def test_database_from_before_migrations_is_adopted():
     upgrade_to_head(engine)
 
     tables = set(inspect(engine).get_table_names())
-    assert {"macro_series", "macro_observations", "alembic_version"} <= tables
+    assert {"macro_series", "macro_observations", "cot_reports", "alembic_version"} <= tables
     with engine.connect() as conn:
         assert conn.execute(text("select count(*) from users")).scalar() == 1
