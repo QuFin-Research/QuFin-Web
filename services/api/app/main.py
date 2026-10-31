@@ -1,17 +1,29 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import RateLimiter
-from app.routes import auth, backtests, decisions, market
+from app.routes import auth, backtests, decisions, macro, market
+from app.stores.db import get_engine
+from app.stores.migrate import upgrade_to_head
 
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
+
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        if settings.auto_migrate:
+            upgrade_to_head(get_engine())
+        yield
+
     app = FastAPI(
+        lifespan=lifespan,
         title="QuFin API",
         version="0.1.0",
         description=(
@@ -64,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(market.router)
+    app.include_router(macro.router)
     app.include_router(backtests.router)
     app.include_router(decisions.router)
     return app

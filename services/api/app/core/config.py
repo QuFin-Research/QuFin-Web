@@ -1,7 +1,7 @@
 from functools import lru_cache
 from typing import Annotated, Literal, Self
 
-from pydantic import Field, field_validator, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     environment: Literal["development", "staging", "production"] = "development"
     cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000"]
     database_url: str = "sqlite:///./qufin.db"
+    # Apply Alembic migrations on startup. Deployments run them as a separate step instead.
+    auto_migrate: bool = True
+
+    # FRED/ALFRED (St. Louis Fed). Free key: https://fred.stlouisfed.org/docs/api/api_key.html
+    fred_api_key: SecretStr | None = None
+    fred_base_url: str = "https://api.stlouisfed.org/fred"
 
     # Sign-in sessions: an opaque token in an httpOnly cookie, stored server-side as a hash.
     session_cookie_name: str = "qufin_session"
@@ -27,6 +33,11 @@ class Settings(BaseSettings):
     # Sign-in and sign-up attempts allowed per client IP and email in each window.
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)
+
+    @field_validator("fred_api_key", mode="before")
+    @classmethod
+    def blank_key_is_unset(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
 
     @field_validator("cors_origins", mode="before")
     @classmethod

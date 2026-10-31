@@ -54,6 +54,9 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `GET` | `/v1/decisions` | Your logged decisions, newest first. Signed in |
 | `POST` | `/v1/decisions` | Log a decision; returns it with `id` and `createdAt` (`201`). Signed in |
 | `DELETE` | `/v1/decisions/{id}` | `204`, or `404` if not found or not yours. Signed in |
+| `GET` | `/v1/macro/series` | Macro series in the point-in-time store, with coverage |
+| `GET` | `/v1/macro/series/{id}?asOf=&start=&end=` | The series as published on `asOf` (latest when omitted) |
+| `GET` | `/v1/macro/series/{id}/revisions?period=` | Every published value of one period, first release first |
 
 Market data and scorecards are public for now (sample data); they move behind sign-in when
 licensed data arrives.
@@ -75,6 +78,28 @@ licensed data arrives.
 
 JSON uses camelCase, matching the TypeScript types in `apps/web/src/features/market/api/types.ts`
 and the `Decision` type in `apps/web/src/features/journal/utils/store.ts`.
+
+### Point-in-time macro data
+
+Macro releases get revised, sometimes heavily. A backtest that uses today's revised numbers for
+a decision made last year has look-ahead bias. The store therefore keeps every vintage, the way
+ALFRED does: each row is one published value of one period, valid from `realtime_start` to
+`realtime_end`. `asOf=2026-09-20` returns exactly what had been published by that day, and
+`/revisions` shows how a figure changed from its first print.
+
+Series come from FRED/ALFRED (St. Louis Fed). The tracked US series and the scorecard dimension
+each informs are in `app/data/macro_catalog.py`. To load them you need a free FRED API key
+(<https://fred.stlouisfed.org/docs/api/api_key.html>), set as `QUFIN_FRED_API_KEY` in `.env`:
+
+```bash
+uv run python -m app.cli ingest-fred                      # the whole catalog, since 2000
+uv run python -m app.cli ingest-fred UNRATE CPIAUCSL --start 2015-01-01
+```
+
+Each run reloads the full vintage history of each series in one transaction, so it is safe to
+repeat; schedule it daily once deployed. The client trusts the operating system's certificate
+store (`truststore`), so it works behind a TLS-inspecting proxy that the machine trusts. The key
+never appears in logs or error messages.
 
 ### Backtests
 
@@ -105,15 +130,35 @@ Settings come from `QUFIN_*` environment variables or a local `.env` (never comm
 | --- | --- | --- |
 | `QUFIN_ENVIRONMENT` | `development` | `production` hides `/docs` and `/openapi.json` |
 | `QUFIN_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated; `*` is rejected |
-| `QUFIN_DATABASE_URL` | `sqlite:///./qufin.db` | Users, sessions and decisions; Postgres 16 later |
+| `QUFIN_DATABASE_URL` | `sqlite:///./qufin.db` | SQLite locally; `postgresql+psycopg://…` for Postgres |
+| `QUFIN_AUTO_MIGRATE` | `true` | Apply migrations on startup; set `false` where deploys run them |
+| `QUFIN_FRED_API_KEY` | unset | Needed only for `ingest-fred` |
 | `QUFIN_SESSION_TTL_HOURS` | `168` | Session lifetime (1–720) |
 | `QUFIN_COOKIE_SECURE` | `false` | Must be `true` over HTTPS; required in production |
 | `QUFIN_COOKIE_DOMAIN` | unset | Parent domain when the web app and API are on subdomains |
 | `QUFIN_AUTH_RATE_LIMIT` | `10` | Sign-in/sign-up attempts per IP and per email in each window |
 | `QUFIN_AUTH_RATE_WINDOW_SECONDS` | `900` | Rate-limit window |
 
-Tables are created on startup. There are no migrations yet, so after a schema change delete
-the local `qufin.db` (this version added users and sessions, and a `user_id` on decisions).
+### Database and migrations
+
+The schema is owned by Alembic (`migrations/`). The API applies pending migrations on startup
+unless `QUFIN_AUTO_MIGRATE=false`; you can also run them yourself:
+
+```bash
+uv run alembic upgrade head            # or: uv run python -m app.cli migrate
+uv run alembic revision --autogenerate -m "describe the change"   # after changing models
+```
+
+A local `qufin.db` created before migrations existed is adopted automatically (stamped at
+revision `0001`, then upgraded), so existing accounts and decisions are kept.
+
+For Postgres 16 with TimescaleDB, `compose.yaml` starts one locally:
+
+```bash
+docker compose up -d     # needs POSTGRES_PASSWORD set in your shell first
+```
+
+then set `QUFIN_DATABASE_URL=postgresql+psycopg://qufin:<password>@localhost:5432/qufin`.
 
 ## Layout
 
@@ -124,9 +169,14 @@ app/
   data/repository.py MarketRepository protocol + the sample implementation
   data/sample.py     port of the web app's deterministic generator
   domain/            snapshots, regime, hit rate; backtest engine
+  data/macro_catalog.py  macro series QuFin tracks, by country and scorecard dimension
   core/              settings, auth dependencies, password/token security, rate limiting
-  stores/            users, sessions and the decision journal (SQLAlchemy)
+  connectors/        external data sources (FRED/ALFRED)
+  jobs/              ingestion jobs
+  stores/            users, sessions, decisions and point-in-time macro data (SQLAlchemy)
   routes/            HTTP endpoints
+  cli.py             `migrate` and `ingest-fred` commands
+migrations/          Alembic revisions
 tests/               pytest, including parity with the TypeScript code
 scripts/             web-parity-fixture.mts
 ```
@@ -155,7 +205,9 @@ Python and V8.
 
 ## Not yet
 
-- Alembic migrations, then Postgres/TimescaleDB and point-in-time macro storage
+- Scorecards computed from the point-in-time macro store instead of sample data
+- CFTC positioning and EIA energy connectors; non-US macro sources
+- A scheduler for daily ingestion; TimescaleDB hypertables once price data is stored
 - Email verification, password reset and MFA; a breached-password check on sign-up
 - Shared rate-limit store (Redis or the reverse proxy) once there is more than one worker
-- Real data connectors and the model service
+- The model service

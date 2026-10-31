@@ -49,7 +49,11 @@ def test_wildcard_cors_is_rejected(monkeypatch):
 
 def test_docs_hidden_in_production():
     client = TestClient(
-        create_app(Settings(_env_file=None, environment="production", cookie_secure=True))
+        create_app(
+            Settings(
+                _env_file=None, environment="production", cookie_secure=True, auto_migrate=False
+            )
+        )
     )
     assert client.get("/docs").status_code == 404
     assert client.get("/openapi.json").status_code == 404
