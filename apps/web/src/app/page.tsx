@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Icons } from '@/components/icons';
 import { QuFinLogo } from '@/components/layout/logo';
 import { ThemeModeToggle } from '@/components/themes/theme-mode-toggle';
+import { authEnabled } from '@/features/auth/api/service';
 import { getSnapshots } from '@/features/market/api/service';
 import {
   ChangeText,
@@ -100,6 +101,11 @@ export default async function LandingPage() {
           </nav>
           <div className='flex items-center gap-2'>
             <ThemeModeToggle />
+            {authEnabled && (
+              <Button variant='ghost' nativeButton={false} render={<Link href='/auth/sign-in' aria-label='Sign in' />}>
+                Sign in
+              </Button>
+            )}
             <Button nativeButton={false} render={<Link href='/dashboard/overview' aria-label='Open dashboard' />}>
               Open dashboard
             </Button>

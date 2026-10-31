@@ -1,31 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Direction } from '@/features/market/api/types';
+import type { Decision, NewDecision } from '../api/types';
 
-// Decisions persist in this browser until the backend exists.
-// Replace with POST/GET /v1/decisions once auth and the API are in place.
-
-export type Decision = {
-  id: string;
-  symbol: string;
-  direction: Direction;
-  entry: number;
-  stop: number;
-  target: number;
-  /** Risk per trade as a % of account */
-  riskPct: number;
-  maxHoldDays: number;
-  /** QuFin signal at the time of the decision */
-  signalProbUp: number;
-  /** Rule-backtest summary captured when the decision was logged */
-  backtest: { trades: number; winRate: number; avgR: number } | null;
-  note: string;
-  createdAt: string;
-};
+// Offline fallback for the journal: decisions persist in this browser when no
+// API is configured. With the API, journal/api/service.ts uses /v1/decisions.
 
 type JournalState = {
   decisions: Decision[];
-  addDecision: (decision: Omit<Decision, 'id' | 'createdAt'>) => Decision;
+  addDecision: (decision: NewDecision) => Decision;
   removeDecision: (id: string) => void;
 };
 

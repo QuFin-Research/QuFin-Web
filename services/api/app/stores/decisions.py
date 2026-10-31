@@ -1,31 +1,23 @@
-"""Decision journal persistence (SQLAlchemy; SQLite now, Postgres later via QUFIN_DATABASE_URL).
-
-Decisions are not yet scoped to a user: that arrives with authentication.
-"""
+"""Decision journal persistence. Every decision belongs to one user."""
 
 import json
 import uuid
-from collections.abc import Iterator
 from datetime import UTC, datetime
-from functools import lru_cache
 
-from sqlalchemy import DateTime, Float, Integer, String, Text, create_engine, select
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
-from sqlalchemy.pool import StaticPool
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, select
+from sqlalchemy.orm import Mapped, Session, mapped_column
 
-from app.core.config import get_settings
 from app.schemas.decisions import Decision, DecisionBacktestSummary, DecisionCreate
-
-
-class Base(DeclarativeBase):
-    pass
+from app.stores.db import Base, as_utc
 
 
 class DecisionRow(Base):
     __tablename__ = "decisions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
     symbol: Mapped[str] = mapped_column(String(12), index=True)
     direction: Mapped[str] = mapped_column(String(5))
     entry: Mapped[float] = mapped_column(Float)
@@ -39,9 +31,6 @@ class DecisionRow(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
     def to_schema(self) -> Decision:
-        created = self.created_at
-        if created.tzinfo is None:  # SQLite drops the offset; values are stored in UTC
-            created = created.replace(tzinfo=UTC)
         return Decision(
             id=self.id,
             symbol=self.symbol,
@@ -56,44 +45,29 @@ class DecisionRow(Base):
             if self.backtest_json
             else None,
             note=self.note,
-            created_at=created,
+            created_at=as_utc(self.created_at),
         )
 
 
-def make_engine(url: str) -> Engine:
-    if url.startswith("sqlite"):
-        kwargs: dict = {"connect_args": {"check_same_thread": False}}
-        if url in ("sqlite://", "sqlite:///:memory:"):
-            kwargs["poolclass"] = StaticPool  # one shared in-memory database
-        engine = create_engine(url, **kwargs)
-    else:
-        engine = create_engine(url, pool_pre_ping=True)
-    Base.metadata.create_all(engine)
-    return engine
-
-
-@lru_cache
-def _session_factory() -> sessionmaker[Session]:
-    return sessionmaker(make_engine(get_settings().database_url), expire_on_commit=False)
-
-
-def get_session() -> Iterator[Session]:
-    """FastAPI dependency yielding a database session."""
-    with _session_factory()() as session:
-        yield session
-
-
 class DecisionStore:
-    def __init__(self, session: Session) -> None:
+    """Reads and writes one user's decisions; other users' rows are invisible to it."""
+
+    def __init__(self, session: Session, user_id: str) -> None:
         self.session = session
+        self.user_id = user_id
 
     def list(self) -> list[Decision]:
-        rows = self.session.scalars(select(DecisionRow).order_by(DecisionRow.created_at.desc()))
+        rows = self.session.scalars(
+            select(DecisionRow)
+            .where(DecisionRow.user_id == self.user_id)
+            .order_by(DecisionRow.created_at.desc())
+        )
         return [row.to_schema() for row in rows]
 
     def add(self, data: DecisionCreate) -> Decision:
         row = DecisionRow(
             id=str(uuid.uuid4()),
+            user_id=self.user_id,
             symbol=data.symbol,
             direction=data.direction,
             entry=data.entry,
@@ -114,7 +88,7 @@ class DecisionStore:
 
     def delete(self, decision_id: str) -> bool:
         row = self.session.get(DecisionRow, decision_id)
-        if row is None:
+        if row is None or row.user_id != self.user_id:
             return False
         self.session.delete(row)
         self.session.commit()

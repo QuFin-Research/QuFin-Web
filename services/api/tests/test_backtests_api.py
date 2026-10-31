@@ -31,8 +31,8 @@ def rule_body(**overrides):
     return body | overrides
 
 
-def test_strategy_backtest(client):
-    res = client.post("/v1/backtests", json=strategy_body())
+def test_strategy_backtest(user_client):
+    res = user_client.post("/v1/backtests", json=strategy_body())
     assert res.status_code == 200
     body = res.json()
     assert body["kind"] == "strategy"
@@ -52,8 +52,8 @@ def test_strategy_backtest(client):
     assert body["stats"]["maxDrawdown"] <= 0
 
 
-def test_decision_rule_backtest(client):
-    res = client.post("/v1/backtests", json=rule_body(symbol="xauusd"))
+def test_decision_rule_backtest(user_client):
+    res = user_client.post("/v1/backtests", json=rule_body(symbol="xauusd"))
     assert res.status_code == 200
     body = res.json()
     assert body["kind"] == "decision-rule"
@@ -63,7 +63,7 @@ def test_decision_rule_backtest(client):
     assert {t["outcome"] for t in body["trades"]} <= {"target", "stop", "time"}
 
 
-def test_profit_factor_is_null_when_there_are_no_losses(client, monkeypatch):
+def test_profit_factor_is_null_when_there_are_no_losses(user_client, monkeypatch):
     real = backtest.backtest_decision_rule
 
     def no_losses(*args):
@@ -71,10 +71,10 @@ def test_profit_factor_is_null_when_there_are_no_losses(client, monkeypatch):
         return backtest.RuleRun(**{**result.__dict__, "profit_factor": math.inf})
 
     monkeypatch.setattr(backtests, "backtest_decision_rule", no_losses)
-    assert client.post("/v1/backtests", json=rule_body()).json()["profitFactor"] is None
+    assert user_client.post("/v1/backtests", json=rule_body()).json()["profitFactor"] is None
 
 
-def test_backtest_validation(client):
+def test_backtest_validation(user_client):
     cases = [
         strategy_body(kind="monte-carlo"),
         strategy_body(strategy="martingale"),
@@ -90,10 +90,10 @@ def test_backtest_validation(client):
         {"symbol": "EURUSD"},
     ]
     for body in cases:
-        assert client.post("/v1/backtests", json=body).status_code == 422, body
+        assert user_client.post("/v1/backtests", json=body).status_code == 422, body
 
 
-def test_backtest_unknown_symbol(client):
-    res = client.post("/v1/backtests", json=strategy_body(symbol="DOGEUSD"))
+def test_backtest_unknown_symbol(user_client):
+    res = user_client.post("/v1/backtests", json=strategy_body(symbol="DOGEUSD"))
     assert res.status_code == 422
     assert res.json() == {"detail": "Unknown symbol"}

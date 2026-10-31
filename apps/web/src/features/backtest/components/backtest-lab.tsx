@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Area, AreaChart, CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 import { Button } from '@/components/ui/button';
@@ -17,11 +17,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect, NativeSelectOptGroup, NativeSelectOption } from '@/components/ui/native-select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { marketQueries } from '@/features/market/api/queries';
 import { listAssets } from '@/features/market/api/service';
 import { formatPct } from '@/features/market/lib/format';
+import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
-import { runBacktest, type StrategyKind } from '../lib/engine';
+import { backtestQueries } from '../api/queries';
+import type { StrategyBacktestParams, StrategyKind } from '../api/types';
 
 const STRATEGIES: { value: StrategyKind; label: string; hint: string }[] = [
   { value: 'all-signals', label: 'Follow signals', hint: 'Long or short whenever the edge clears your threshold' },
@@ -73,23 +74,24 @@ export function BacktestLab() {
   const [costBps, setCostBps] = useState(3);
   const [lookbackDays, setLookbackDays] = useState(504);
 
-  const { data: detail } = useQuery({ ...marketQueries.asset(symbol), placeholderData: keepPreviousData });
-
-  const result = useMemo(
-    () =>
-      detail
-        ? runBacktest({
-            candles: detail.candles,
-            signals: detail.signals,
-            strategy,
-            minEdge: minEdgePts / 100,
-            rebalanceDays,
-            costBps,
-            lookbackDays
-          })
-        : null,
-    [detail, strategy, minEdgePts, rebalanceDays, costBps, lookbackDays]
+  const params = useDebounce<StrategyBacktestParams>(
+    { symbol, strategy, minEdge: minEdgePts / 100, rebalanceDays, costBps, lookbackDays },
+    250
   );
+  // Same limits the API validates, so a half-typed value never reaches it.
+  const valid =
+    params.minEdge >= 0 &&
+    params.minEdge <= 0.5 &&
+    Number.isInteger(params.rebalanceDays) &&
+    params.rebalanceDays >= 1 &&
+    params.rebalanceDays <= 60 &&
+    params.costBps >= 0 &&
+    params.costBps <= 500;
+  const { data: result, error } = useQuery({
+    ...backtestQueries.strategy(params),
+    enabled: valid,
+    placeholderData: keepPreviousData
+  });
 
   const groups = Array.from(new Set(assets.map((a) => a.assetClass)));
   const s = result?.stats;
@@ -187,7 +189,15 @@ export function BacktestLab() {
       </Card>
 
       <div className='flex flex-col gap-4 xl:col-span-3'>
-        {!result || !s ? (
+        {!valid || error ? (
+          <Card>
+            <CardContent className='text-muted-foreground py-10 text-center text-sm'>
+              {error
+                ? `Could not run the backtest: ${error.message}`
+                : 'Check the setup: edge 0–50 pts, rebalance 1–60 days, cost 0–500 bps.'}
+            </CardContent>
+          </Card>
+        ) : !result || !s ? (
           <Skeleton className='h-[560px] w-full rounded-xl' />
         ) : (
           <>
@@ -245,9 +255,8 @@ export function BacktestLab() {
               </CardContent>
             </Card>
             <p className='text-muted-foreground text-xs'>
-              Preview engine running on sample data. Production backtests run on the server with
-              point-in-time data and purged walk-forward validation. Past performance does not
-              guarantee future results.
+              Sample data for now. Production backtests will use point-in-time data and purged
+              walk-forward validation. Past performance does not guarantee future results.
             </p>
           </>
         )}
