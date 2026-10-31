@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Settings
 from app.main import create_app
-from app.stores.db import get_session, make_engine
+from app.stores.db import create_all, get_session, make_engine
 
 PASSWORD = "correct horse battery staple"
 
@@ -14,13 +14,15 @@ PASSWORD = "correct horse battery staple"
 @pytest.fixture
 def app():
     """App with a fresh in-memory database per test."""
-    factory = sessionmaker(make_engine("sqlite://"), expire_on_commit=False)
+    engine = make_engine("sqlite://")
+    create_all(engine)
+    factory = sessionmaker(engine, expire_on_commit=False)
 
     def session_override() -> Iterator[Session]:
         with factory() as session:
             yield session
 
-    application = create_app(Settings(_env_file=None))
+    application = create_app(Settings(_env_file=None, auto_migrate=False))
     application.dependency_overrides[get_session] = session_override
     return application
 

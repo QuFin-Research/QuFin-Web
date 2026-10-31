@@ -1,7 +1,6 @@
-"""Database engine and sessions (SQLAlchemy; SQLite now, Postgres later via QUFIN_DATABASE_URL).
+"""Database engine and sessions (SQLAlchemy; SQLite locally, Postgres via QUFIN_DATABASE_URL).
 
-Tables are created on startup with `create_all`. Schema changes need Alembic migrations before
-any real data is stored; until then, delete the local SQLite file after a schema change.
+The schema is owned by the Alembic migrations in `migrations/`; see app/stores/migrate.py.
 """
 
 from collections.abc import Iterator
@@ -20,29 +19,44 @@ class Base(DeclarativeBase):
     pass
 
 
+def import_models() -> None:
+    """Import every model module so its tables are registered on Base.metadata."""
+    from app.stores import decisions, macro, users  # noqa: F401
+
+
 def as_utc(value: datetime) -> datetime:
     """SQLite drops the offset; every timestamp is stored in UTC."""
     return value if value.tzinfo else value.replace(tzinfo=UTC)
 
 
 def make_engine(url: str) -> Engine:
-    # Import the models so their tables are registered on Base.metadata.
-    from app.stores import decisions, users  # noqa: F401
-
     if url.startswith("sqlite"):
         kwargs: dict = {"connect_args": {"check_same_thread": False}}
         if url in ("sqlite://", "sqlite:///:memory:"):
             kwargs["poolclass"] = StaticPool  # one shared in-memory database
-        engine = create_engine(url, **kwargs)
-    else:
-        engine = create_engine(url, pool_pre_ping=True)
+        return create_engine(url, **kwargs)
+    return create_engine(url, pool_pre_ping=True)
+
+
+def create_all(engine: Engine) -> None:
+    """Create every table directly from the models. For tests only; use migrations elsewhere."""
+    import_models()
     Base.metadata.create_all(engine)
-    return engine
+
+
+@lru_cache
+def get_engine() -> Engine:
+    return make_engine(get_settings().database_url)
 
 
 @lru_cache
 def _session_factory() -> sessionmaker[Session]:
-    return sessionmaker(make_engine(get_settings().database_url), expire_on_commit=False)
+    return sessionmaker(get_engine(), expire_on_commit=False)
+
+
+def session_scope() -> Session:
+    """A session for scripts and jobs (use as a context manager)."""
+    return _session_factory()()
 
 
 def get_session() -> Iterator[Session]:

@@ -52,6 +52,14 @@ export const navGroups: NavGroup[] = [
         isActive: false,
         shortcut: ['m', 'm'],
         items: []
+      },
+      {
+        title: 'Macro data',
+        url: '/dashboard/macro',
+        icon: 'world',
+        isActive: false,
+        shortcut: ['r', 'r'],
+        items: []
       }
     ]
   },

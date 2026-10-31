@@ -1,0 +1,22 @@
+# Local Postgres 16 with TimescaleDB for QuFin. SQLite remains the zero-setup default.
+#   $env:POSTGRES_PASSWORD = "<choose one>"   (bash: export POSTGRES_PASSWORD=...)
+#   docker compose up -d
+#   QUFIN_DATABASE_URL=postgresql+psycopg://qufin:<password>@localhost:5432/qufin
+services:
+  db:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: qufin
+      POSTGRES_DB: qufin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD before starting the database}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - qufin-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qufin -d qufin"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  qufin-db:
