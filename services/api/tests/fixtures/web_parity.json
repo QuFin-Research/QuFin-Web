@@ -1,0 +1,1533 @@
+{
+ "countries": [
+  {
+   "code": "US",
+   "country": "United States",
+   "currency": "USD",
+   "scores": {
+    "growth": 3,
+    "inflation": 0,
+    "labour": 0,
+    "policy": 3,
+    "sentiment": 1
+   },
+   "overall": 1.4
+  },
+  {
+   "code": "EA",
+   "country": "Euro Area",
+   "currency": "EUR",
+   "scores": {
+    "growth": 0,
+    "inflation": 1,
+    "labour": -1,
+    "policy": 1,
+    "sentiment": 1
+   },
+   "overall": 0.4
+  },
+  {
+   "code": "GB",
+   "country": "United Kingdom",
+   "currency": "GBP",
+   "scores": {
+    "growth": 1,
+    "inflation": -1,
+    "labour": 0,
+    "policy": 1,
+    "sentiment": 1
+   },
+   "overall": 0.4
+  },
+  {
+   "code": "AU",
+   "country": "Australia",
+   "currency": "AUD",
+   "scores": {
+    "growth": 1,
+    "inflation": 1,
+    "labour": 0,
+    "policy": -2,
+    "sentiment": 2
+   },
+   "overall": 0.4
+  },
+  {
+   "code": "CA",
+   "country": "Canada",
+   "currency": "CAD",
+   "scores": {
+    "growth": 0,
+    "inflation": 2,
+    "labour": 0,
+    "policy": 2,
+    "sentiment": -3
+   },
+   "overall": 0.2
+  },
+  {
+   "code": "CH",
+   "country": "Switzerland",
+   "currency": "CHF",
+   "scores": {
+    "growth": 1,
+    "inflation": 1,
+    "labour": 1,
+    "policy": -2,
+    "sentiment": 0
+   },
+   "overall": 0.2
+  },
+  {
+   "code": "AE",
+   "country": "United Arab Emirates",
+   "currency": "AED",
+   "scores": {
+    "growth": -1,
+    "inflation": 2,
+    "labour": 2,
+    "policy": -2,
+    "sentiment": 0
+   },
+   "overall": 0.2
+  },
+  {
+   "code": "CN",
+   "country": "China",
+   "currency": "CNY",
+   "scores": {
+    "growth": 0,
+    "inflation": -1,
+    "labour": -1,
+    "policy": 1,
+    "sentiment": 1
+   },
+   "overall": 0
+  },
+  {
+   "code": "JP",
+   "country": "Japan",
+   "currency": "JPY",
+   "scores": {
+    "growth": 0,
+    "inflation": -1,
+    "labour": -1,
+    "policy": 1,
+    "sentiment": 0
+   },
+   "overall": -0.2
+  },
+  {
+   "code": "SA",
+   "country": "Saudi Arabia",
+   "currency": "SAR",
+   "scores": {
+    "growth": -1,
+    "inflation": 0,
+    "labour": 1,
+    "policy": -2,
+    "sentiment": 0
+   },
+   "overall": -0.4
+  }
+ ],
+ "assets": {
+  "EURUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 1.085637760856677,
+    "high": 1.089319640430178,
+    "low": 1.0843343784131603,
+    "close": 1.088490660742879
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 1.0659998957927894,
+    "high": 1.0665246125416208,
+    "low": 1.0648313014711153,
+    "close": 1.0656279131667916
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.42932340906721506,
+    "direction": "short",
+    "conviction": "medium",
+    "horizonDays": 5
+   },
+   "regime": "Uptrend",
+   "hitRate": 0.535483870967742,
+   "drivers": [
+    {
+     "name": "PMI surprise index",
+     "category": "Macro",
+     "contribution": -1.4
+    },
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": -1.13
+    },
+    {
+     "name": "News sentiment",
+     "category": "Sentiment",
+     "contribution": 0.84
+    },
+    {
+     "name": "2Y rate differential",
+     "category": "Fundamental",
+     "contribution": 0.5
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": 0.48
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.1159530898929857,
+      "benchmarkReturn": -0.04074769589568272,
+      "cagr": 0.05638680884086478,
+      "annualVol": 0.057511589506026986,
+      "sharpe": 1.1705154025080058,
+      "maxDrawdown": -0.04483368973742019,
+      "hitRate": 0.5970149253731343,
+      "trades": 36,
+      "exposure": 0.6646825396825397
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.0015086516913320747,
+      "benchmarkReturn": -0.04074769589568272,
+      "cagr": 0.0007540415563316305,
+      "annualVol": 0.043820305354610053,
+      "sharpe": 0.19658611619783975,
+      "maxDrawdown": -0.04422457942651081,
+      "hitRate": 0.4722222222222222,
+      "trades": 23,
+      "exposure": 0.35714285714285715
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.041035471586913785,
+      "benchmarkReturn": -0.04074769589568272,
+      "cagr": -0.020732657333511262,
+      "annualVol": 0.07080445686869535,
+      "sharpe": -0.2583638761608205,
+      "maxDrawdown": -0.13604643766020286,
+      "hitRate": 0.4752475247524752,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 76,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-20",
+      "outcome": "time",
+      "r": -0.4810536007546357
+     },
+     "winRate": 0.32894736842105265,
+     "avgR": -0.19836995238133884,
+     "profitFactor": 0.6773736368049451,
+     "finalCumR": -15.08
+    },
+    {
+     "direction": "short",
+     "trades": 66,
+     "firstTrade": {
+      "entryTime": "2023-11-08",
+      "exitTime": "2023-11-09",
+      "outcome": "stop",
+      "r": -1.0400000000000023
+     },
+     "winRate": 0.3939393939393939,
+     "avgR": -0.038828628677976325,
+     "profitFactor": 0.9228042381053286,
+     "finalCumR": -2.56
+    }
+   ]
+  },
+  "GBPUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 1.2373776031543817,
+    "high": 1.2381031771400235,
+    "low": 1.2353635335627116,
+    "close": 1.2357911767121876
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 1.296552846563496,
+    "high": 1.3036371275313339,
+    "low": 1.295315947927301,
+    "close": 1.3031379254525834
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.307290880441529,
+    "direction": "short",
+    "conviction": "high",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5625806451612904,
+   "drivers": [
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": -1.36
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": -1.16
+    },
+    {
+     "name": "2Y rate differential",
+     "category": "Fundamental",
+     "contribution": 0.95
+    },
+    {
+     "name": "News sentiment",
+     "category": "Sentiment",
+     "contribution": -0.4
+    },
+    {
+     "name": "PMI surprise index",
+     "category": "Macro",
+     "contribution": 0.05
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": -0.010873281059292528,
+      "benchmarkReturn": 0.010478857174063716,
+      "cagr": -0.005451499955528849,
+      "annualVol": 0.06489690429346395,
+      "sharpe": 0.1215707561294308,
+      "maxDrawdown": -0.07146272304358148,
+      "hitRate": 0.546875,
+      "trades": 38,
+      "exposure": 0.6329365079365079
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": -0.008705758470362479,
+      "benchmarkReturn": 0.010478857174063716,
+      "cagr": -0.0043623944779719315,
+      "annualVol": 0.053344885410721556,
+      "sharpe": 0.10218389907388024,
+      "maxDrawdown": -0.04816139631434224,
+      "hitRate": 0.575,
+      "trades": 28,
+      "exposure": 0.3968253968253968
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": 0.01017571351691493,
+      "benchmarkReturn": 0.010478857174063716,
+      "cagr": 0.005074979052267059,
+      "annualVol": 0.07988916527478618,
+      "sharpe": 0.10517557959272873,
+      "maxDrawdown": -0.10341848166065615,
+      "hitRate": 0.4752475247524752,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 79,
+     "firstTrade": {
+      "entryTime": "2023-11-10",
+      "exitTime": "2023-11-14",
+      "outcome": "stop",
+      "r": -1.0399999999999947
+     },
+     "winRate": 0.4430379746835443,
+     "avgR": 0.012794406794375568,
+     "profitFactor": 1.023038559615867,
+     "finalCumR": 1.01
+    },
+    {
+     "direction": "short",
+     "trades": 57,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-15",
+      "outcome": "target",
+      "r": 1.9599999999999982
+     },
+     "winRate": 0.49122807017543857,
+     "avgR": 0.1945220519320767,
+     "profitFactor": 1.4391101363819674,
+     "finalCumR": 11.09
+    }
+   ]
+  },
+  "USDJPY": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 152.78111606877562,
+    "high": 152.84484381456832,
+    "low": 151.68136308970637,
+    "close": 152.4151397372374
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 148.21005770945695,
+    "high": 148.8487987585243,
+    "low": 146.50230987560798,
+    "close": 146.9872624466132
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.7069112706858895,
+    "direction": "long",
+    "conviction": "high",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.56,
+   "drivers": [
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": 0.89
+    },
+    {
+     "name": "2Y rate differential",
+     "category": "Fundamental",
+     "contribution": 0.79
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": 0.41
+    },
+    {
+     "name": "News sentiment",
+     "category": "Sentiment",
+     "contribution": -0.07
+    },
+    {
+     "name": "PMI surprise index",
+     "category": "Macro",
+     "contribution": 0.06
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.20009870228006177,
+      "benchmarkReturn": -0.03503784965158285,
+      "cagr": 0.09549016530503907,
+      "annualVol": 0.07296453639715769,
+      "sharpe": 1.4038765408632239,
+      "maxDrawdown": -0.054754072234834084,
+      "hitRate": 0.6086956521739131,
+      "trades": 29,
+      "exposure": 0.6825396825396826
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.2593593524841773,
+      "benchmarkReturn": -0.03503784965158285,
+      "cagr": 0.12221181266469361,
+      "annualVol": 0.060697891349785975,
+      "sharpe": 2.0613961345996925,
+      "maxDrawdown": -0.03066180303350341,
+      "hitRate": 0.6739130434782609,
+      "trades": 27,
+      "exposure": 0.45436507936507936
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.03532733829668788,
+      "benchmarkReturn": -0.03503784965158285,
+      "cagr": -0.01782248971822198,
+      "annualVol": 0.08782760156311627,
+      "sharpe": -0.15912024313806097,
+      "maxDrawdown": -0.16053964011802624,
+      "hitRate": 0.5247524752475248,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 68,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-20",
+      "outcome": "time",
+      "r": -0.6033576725599877
+     },
+     "winRate": 0.4852941176470588,
+     "avgR": 0.19192352297681717,
+     "profitFactor": 1.3771141155027111,
+     "finalCumR": 13.05
+    },
+    {
+     "direction": "short",
+     "trades": 77,
+     "firstTrade": {
+      "entryTime": "2023-11-09",
+      "exitTime": "2023-11-13",
+      "outcome": "stop",
+      "r": -1.0400000000000014
+     },
+     "winRate": 0.44155844155844154,
+     "avgR": 0.07442855769358378,
+     "profitFactor": 1.1306816871752683,
+     "finalCumR": 5.73
+    }
+   ]
+  },
+  "AUDUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 0.6624006015206022,
+    "high": 0.6639560385740095,
+    "low": 0.6597895483288363,
+    "close": 0.6638305432787907
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 0.6606816931998504,
+    "high": 0.6633441093554241,
+    "low": 0.6598635457311184,
+    "close": 0.6610800344941963
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.48059902788851344,
+    "direction": "short",
+    "conviction": "low",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5445161290322581,
+   "drivers": [
+    {
+     "name": "News sentiment",
+     "category": "Sentiment",
+     "contribution": -0.91
+    },
+    {
+     "name": "PMI surprise index",
+     "category": "Macro",
+     "contribution": 0.82
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": 0.45
+    },
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": -0.35
+    },
+    {
+     "name": "2Y rate differential",
+     "category": "Fundamental",
+     "contribution": -0.2
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.09057230322107324,
+      "benchmarkReturn": 0.0194060993953451,
+      "cagr": 0.04430469845781748,
+      "annualVol": 0.08639938618026127,
+      "sharpe": 0.7308167520679659,
+      "maxDrawdown": -0.07861834187683159,
+      "hitRate": 0.5733333333333334,
+      "trades": 54,
+      "exposure": 0.7420634920634921
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.1237236077175996,
+      "benchmarkReturn": 0.0194060993953451,
+      "cagr": 0.060058303923703704,
+      "annualVol": 0.06120607138246477,
+      "sharpe": 1.150306815585764,
+      "maxDrawdown": -0.04090357416519563,
+      "hitRate": 0.5853658536585366,
+      "trades": 34,
+      "exposure": 0.40674603174603174
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": 0.019100277565528012,
+      "benchmarkReturn": 0.0194060993953451,
+      "cagr": 0.009504966587845942,
+      "annualVol": 0.09962797091198407,
+      "sharpe": 0.14627672033326383,
+      "maxDrawdown": -0.11520151282916591,
+      "hitRate": 0.49504950495049505,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 87,
+     "firstTrade": {
+      "entryTime": "2023-11-13",
+      "exitTime": "2023-11-16",
+      "outcome": "stop",
+      "r": -1.0399999999999978
+     },
+     "winRate": 0.3793103448275862,
+     "avgR": -0.02730566777703959,
+     "profitFactor": 0.9553043340968292,
+     "finalCumR": -2.38
+    },
+    {
+     "direction": "short",
+     "trades": 75,
+     "firstTrade": {
+      "entryTime": "2023-11-08",
+      "exitTime": "2023-11-21",
+      "outcome": "time",
+      "r": 0.8994222460381428
+     },
+     "winRate": 0.4,
+     "avgR": 0.0639279094278354,
+     "profitFactor": 1.1106145799393092,
+     "finalCumR": 4.79
+    }
+   ]
+  },
+  "XAUUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 2400.9599904599463,
+    "high": 2426.7942834739565,
+    "low": 2395.3396847273607,
+    "close": 2418.61761066483
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 2526.229379794593,
+    "high": 2585.93428075286,
+    "low": 2522.2720542696065,
+    "close": 2579.788011441508
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.6563846063642582,
+    "direction": "long",
+    "conviction": "high",
+    "horizonDays": 5
+   },
+   "regime": "Uptrend",
+   "hitRate": 0.5264516129032258,
+   "drivers": [
+    {
+     "name": "CFTC managed-money positioning",
+     "category": "Positioning",
+     "contribution": 1.77
+    },
+    {
+     "name": "50-day trend",
+     "category": "Technical",
+     "contribution": -1.01
+    },
+    {
+     "name": "Geopolitical risk index",
+     "category": "Sentiment",
+     "contribution": 0.62
+    },
+    {
+     "name": "US Dollar index trend",
+     "category": "Macro",
+     "contribution": 0.41
+    },
+    {
+     "name": "US real yields",
+     "category": "Fundamental",
+     "contribution": -0.23
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.08156010455591867,
+      "benchmarkReturn": -0.0022644930277728736,
+      "cagr": 0.039980819321163485,
+      "annualVol": 0.1250469388966892,
+      "sharpe": 0.45401947111650587,
+      "maxDrawdown": -0.15353626905129825,
+      "hitRate": 0.5,
+      "trades": 33,
+      "exposure": 0.7123015873015873
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.1607112119583598,
+      "benchmarkReturn": -0.0022644930277728736,
+      "cagr": 0.07736308269698933,
+      "annualVol": 0.10240635362602042,
+      "sharpe": 0.8624234811134996,
+      "maxDrawdown": -0.10113711132654912,
+      "hitRate": 0.5319148936170213,
+      "trades": 29,
+      "exposure": 0.4642857142857143
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.0025638136798639133,
+      "benchmarkReturn": -0.0022644930277728736,
+      "cagr": -0.0012827295374651104,
+      "annualVol": 0.1429509567832538,
+      "sharpe": 0.06345710458292247,
+      "maxDrawdown": -0.2901367963357169,
+      "hitRate": 0.504950495049505,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 119,
+     "firstTrade": {
+      "entryTime": "2023-11-14",
+      "exitTime": "2023-11-24",
+      "outcome": "stop",
+      "r": -1.040000000000003
+     },
+     "winRate": 0.35294117647058826,
+     "avgR": 0.013049887863400715,
+     "profitFactor": 1.019392315880928,
+     "finalCumR": 1.55
+    },
+    {
+     "direction": "short",
+     "trades": 93,
+     "firstTrade": {
+      "entryTime": "2023-11-10",
+      "exitTime": "2023-11-14",
+      "outcome": "target",
+      "r": 1.9600000000000048
+     },
+     "winRate": 0.3655913978494624,
+     "avgR": 0.0414428989966214,
+     "profitFactor": 1.0628127380489862,
+     "finalCumR": 3.85
+    }
+   ]
+  },
+  "XAGUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 27.515566707826263,
+    "high": 28.555378869797213,
+    "low": 27.105654365073704,
+    "close": 28.48400766582863
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 27.26987202920727,
+    "high": 27.430506159601617,
+    "low": 26.245588173374927,
+    "close": 26.506636605021363
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.23549782515916806,
+    "direction": "short",
+    "conviction": "high",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5716129032258065,
+   "drivers": [
+    {
+     "name": "50-day trend",
+     "category": "Technical",
+     "contribution": -0.85
+    },
+    {
+     "name": "Geopolitical risk index",
+     "category": "Sentiment",
+     "contribution": -0.8
+    },
+    {
+     "name": "CFTC managed-money positioning",
+     "category": "Positioning",
+     "contribution": -0.78
+    },
+    {
+     "name": "US Dollar index trend",
+     "category": "Macro",
+     "contribution": -0.72
+    },
+    {
+     "name": "US real yields",
+     "category": "Fundamental",
+     "contribution": 0.51
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.9339559893747913,
+      "benchmarkReturn": -0.17063539029374486,
+      "cagr": 0.39066746182356304,
+      "annualVol": 0.22017270071873143,
+      "sharpe": 1.6488468547039763,
+      "maxDrawdown": -0.22049213515507404,
+      "hitRate": 0.6027397260273972,
+      "trades": 30,
+      "exposure": 0.7222222222222222
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 1.1054538439700892,
+      "benchmarkReturn": -0.17063539029374486,
+      "cagr": 0.4510182093861155,
+      "annualVol": 0.17087955584461487,
+      "sharpe": 2.313481345482165,
+      "maxDrawdown": -0.13058136725370006,
+      "hitRate": 0.7045454545454546,
+      "trades": 28,
+      "exposure": 0.43452380952380953
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.17088419967665458,
+      "benchmarkReturn": -0.17063539029374486,
+      "cagr": -0.0894420390094075,
+      "annualVol": 0.2618063626219638,
+      "sharpe": -0.226469156906547,
+      "maxDrawdown": -0.3767284348952523,
+      "hitRate": 0.46534653465346537,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 177,
+     "firstTrade": {
+      "entryTime": "2023-11-20",
+      "exitTime": "2023-11-20",
+      "outcome": "stop",
+      "r": -1.0399999999999954
+     },
+     "winRate": 0.3333333333333333,
+     "avgR": -0.03999999999999983,
+     "profitFactor": 0.9423076923076925,
+     "finalCumR": -7.08
+    },
+    {
+     "direction": "short",
+     "trades": 120,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-09",
+      "outcome": "stop",
+      "r": -1.040000000000005
+     },
+     "winRate": 0.425,
+     "avgR": 0.23500000000000035,
+     "profitFactor": 1.392976588628764,
+     "finalCumR": 28.2
+    }
+   ]
+  },
+  "WTI": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 79.35839390813635,
+    "high": 81.80068654136524,
+    "low": 78.35156950153097,
+    "close": 80.21771620678639
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 76.30571080911295,
+    "high": 80.65109657797146,
+    "low": 76.09371450903666,
+    "close": 79.2436148689825
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.5144282756784339,
+    "direction": "long",
+    "conviction": "low",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5341935483870968,
+   "drivers": [
+    {
+     "name": "Term-structure carry",
+     "category": "Technical",
+     "contribution": 0.91
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": -0.69
+    },
+    {
+     "name": "OPEC+ supply outlook",
+     "category": "Macro",
+     "contribution": 0.46
+    },
+    {
+     "name": "Geopolitical risk index",
+     "category": "Sentiment",
+     "contribution": -0.35
+    },
+    {
+     "name": "EIA inventory surprise",
+     "category": "Fundamental",
+     "contribution": -0.18
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.1787266504340228,
+      "benchmarkReturn": -0.04777382498491811,
+      "cagr": 0.08569178427121882,
+      "annualVol": 0.24852360103852061,
+      "sharpe": 0.49584049720365475,
+      "maxDrawdown": -0.3222948636857219,
+      "hitRate": 0.5909090909090909,
+      "trades": 34,
+      "exposure": 0.6547619047619048
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.3180695684627548,
+      "benchmarkReturn": -0.04777382498491811,
+      "cagr": 0.14807210943509763,
+      "annualVol": 0.17470852940740159,
+      "sharpe": 0.9137251238226424,
+      "maxDrawdown": -0.17027627660069722,
+      "hitRate": 0.6875,
+      "trades": 21,
+      "exposure": 0.31746031746031744
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.0480594928374245,
+      "benchmarkReturn": -0.04777382498491811,
+      "cagr": -0.02432561417111323,
+      "annualVol": 0.3144670164106898,
+      "sharpe": 0.07910931765219759,
+      "maxDrawdown": -0.3531583610543544,
+      "hitRate": 0.5346534653465347,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 164,
+     "firstTrade": {
+      "entryTime": "2023-11-13",
+      "exitTime": "2023-11-13",
+      "outcome": "target",
+      "r": 1.9600000000000057
+     },
+     "winRate": 0.2865853658536585,
+     "avgR": -0.18024390243902444,
+     "profitFactor": 0.7570677186061802,
+     "finalCumR": -29.56
+    },
+    {
+     "direction": "short",
+     "trades": 172,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-07",
+      "outcome": "stop",
+      "r": -1.0399999999999994
+     },
+     "winRate": 0.31976744186046513,
+     "avgR": -0.08069767441860495,
+     "profitFactor": 0.8859303090072322,
+     "finalCumR": -13.88
+    }
+   ]
+  },
+  "BRENT": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 80.47500849980605,
+    "high": 82.14174114180173,
+    "low": 80.05431912577895,
+    "close": 80.86383045483797
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 79.51024459948843,
+    "high": 80.09447570163562,
+    "low": 78.52096654064238,
+    "close": 78.62141678425266
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.31422206501277894,
+    "direction": "short",
+    "conviction": "high",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5806451612903226,
+   "drivers": [
+    {
+     "name": "OPEC+ supply outlook",
+     "category": "Macro",
+     "contribution": -1.15
+    },
+    {
+     "name": "Geopolitical risk index",
+     "category": "Sentiment",
+     "contribution": -0.96
+    },
+    {
+     "name": "EIA inventory surprise",
+     "category": "Fundamental",
+     "contribution": -0.74
+    },
+    {
+     "name": "Term-structure carry",
+     "category": "Technical",
+     "contribution": 0.59
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": 0.41
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.022057204634455818,
+      "benchmarkReturn": -0.016759170981795468,
+      "cagr": 0.010968448881791604,
+      "annualVol": 0.2181396417451217,
+      "sharpe": 0.2043802478109992,
+      "maxDrawdown": -0.22159918771525777,
+      "hitRate": 0.5396825396825397,
+      "trades": 33,
+      "exposure": 0.625
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.473172421853034,
+      "benchmarkReturn": -0.016759170981795468,
+      "cagr": 0.21374314492524893,
+      "annualVol": 0.15622291343384845,
+      "sharpe": 1.3565861961350678,
+      "maxDrawdown": -0.11414697712253996,
+      "hitRate": 0.6176470588235294,
+      "trades": 20,
+      "exposure": 0.3373015873015873
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.017054143230500585,
+      "benchmarkReturn": -0.016759170981795468,
+      "cagr": -0.008563740440415746,
+      "annualVol": 0.28191140801014924,
+      "sharpe": 0.11078527080245236,
+      "maxDrawdown": -0.38478417870550796,
+      "hitRate": 0.5346534653465347,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 158,
+     "firstTrade": {
+      "entryTime": "2023-11-08",
+      "exitTime": "2023-11-08",
+      "outcome": "target",
+      "r": 1.9600000000000088
+     },
+     "winRate": 0.3291139240506329,
+     "avgR": -0.05265822784810138,
+     "profitFactor": 0.9245283018867926,
+     "finalCumR": -8.32
+    },
+    {
+     "direction": "short",
+     "trades": 170,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-07",
+      "outcome": "stop",
+      "r": -1.040000000000002
+     },
+     "winRate": 0.3235294117647059,
+     "avgR": -0.07460071555253087,
+     "profitFactor": 0.8939621936126232,
+     "finalCumR": -12.68
+    }
+   ]
+  },
+  "NATGAS": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 2.283991396993133,
+    "high": 2.3143169660499816,
+    "low": 2.257066573341004,
+    "close": 2.2650563603581455
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 3.1941487620525564,
+    "high": 3.392186309088232,
+    "low": 3.1282990097687926,
+    "close": 3.3362024209362753
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.4650224586409702,
+    "direction": "short",
+    "conviction": "low",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5174193548387097,
+   "drivers": [
+    {
+     "name": "OPEC+ supply outlook",
+     "category": "Macro",
+     "contribution": -0.99
+    },
+    {
+     "name": "CFTC net positioning",
+     "category": "Positioning",
+     "contribution": 0.44
+    },
+    {
+     "name": "Geopolitical risk index",
+     "category": "Sentiment",
+     "contribution": 0.18
+    },
+    {
+     "name": "Term-structure carry",
+     "category": "Technical",
+     "contribution": 0.02
+    },
+    {
+     "name": "EIA inventory surprise",
+     "category": "Fundamental",
+     "contribution": 0
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": -0.17772887702099627,
+      "benchmarkReturn": 0.09940062777578351,
+      "cagr": -0.09320833540498197,
+      "annualVol": 0.37980023917787736,
+      "sharpe": -0.03808498937960944,
+      "maxDrawdown": -0.4582475135793943,
+      "hitRate": 0.4153846153846154,
+      "trades": 37,
+      "exposure": 0.6448412698412699
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 0.06447788651158248,
+      "benchmarkReturn": 0.09940062777578351,
+      "cagr": 0.03173537620437461,
+      "annualVol": 0.3086796133501447,
+      "sharpe": 0.2812952971625203,
+      "maxDrawdown": -0.37411859769129296,
+      "hitRate": 0.38636363636363635,
+      "trades": 27,
+      "exposure": 0.4365079365079365
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": 0.09907080758745024,
+      "benchmarkReturn": 0.09940062777578351,
+      "cagr": 0.048365779481307936,
+      "annualVol": 0.4854984281205211,
+      "sharpe": 0.34020833396583144,
+      "maxDrawdown": -0.5107931325886352,
+      "hitRate": 0.504950495049505,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 159,
+     "firstTrade": {
+      "entryTime": "2023-11-10",
+      "exitTime": "2023-11-10",
+      "outcome": "target",
+      "r": 1.960000000000007
+     },
+     "winRate": 0.2578616352201258,
+     "avgR": -0.26641509433962185,
+     "profitFactor": 0.6548239895697532,
+     "finalCumR": -42.36
+    },
+    {
+     "direction": "short",
+     "trades": 183,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-07",
+      "outcome": "stop",
+      "r": -1.0400000000000083
+     },
+     "winRate": 0.22404371584699453,
+     "avgR": -0.36786885245901646,
+     "profitFactor": 0.5441495124593723,
+     "finalCumR": -67.32
+    }
+   ]
+  },
+  "BTCUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 81110.901231514,
+    "high": 83408.18633286114,
+    "low": 76848.42741814884,
+    "close": 78619.05491192255
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 34378.74178662041,
+    "high": 34425.25185428774,
+    "low": 31538.836804675797,
+    "close": 31852.087630065846
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.42329133661060947,
+    "direction": "short",
+    "conviction": "medium",
+    "horizonDays": 5
+   },
+   "regime": "Downtrend",
+   "hitRate": 0.5548387096774193,
+   "drivers": [
+    {
+     "name": "Social sentiment",
+     "category": "Sentiment",
+     "contribution": -1.19
+    },
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": 0.85
+    },
+    {
+     "name": "Funding rates",
+     "category": "Positioning",
+     "contribution": -0.51
+    },
+    {
+     "name": "Global liquidity (M2)",
+     "category": "Macro",
+     "contribution": 0.25
+    },
+    {
+     "name": "ETF net flows",
+     "category": "Positioning",
+     "contribution": -0.17
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 0.7138770772952632,
+      "benchmarkReturn": -0.5385129278540177,
+      "cagr": 0.30915128128695013,
+      "annualVol": 0.3740714589906397,
+      "sharpe": 0.938569083860968,
+      "maxDrawdown": -0.22080515633837305,
+      "hitRate": 0.5492957746478874,
+      "trades": 40,
+      "exposure": 0.7023809523809523
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 1.2817419395869178,
+      "benchmarkReturn": -0.5385129278540177,
+      "cagr": 0.510543590760266,
+      "annualVol": 0.25937398052740473,
+      "sharpe": 1.747791991898863,
+      "maxDrawdown": -0.20385896129850067,
+      "hitRate": 0.625,
+      "trades": 24,
+      "exposure": 0.3968253968253968
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": -0.5386513739756611,
+      "benchmarkReturn": -0.5385129278540177,
+      "cagr": -0.3207735090381568,
+      "annualVol": 0.4457417000709901,
+      "sharpe": -0.6434566248385034,
+      "maxDrawdown": -0.6284096260441219,
+      "hitRate": 0.4752475247524752,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 148,
+     "firstTrade": {
+      "entryTime": "2023-11-27",
+      "exitTime": "2023-11-27",
+      "outcome": "stop",
+      "r": -1.0399999999999994
+     },
+     "winRate": 0.25,
+     "avgR": -0.28999999999999987,
+     "profitFactor": 0.6282051282051282,
+     "finalCumR": -42.92
+    },
+    {
+     "direction": "short",
+     "trades": 201,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-08",
+      "outcome": "target",
+      "r": 1.9599999999999933
+     },
+     "winRate": 0.3034825870646766,
+     "avgR": -0.12955223880597,
+     "profitFactor": 0.8211538461538461,
+     "finalCumR": -26.04
+    }
+   ]
+  },
+  "ETHUSD": {
+   "candleCount": 780,
+   "firstCandle": {
+    "time": "2023-11-06",
+    "open": 2548.0049621349585,
+    "high": 2600.1728102339375,
+    "low": 2505.1218628239167,
+    "close": 2578.3714235200096
+   },
+   "lastCandle": {
+    "time": "2026-10-30",
+    "open": 3720.6562061762693,
+    "high": 3732.4332330310244,
+    "low": 3576.572010391613,
+    "close": 3604.8156934171598
+   },
+   "lastSignal": {
+    "time": "2026-10-30",
+    "probUp": 0.5518255179621999,
+    "direction": "long",
+    "conviction": "medium",
+    "horizonDays": 5
+   },
+   "regime": "Range",
+   "hitRate": 0.5419354838709678,
+   "drivers": [
+    {
+     "name": "20-day momentum",
+     "category": "Technical",
+     "contribution": 0.77
+    },
+    {
+     "name": "Social sentiment",
+     "category": "Sentiment",
+     "contribution": 0.7
+    },
+    {
+     "name": "ETF net flows",
+     "category": "Positioning",
+     "contribution": -0.66
+    },
+    {
+     "name": "Global liquidity (M2)",
+     "category": "Macro",
+     "contribution": -0.22
+    },
+    {
+     "name": "Funding rates",
+     "category": "Positioning",
+     "contribution": -0.08
+    }
+   ],
+   "strategy": [
+    {
+     "strategy": "all-signals",
+     "stats": {
+      "totalReturn": 1.8535591672314538,
+      "benchmarkReturn": 0.3332971107055578,
+      "cagr": 0.6892481070675953,
+      "annualVol": 0.4357733178469273,
+      "sharpe": 1.4474918017904896,
+      "maxDrawdown": -0.4595960978154675,
+      "hitRate": 0.5373134328358209,
+      "trades": 39,
+      "exposure": 0.6646825396825397
+     }
+    },
+    {
+     "strategy": "high-conviction",
+     "stats": {
+      "totalReturn": 1.2786439536471699,
+      "benchmarkReturn": 0.3332971107055578,
+      "cagr": 0.5095177884500632,
+      "annualVol": 0.3687883826026002,
+      "sharpe": 1.3268706854900307,
+      "maxDrawdown": -0.4144125790616061,
+      "hitRate": 0.5510204081632653,
+      "trades": 33,
+      "exposure": 0.4861111111111111
+     }
+    },
+    {
+     "strategy": "buy-hold",
+     "stats": {
+      "totalReturn": 0.33289712157234663,
+      "benchmarkReturn": 0.3332971107055578,
+      "cagr": 0.15451163769463427,
+      "annualVol": 0.5292823231937358,
+      "sharpe": 0.5355524114556539,
+      "maxDrawdown": -0.5243697908118637,
+      "hitRate": 0.5445544554455446,
+      "trades": 1,
+      "exposure": 1
+     }
+    }
+   ],
+   "rule": [
+    {
+     "direction": "long",
+     "trades": 196,
+     "firstTrade": {
+      "entryTime": "2023-11-09",
+      "exitTime": "2023-11-09",
+      "outcome": "stop",
+      "r": -1.0399999999999954
+     },
+     "winRate": 0.21428571428571427,
+     "avgR": -0.39714285714285685,
+     "profitFactor": 0.5139860139860151,
+     "finalCumR": -77.84
+    },
+    {
+     "direction": "short",
+     "trades": 153,
+     "firstTrade": {
+      "entryTime": "2023-11-07",
+      "exitTime": "2023-11-07",
+      "outcome": "target",
+      "r": 1.9599999999999944
+     },
+     "winRate": 0.21568627450980393,
+     "avgR": -0.3929411764705886,
+     "profitFactor": 0.5182692307692308,
+     "finalCumR": -60.12
+    }
+   ]
+  }
+ }
+}

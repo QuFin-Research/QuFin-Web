@@ -1,0 +1,40 @@
+[project]
+name = "qufin-api"
+version = "0.1.0"
+description = "QuFin research and decision-support API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0.36",
+    "uvicorn[standard]>=0.32",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27",
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient` is deprecated"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "N", "S", "SIM", "RUF"]
+# Greek letters (e.g. sigma) in comments are intentional; nested ternaries read worse than if/else
+ignore = ["RUF001", "RUF002", "RUF003", "SIM108"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
