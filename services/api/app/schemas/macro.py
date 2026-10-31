@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 
 from pydantic import Field
 
@@ -15,6 +16,9 @@ class MacroSeries(ApiModel):
     seasonal_adjustment: str
     country: str
     dimension: ScoreDimension
+    cycle: Literal["leading", "coincident", "lagging"] | None = Field(
+        description="When the series tends to turn relative to the business cycle"
+    )
     last_updated: datetime | None = Field(description="When the source last revised the series")
 
 

@@ -91,6 +91,7 @@ def test_list_series(ingested, client):
     [summary] = client.get("/v1/macro/series").json()
     assert summary["id"] == "UNRATE"
     assert summary["dimension"] == "labour"
+    assert summary["cycle"] == "lagging"
     assert summary["country"] == "US"
     assert summary["firstPeriod"] == "2026-08-01"
     assert summary["lastPeriod"] == "2026-09-01"

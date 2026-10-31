@@ -26,10 +26,32 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
 import { macroAvailable } from '../api/service';
-import type { MacroSeriesSummary } from '../api/types';
+import type { BusinessCycle, MacroSeriesSummary } from '../api/types';
+
+type CycleFilter = BusinessCycle | 'all';
+
+const CYCLES: { value: CycleFilter; label: string; hint: string }[] = [
+  { value: 'all', label: 'All', hint: 'Every series in the point-in-time store.' },
+  {
+    value: 'leading',
+    label: 'Leading',
+    hint: 'Tend to turn before the economy: orders, permits, hours, claims, the yield curve, sentiment.'
+  },
+  {
+    value: 'coincident',
+    label: 'Coincident',
+    hint: 'Move with the economy: output, income, sales and payrolls.'
+  },
+  {
+    value: 'lagging',
+    label: 'Lagging',
+    hint: 'Turn after the economy: unemployment duration, unit labour costs, services inflation, credit.'
+  }
+];
 
 const chartConfig = {
   latest: { label: 'Latest', color: 'var(--chart-1)' },
@@ -73,10 +95,12 @@ function SetupHint() {
 export function MacroView() {
   const { data: list, error } = useQuery(macroQueries.list());
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [cycle, setCycle] = useState<CycleFilter>('all');
   const [asOf, setAsOf] = useState('');
   const [period, setPeriod] = useState<string | null>(null);
 
-  const selected = list?.find((s) => s.id === selectedId) ?? list?.[0];
+  const visible = cycle === 'all' ? list : list?.filter((s) => s.cycle === cycle);
+  const selected = visible?.find((s) => s.id === selectedId) ?? visible?.[0] ?? list?.[0];
   const start = selected ? chartStart(selected) : undefined;
 
   const latest = useQuery({
@@ -121,12 +145,23 @@ export function MacroView() {
   return (
     <div className='flex flex-col gap-4'>
       <Card>
-        <CardHeader>
-          <CardTitle>Series</CardTitle>
-          <CardDescription>
-            Every published vintage is stored, so any date can be replayed exactly as it was known
-            then.
-          </CardDescription>
+        <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-3'>
+          <div className='flex flex-col gap-1.5'>
+            <CardTitle>Series</CardTitle>
+            <CardDescription>
+              {CYCLES.find((c) => c.value === cycle)?.hint} Every published vintage is stored, so
+              any date can be replayed exactly as it was known then.
+            </CardDescription>
+          </div>
+          <Tabs value={cycle} onValueChange={(v) => setCycle(v as CycleFilter)}>
+            <TabsList>
+              {CYCLES.map((c) => (
+                <TabsTrigger key={c.value} value={c.value}>
+                  {c.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </CardHeader>
         <CardContent className='px-0'>
           <Table>
@@ -134,13 +169,14 @@ export function MacroView() {
               <TableRow>
                 <TableHead className='pl-4'>Series</TableHead>
                 <TableHead>Pillar</TableHead>
+                <TableHead className='hidden lg:table-cell'>Cycle</TableHead>
                 <TableHead className='hidden md:table-cell'>Units</TableHead>
                 <TableHead className='text-right'>Latest period</TableHead>
                 <TableHead className='hidden pr-4 text-right sm:table-cell'>Vintage rows</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {list.map((s) => (
+              {(visible ?? []).map((s) => (
                 <TableRow
                   key={s.id}
                   className={cn('cursor-pointer', s.id === selected.id && 'bg-muted/60')}
@@ -161,6 +197,9 @@ export function MacroView() {
                     <Badge variant='outline' className='capitalize'>
                       {s.dimension}
                     </Badge>
+                  </TableCell>
+                  <TableCell className='text-muted-foreground hidden text-xs capitalize lg:table-cell'>
+                    {s.cycle ?? '—'}
                   </TableCell>
                   <TableCell className='text-muted-foreground hidden max-w-56 truncate text-xs md:table-cell'>
                     {s.units}

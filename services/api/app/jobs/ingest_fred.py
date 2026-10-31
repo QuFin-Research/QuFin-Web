@@ -40,6 +40,7 @@ def ingest_series(
         seasonal_adjustment=info.seasonal_adjustment,
         country=entry.country,
         dimension=entry.dimension,
+        cycle=entry.cycle,
         last_updated=info.last_updated,
     )
     return store.replace_series(meta, vintages)

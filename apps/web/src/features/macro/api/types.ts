@@ -1,5 +1,7 @@
 import type { ScoreDimension } from '@/features/market/api/types';
 
+export type BusinessCycle = 'leading' | 'coincident' | 'lagging';
+
 export type MacroSeries = {
   id: string;
   source: string;
@@ -9,6 +11,8 @@ export type MacroSeries = {
   seasonalAdjustment: string;
   country: string;
   dimension: ScoreDimension;
+  /** When the series tends to turn relative to the business cycle */
+  cycle: BusinessCycle | null;
   /** When the source last revised the series */
   lastUpdated: string | null;
 };
