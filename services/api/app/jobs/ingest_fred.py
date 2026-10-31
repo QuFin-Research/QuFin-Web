@@ -109,4 +109,5 @@ def ingest(
             continue
         log.info("Ingested %s: %d vintage rows", series_id, rows)
         results.append(IngestResult(series_id, rows))
+    store.analyze()
     return results

@@ -59,6 +59,13 @@ series, existing or new:
     thing as a monthly one, carry it too; the scorecard averages it into the current month as
     soon as each week lands, and its momentum part (3-month change) catches turns before the
     level does.
+15. **Every hot query is indexed; nothing aggregates a data table on a page load.** Data grows
+    with every country and series, so a full scan gets slower with each one added. Each read a
+    page or job relies on is listed in `tests/test_query_plans.py`, which fails if the planner
+    scans a data table; a new read is added there with the index that serves it, in a
+    migration. Summaries a page needs (coverage, counts, latest period) are stored at ingest,
+    not computed per request. Bulk loads end with `ANALYZE` so the planner picks the right
+    index. Indexes belong to the table, so rows for series added later are indexed on insert.
 
 ## Scorecard correction mechanism (non-negotiable)
 
