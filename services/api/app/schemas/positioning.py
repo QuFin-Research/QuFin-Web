@@ -3,6 +3,7 @@ from datetime import date
 from pydantic import Field
 
 from app.schemas.base import ApiModel
+from app.schemas.freshness import DataFreshness
 
 
 class PositioningPoint(ApiModel):
@@ -22,6 +23,7 @@ class PositioningSnapshot(ApiModel):
     market_name: str
     latest: PositioningPoint
     weekly_change: int | None = Field(description="Change in net contracts from the prior week")
+    freshness: DataFreshness = Field(description="Release status as of the requested date")
 
 
 class PositioningHistory(ApiModel):
@@ -29,4 +31,5 @@ class PositioningHistory(ApiModel):
     contract_code: str
     market_name: str
     as_of: date | None
+    freshness: DataFreshness = Field(description="Release status as of the requested date")
     points: list[PositioningPoint]

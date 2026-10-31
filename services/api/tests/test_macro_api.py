@@ -35,7 +35,11 @@ VINTAGES = [
 
 
 def fred_handler(request: httpx.Request):
+    if request.url.path.endswith("/release/sources"):
+        return httpx.Response(200, json={"sources": [{"name": "U.S. Bureau of Labor Statistics"}]})
     series_id = request.url.params["series_id"]
+    if request.url.path.endswith("/series/release"):
+        return httpx.Response(200, json={"releases": [{"id": 50, "name": "Employment Situation"}]})
     if series_id != "UNRATE":
         return httpx.Response(400, json={"error_message": "The series does not exist."})
     if request.url.path.endswith("/vintagedates"):

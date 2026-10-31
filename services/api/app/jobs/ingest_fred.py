@@ -28,6 +28,7 @@ def ingest_series(
     observation_start: date = DEFAULT_OBSERVATION_START,
 ) -> int:
     info = client.series(entry.id)
+    release = client.release(entry.id)
     vintages = client.vintages(entry.id, observation_start)
     if entry.market:
         vintages = date_pre_archive_periods(vintages)
@@ -42,6 +43,9 @@ def ingest_series(
         dimension=entry.dimension,
         cycle=entry.cycle,
         last_updated=info.last_updated,
+        source_name=entry.source_override or "; ".join(release.sources) or None,
+        release_name=release.name or None,
+        delay_notice=info.delay_notice,
     )
     return store.replace_series(meta, vintages)
 

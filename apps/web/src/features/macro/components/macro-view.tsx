@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +28,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FRESHNESS_LABEL } from '@/lib/data-quality';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
 import { macroAvailable } from '../api/service';
@@ -67,6 +69,85 @@ function chartStart(series: MacroSeriesSummary) {
   const d = new Date(`${series.lastPeriod}T00:00:00Z`);
   d.setUTCFullYear(d.getUTCFullYear() - 5);
   return d.toISOString().slice(0, 10);
+}
+
+function StatusBadge({ series }: { series: MacroSeriesSummary }) {
+  const f = series.freshness;
+  return (
+    <Badge
+      variant={f.usable ? 'outline' : 'destructive'}
+      title={f.reason}
+      className='whitespace-nowrap'
+    >
+      {FRESHNESS_LABEL[f.status]}
+      {f.status === 'overdue' && f.daysOverdue > 0 ? ` ${f.daysOverdue}d` : ''}
+    </Badge>
+  );
+}
+
+/** Series that must not be used, and series that reach QuFin late (lower weight). */
+function DataChecks({ list }: { list: MacroSeriesSummary[] }) {
+  const unusable = list.filter((s) => !s.freshness.usable);
+  const delayed = list.filter((s) => s.freshness.usable && s.timeliness.fredDelayDays > 0);
+  const late = list
+    .filter((s) => s.freshness.usable && s.timeliness.weight < 0.75)
+    .toSorted((a, b) => a.timeliness.weight - b.timeliness.weight);
+  return (
+    <div className='flex flex-col gap-3'>
+      {unusable.length > 0 && (
+        <Alert variant='destructive'>
+          <AlertTitle>
+            {unusable.length} series not usable: excluded from signals and scorecards
+          </AlertTitle>
+          <AlertDescription>
+            <ul className='list-disc pl-4'>
+              {unusable.map((s) => (
+                <li key={s.id}>
+                  <span className='font-mono'>{s.id}</span> ({s.sourceName ?? 'unknown source'}):{' '}
+                  {s.freshness.reason}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+      <Alert>
+        <AlertTitle>
+          {list.length - unusable.length} of {list.length} series are on their release schedule
+        </AlertTitle>
+        <AlertDescription>
+          <p>
+            Each series is checked against its frequency and usual release lag after every load.
+            Data that reaches QuFin long after its period ended counts for less in scorecards: the
+            weight halves for every 60 days.
+          </p>
+          {delayed.length > 0 && (
+            <ul className='mt-2 list-disc pl-4'>
+              {delayed.map((s) => (
+                <li key={s.id}>
+                  <span className='font-mono'>{s.id}</span> ({s.sourceName}) reaches FRED{' '}
+                  {s.timeliness.fredDelayDays} days after the source publishes it.{' '}
+                  {s.timeliness.delayNote} Weight {s.timeliness.weight.toFixed(2)}.
+                </li>
+              ))}
+            </ul>
+          )}
+          {late.length > 0 && (
+            <p className='mt-2'>
+              Lowest weights:{' '}
+              {late
+                .map(
+                  (s) =>
+                    `${s.id} ${s.timeliness.weight.toFixed(2)} (${s.timeliness.daysAfterPeriodEnd} days after its period ends)`
+                )
+                .join(', ')}
+              .
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
 }
 
 function SetupHint() {
@@ -144,6 +225,7 @@ export function MacroView() {
 
   return (
     <div className='flex flex-col gap-4'>
+      <DataChecks list={list} />
       <Card>
         <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-3'>
           <div className='flex flex-col gap-1.5'>
@@ -170,9 +252,10 @@ export function MacroView() {
                 <TableHead className='pl-4'>Series</TableHead>
                 <TableHead>Pillar</TableHead>
                 <TableHead className='hidden lg:table-cell'>Cycle</TableHead>
-                <TableHead className='hidden md:table-cell'>Units</TableHead>
                 <TableHead className='text-right'>Latest period</TableHead>
-                <TableHead className='hidden pr-4 text-right sm:table-cell'>Vintage rows</TableHead>
+                <TableHead className='hidden md:table-cell'>Released</TableHead>
+                <TableHead className='hidden text-right sm:table-cell'>Weight</TableHead>
+                <TableHead className='pr-4'>Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -191,6 +274,10 @@ export function MacroView() {
                       <span className='text-muted-foreground block max-w-80 truncate text-xs'>
                         {s.title}
                       </span>
+                      <span className='text-muted-foreground/80 block max-w-80 truncate text-xs'>
+                        {s.sourceName}
+                        {s.releaseName ? ` · ${s.releaseName}` : ''}
+                      </span>
                     </button>
                   </TableCell>
                   <TableCell>
@@ -201,14 +288,22 @@ export function MacroView() {
                   <TableCell className='text-muted-foreground hidden text-xs capitalize lg:table-cell'>
                     {s.cycle ?? '—'}
                   </TableCell>
-                  <TableCell className='text-muted-foreground hidden max-w-56 truncate text-xs md:table-cell'>
-                    {s.units}
-                  </TableCell>
                   <TableCell className='text-right font-mono text-xs tabular-nums'>
                     {s.lastPeriod ?? '—'}
                   </TableCell>
-                  <TableCell className='hidden pr-4 text-right font-mono text-xs tabular-nums sm:table-cell'>
-                    {s.vintageRows.toLocaleString('en-US')}
+                  <TableCell className='hidden font-mono text-xs tabular-nums md:table-cell'>
+                    <span className='block'>{s.timeliness.latestSourceRelease ?? '—'}</span>
+                    {s.timeliness.fredDelayDays > 0 && (
+                      <span className='text-muted-foreground block'>
+                        FRED ~{s.timeliness.latestFredRelease}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className='hidden text-right font-mono text-xs tabular-nums sm:table-cell'>
+                    {s.timeliness.weight.toFixed(2)}
+                  </TableCell>
+                  <TableCell className='pr-4'>
+                    <StatusBadge series={s} />
                   </TableCell>
                 </TableRow>
               ))}
@@ -223,6 +318,15 @@ export function MacroView() {
             <CardTitle>{selected.title}</CardTitle>
             <CardDescription>
               {selected.units} · {selected.frequency} · {selected.seasonalAdjustment}
+              <span className='block'>
+                Source: {selected.sourceName ?? 'unknown'}
+                {selected.releaseName ? `, ${selected.releaseName}` : ''}. Latest period released{' '}
+                {selected.timeliness.latestSourceRelease ?? '—'}
+                {selected.timeliness.fredDelayDays > 0
+                  ? ` by the source, about ${selected.timeliness.latestFredRelease} on FRED`
+                  : ''}
+                . {selected.freshness.reason}.
+              </span>
             </CardDescription>
           </CardHeader>
           <CardContent className='flex flex-col gap-4'>

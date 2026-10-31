@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from 'recharts';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ChartContainer,
@@ -112,9 +113,19 @@ export function PositioningView() {
 
   const reportDate = list[0].latest.reportDate;
   const releaseDate = list[0].latest.releaseDate;
+  const unusable = list.filter((s) => !s.freshness.usable);
 
   return (
     <div className='flex flex-col gap-4'>
+      {unusable.length > 0 && (
+        <Alert variant='destructive'>
+          <AlertTitle>
+            CFTC reports overdue for {unusable.map((s) => s.symbol).join(', ')}: do not treat this
+            positioning as current
+          </AlertTitle>
+          <AlertDescription>{unusable[0].freshness.reason}.</AlertDescription>
+        </Alert>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Large speculators</CardTitle>

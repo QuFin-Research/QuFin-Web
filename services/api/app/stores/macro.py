@@ -33,6 +33,11 @@ class MacroSeriesRow(Base):
     dimension: Mapped[str] = mapped_column(String(16), index=True)
     # Business-cycle timing: leading, coincident or lagging; None when it is neither.
     cycle: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Who produces the data (e.g. "University of Michigan") and the release it comes in.
+    source_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    release_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # FRED's note when it publishes later than the source, e.g. "delayed by 1 month".
+    delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
@@ -66,6 +71,9 @@ class SeriesMeta:
     dimension: str
     last_updated: datetime | None
     cycle: str | None = None
+    source_name: str | None = None
+    release_name: str | None = None
+    delay_notice: str | None = None
 
 
 @dataclass(frozen=True)
@@ -98,6 +106,9 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         country=row.country,
         dimension=row.dimension,
         cycle=row.cycle,
+        source_name=row.source_name,
+        release_name=row.release_name,
+        delay_notice=row.delay_notice,
         last_updated=as_utc(row.last_updated) if row.last_updated else None,
     )
 
@@ -133,6 +144,9 @@ class MacroStore:
         series.country = meta.country
         series.dimension = meta.dimension
         series.cycle = meta.cycle
+        series.source_name = meta.source_name
+        series.release_name = meta.release_name
+        series.delay_notice = meta.delay_notice
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
         self.session.add(series)
@@ -172,6 +186,31 @@ class MacroStore:
             )
             for row, first, last, count in result
         ]
+
+    def first_releases(
+        self, since: date, series_id: str | None = None
+    ) -> dict[str, dict[date, date]]:
+        """When the source first published each period since `since`, per series."""
+        query = select(
+            MacroObservationRow.series_id,
+            MacroObservationRow.period,
+            func.min(MacroObservationRow.realtime_start),
+        ).where(MacroObservationRow.period >= since)
+        if series_id is not None:
+            query = query.where(MacroObservationRow.series_id == series_id)
+        result: dict[str, dict[date, date]] = {}
+        for sid, period, first_release in self.session.execute(
+            query.group_by(MacroObservationRow.series_id, MacroObservationRow.period)
+        ):
+            result.setdefault(sid, {})[period] = first_release
+        return result
+
+    def last_period(self, series_id: str) -> date | None:
+        return self.session.scalar(
+            select(func.max(MacroObservationRow.period)).where(
+                MacroObservationRow.series_id == series_id
+            )
+        )
 
     def get_series(self, series_id: str) -> SeriesMeta | None:
         row = self.session.get(MacroSeriesRow, series_id)

@@ -1,3 +1,5 @@
+import type { DataFreshness } from '@/lib/data-quality';
+
 export type PositioningPoint = {
   /** Positions as of this Tuesday */
   reportDate: string;
@@ -18,6 +20,8 @@ export type PositioningSnapshot = {
   marketName: string;
   latest: PositioningPoint;
   weeklyChange: number | null;
+  /** Release status as of the requested date */
+  freshness: DataFreshness;
 };
 
 export type PositioningHistory = {
@@ -25,5 +29,7 @@ export type PositioningHistory = {
   contractCode: string;
   marketName: string;
   asOf: string | null;
+  /** Release status as of the requested date */
+  freshness: DataFreshness;
   points: PositioningPoint[];
 };
