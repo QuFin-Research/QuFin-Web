@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 import httpx
 import pytest
 
+from app.connectors import fred
 from app.connectors.fred import FredClient, FredError
 
 KEY = "test-key-0123456789"
@@ -59,6 +60,10 @@ def test_vintages_request_all_real_time_periods_and_page():
 
     def handler(request: httpx.Request):
         params = request.url.params
+        if request.url.path.endswith("/vintagedates"):
+            return httpx.Response(
+                200, json={"count": 2, "vintage_dates": ["2026-09-05", "2026-10-03"]}
+            )
         seen.append(int(params["offset"]))
         assert params["realtime_start"] == "1776-07-04"
         assert params["realtime_end"] == "9999-12-31"
@@ -71,6 +76,48 @@ def test_vintages_request_all_real_time_periods_and_page():
         (date(2026, 8, 1), date(2026, 9, 5), 4.3),
         (date(2026, 8, 1), date(2026, 10, 3), 4.2),
         (date(2026, 9, 1), date(2026, 10, 3), None),  # "." means no value
+    ]
+
+
+def test_vintages_split_the_real_time_axis_when_alfred_would_refuse(monkeypatch):
+    # Five vintage dates, at most two per request: windows [start, d2-1], [d2, d4-1], [d4, end].
+    monkeypatch.setattr(fred, "MAX_VINTAGES_PER_REQUEST", 2)
+    monkeypatch.setattr(fred, "VINTAGE_DATES_LIMIT", 3)
+    dates = ["2026-01-02", "2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08"]
+    # Jan 2 printed 1.0 on Jan 5 and never revised; Jan 5 printed 2.0, revised to 2.5 on Jan 7.
+    history = [
+        ("2026-01-02", "2026-01-05", "9999-12-31", "1.0"),
+        ("2026-01-05", "2026-01-06", "2026-01-06", "2.0"),
+        ("2026-01-05", "2026-01-07", "9999-12-31", "2.5"),
+    ]
+    windows = []
+
+    def handler(request: httpx.Request):
+        params = request.url.params
+        if request.url.path.endswith("/vintagedates"):
+            offset, limit = int(params["offset"]), int(params["limit"])
+            return httpx.Response(
+                200, json={"count": len(dates), "vintage_dates": dates[offset : offset + limit]}
+            )
+        lo, hi = params["realtime_start"], params["realtime_end"]
+        windows.append((lo, hi))
+        clipped = [
+            obs(p, max(s, lo), min(e, hi), v) for p, s, e, v in history if s <= hi and e >= lo
+        ]
+        return httpx.Response(200, json={"count": len(clipped), "observations": clipped})
+
+    vintages = client_for(handler).vintages("DGS2")
+    assert windows == [
+        ("1776-07-04", "2026-01-05"),
+        ("2026-01-06", "2026-01-07"),
+        ("2026-01-08", "9999-12-31"),
+    ]
+    assert [
+        (str(v.period), str(v.realtime_start), str(v.realtime_end), v.value) for v in vintages
+    ] == [
+        ("2026-01-02", "2026-01-05", "9999-12-31", 1.0),
+        ("2026-01-05", "2026-01-06", "2026-01-06", 2.0),
+        ("2026-01-05", "2026-01-07", "9999-12-31", 2.5),
     ]
 
 

@@ -103,6 +103,17 @@ repeat; schedule it daily once deployed. The client trusts the operating system'
 store (`truststore`), so it works behind a TLS-inspecting proxy that the machine trusts. The key
 never appears in logs or error messages.
 
+ALFRED serves at most 2,000 vintage dates per request, and daily market series (Treasury yields,
+the dollar index) have thousands, so the connector fetches the real-time axis in windows and
+joins rows a window edge split. ALFRED's archive of those market series also starts years after
+their data does (2005 for Treasury yields) and stamps the whole back history with the archive's
+first date. Market rates are not revised beyond rare error corrections, so for series marked
+`market=True` in the catalog,
+those older periods are instead dated by the series' usual release lag (the 95th percentile of
+the lag seen once archiving began). Revised series such as GDP or payrolls are left as ALFRED
+has them: before the archive starts there is no record of the first print, so they have no
+point-in-time values there. So is the broad dollar index, which was reweighted in 2019 and 2021.
+
 ### CFTC positioning
 
 Weekly Commitments of Traders reports (legacy, futures only) from the CFTC's open data API, no
