@@ -1,13 +1,15 @@
 """Check every stored data source against its release schedule (see app.domain.freshness)."""
 
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
-from app.data.macro_catalog import BY_ID, CATALOG
+from app.data.macro_catalog import BY_ID, CATALOG, CatalogSeries
 from app.data.positioning_catalog import COT_CONTRACTS
+from app.data.scorecard_catalog import SCORED
 from app.domain.freshness import Freshness, Timeliness, assess, timeliness
 from app.stores.macro import MacroStore, SeriesMeta
 from app.stores.positioning import CotReport, PositioningStore
@@ -36,7 +38,29 @@ class DataCheck:
     status: SeriesStatus
 
 
+# Units that say the source already publishes a change ("Percent Change from Year Ago", ...).
+_CHANGE_UNITS = re.compile(r"\bchange\b|\bgrowth\b", re.IGNORECASE)
+
+
+def double_change_reason(meta: SeriesMeta, entry: CatalogSeries | None) -> str | None:
+    """A series published as a change must not be changed again (percent change or y/y)."""
+    if entry is None:
+        return None
+    already = entry.published_as_change or bool(_CHANGE_UNITS.search(meta.units))
+    if not already:
+        return None
+    spec = SCORED.get(entry.id)
+    if entry.change == "pct" or (spec is not None and spec.transform == "yoy"):
+        return (
+            f"The source already publishes {entry.id} as a change ({meta.units}); a percent "
+            "change or year-on-year transform would be a change of a change"
+        )
+    return None
+
+
 def _review_reason(meta: SeriesMeta, declared_delay: int) -> str | None:
+    if reason := double_change_reason(meta, BY_ID.get(meta.id)):
+        return reason
     if meta.delay_notice and declared_delay == 0:
         return (
             "FRED reports a publication delay the catalog does not account for: "

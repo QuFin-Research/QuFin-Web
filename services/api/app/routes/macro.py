@@ -1,11 +1,12 @@
-from datetime import date
+from datetime import date, timedelta
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.core.auth import DbSession
 from app.core.clock import Today
-from app.data.macro_catalog import BY_ID
+from app.data.macro_catalog import BY_ID, ChangeKind
+from app.domain.changes import change_measures
 from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
 from app.schemas.freshness import DataFreshness, DataTimeliness
 from app.schemas.macro import (
@@ -15,10 +16,14 @@ from app.schemas.macro import (
     MacroSeries,
     MacroSeriesData,
     MacroSeriesSummary,
+    SeriesChange,
 )
 from app.stores.macro import OPEN_END, MacroStore, SeriesMeta
 
 router = APIRouter(prefix="/v1/macro", tags=["macro"])
+
+# Enough history for a year-on-year change of a quarterly series.
+CHANGE_LOOKBACK = timedelta(days=550)
 
 SeriesId = Annotated[str, Path(pattern=r"^[A-Za-z0-9_.]{1,64}$")]
 
@@ -56,11 +61,32 @@ def list_series(store: Store, today: Today) -> list[MacroSeriesSummary]:
             first_period=s.first_period,
             last_period=s.last_period,
             vintage_rows=s.vintage_rows,
+            change_kind=_change_kind(s.meta.id),
+            published_as_change=bool(BY_ID.get(s.meta.id) and BY_ID[s.meta.id].published_as_change),
+            changes=_changes(store, s.meta, None, today),
             **_status(
                 s.meta, macro_status(s.meta, s.last_period, releases.get(s.meta.id, {}), today)
             ),
         )
         for s in store.list_series()
+    ]
+
+
+def _change_kind(series_id: str) -> ChangeKind:
+    entry = BY_ID.get(series_id)
+    return entry.change if entry else "diff"
+
+
+def _changes(
+    store: MacroStore, meta: SeriesMeta, as_of: date | None, today: date
+) -> list[SeriesChange]:
+    """Latest moves within one vintage (as published on `as_of`, or the latest)."""
+    recent = store.as_of(meta.id, as_of, start=(as_of or today) - CHANGE_LOOKBACK)
+    return [
+        SeriesChange(horizon=c.horizon, value=c.value, unit=c.unit)
+        for c in change_measures(
+            [(v.period, v.value) for v in recent], meta.frequency, _change_kind(meta.id)
+        )
     ]
 
 
@@ -106,6 +132,7 @@ def get_series(
     return MacroSeriesData(
         series=_series(meta),
         **_status(meta, status),
+        changes=_changes(store, meta, as_of, today),
         as_of=as_of,
         observations=[
             MacroObservation(period=v.period, value=v.value, realtime_start=v.realtime_start)

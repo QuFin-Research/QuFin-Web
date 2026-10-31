@@ -3,9 +3,13 @@
 QuFin rule (see services/api/CLAUDE.md). A late or missing indicator must make a score less
 certain, never more bullish or bearish:
 
-- Each indicator is scored against its own history as published at the time: its latest
-  reading as a z-score over the trailing ten years, clipped to -3..+3 and flipped where a
-  higher reading means a weaker pillar.
+- Each indicator is scored against its own history as published at the time, on two parts:
+  where it stands (its level, or its change over a year for quantities) and how fast it is
+  moving (its change over three months: annualised percent for quantities, points for rates).
+  Each part is a z-score over the trailing ten years, clipped to -3..+3 and flipped where a
+  higher reading means a weaker pillar; the indicator's score is their weighted average
+  (MOMENTUM_WEIGHT), rescaled when one part is missing. Daily and weekly series enter as
+  monthly averages that already include the latest week, so they lead the monthly releases.
 - A pillar is the weighted average of the indicators that are usable, with the weights
   rescaled to sum to one: score = sum(w * s) / sum(w). An overdue, discontinued or missing
   indicator drops out (weight 0); it is never counted as a zero, which would pull every score
@@ -24,6 +28,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
 
+from app.data.macro_catalog import ChangeKind
 from app.data.scorecard_catalog import ScoreSpec, Transform
 from app.domain.freshness import frequency_code
 
@@ -32,6 +37,8 @@ SCORE_LIMIT = 3.0
 HISTORY_YEARS = 10
 # Fewer points than this and the history says too little about what is normal.
 MIN_HISTORY = {"M": 36, "Q": 12}
+# Share of an indicator's score that comes from its recent momentum rather than its standing.
+MOMENTUM_WEIGHT = 0.5
 
 
 @dataclass(frozen=True)
@@ -43,6 +50,8 @@ class IndicatorScore:
     score: float | None  # -3..+3, None when there is too little history
     importance: float
     weight: float  # importance x timeliness weight; 0 when not usable or not scored
+    level_score: float | None = None  # where it stands
+    momentum_score: float | None = None  # how fast it is moving (3-month change)
 
 
 @dataclass(frozen=True)
@@ -99,6 +108,26 @@ def history_score(points: Sequence[tuple[date, float]], frequency: str) -> float
     return max(-SCORE_LIMIT, min(SCORE_LIMIT, z))
 
 
+def momentum(
+    points: Sequence[tuple[date, float]], frequency: str, change: ChangeKind
+) -> list[tuple[date, float]]:
+    """Each period's change over three months (one quarter for quarterly series)."""
+    quarterly = frequency_code(frequency) in ("Q", "S", "A")
+    step = 1 if quarterly else 3
+    by_period = dict(points)
+    result = []
+    for p, v in points:
+        y, m = divmod(p.month - 1 - (3 if quarterly else step), 12)
+        prior = by_period.get(date(p.year + y, m + 1, 1))
+        if prior is None:
+            continue
+        if change == "diff":
+            result.append((p, v - prior))
+        elif prior > 0 and v > 0:
+            result.append((p, ((v / prior) ** 4 - 1) * 100))  # annualised
+    return result
+
+
 def score_indicator(
     series_id: str,
     pillar: str,
@@ -106,14 +135,28 @@ def score_indicator(
     frequency: str,
     observations: Sequence[tuple[date, float | None]],
     timeliness_weight: float,
+    change: ChangeKind = "pct",
 ) -> IndicatorScore:
-    transformed = transform(to_monthly(observations, frequency), spec.transform)
-    raw = history_score(transformed, frequency) if transformed else None
-    score = None if raw is None else raw * spec.polarity
+    monthly = to_monthly(observations, frequency)
+    transformed = transform(monthly, spec.transform)
+    level = history_score(transformed, frequency) if transformed else None
+    moving = momentum(monthly, frequency, change)
+    pace = history_score(moving, frequency) if moving else None
+    level = None if level is None else level * spec.polarity
+    pace = None if pace is None else pace * spec.polarity
+    score = rescaled_average(
+        [
+            (s, w)
+            for s, w in ((level, 1 - MOMENTUM_WEIGHT), (pace, MOMENTUM_WEIGHT))
+            if s is not None
+        ]
+    )
     period = transformed[-1][0] if transformed else None
     value = transformed[-1][1] if transformed else None
     weight = spec.importance * timeliness_weight if score is not None else 0.0
-    return IndicatorScore(series_id, pillar, period, value, score, spec.importance, weight)
+    return IndicatorScore(
+        series_id, pillar, period, value, score, spec.importance, weight, level, pace
+    )
 
 
 def rescaled_average(pairs: Sequence[tuple[float, float]]) -> float | None:
