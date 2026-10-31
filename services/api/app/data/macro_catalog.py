@@ -102,8 +102,9 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("INDPRO", "growth", "coincident"),  # Industrial production
     _us("RRSFS", "growth", "coincident"),  # Real retail sales (CPI-adjusted)
     _us("W875RX1", "growth", "coincident"),  # Real personal income less transfers
-    _us("RSAFS", "growth"),  # Retail sales, nominal (shown, not scored)
-    _us("PI", "growth"),  # Personal income, nominal (shown, not scored)
+    # Nominal versions keep their timing tag; only the real versions are scored.
+    _us("RSAFS", "growth", "coincident"),  # Retail sales, nominal
+    _us("PI", "growth", "coincident"),  # Personal income, nominal
     _us("PAYEMS", "labour", "coincident"),  # Nonfarm payrolls
     # --- Lagging: turn after the economy -------------------------------------------------
     _us("UEMPMEAN", "labour", "lagging"),  # Average weeks unemployed

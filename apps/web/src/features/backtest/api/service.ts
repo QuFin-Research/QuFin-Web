@@ -25,15 +25,15 @@ async function seriesFor(symbol: string) {
 
 export async function runStrategyBacktest(params: StrategyBacktestParams): Promise<BacktestResult> {
   if (isApiConfigured) {
-    const { equity, stats } = await apiClient<BacktestResult>('/v1/backtests', {
+    const { equity, stats, data } = await apiClient<BacktestResult>('/v1/backtests', {
       method: 'POST',
       body: JSON.stringify({ kind: 'strategy', ...params })
     });
-    return { equity, stats };
+    return { equity, stats, data };
   }
   const { symbol, ...settings } = params;
-  const { candles, signals } = await seriesFor(symbol);
-  return runBacktest({ candles, signals, ...settings });
+  const { candles, signals, data } = await seriesFor(symbol);
+  return { ...runBacktest({ candles, signals, ...settings }), data };
 }
 
 export async function runDecisionRuleBacktest(
@@ -53,10 +53,11 @@ export async function runDecisionRuleBacktest(
       avgR: result.avgR,
       expectancyPct: result.expectancyPct,
       profitFactor: result.profitFactor ?? Infinity,
-      curve: result.curve
+      curve: result.curve,
+      data: result.data
     };
   }
   const { symbol, ...rule } = params;
-  const { candles, signals } = await seriesFor(symbol);
-  return backtestDecisionRule(candles, signals, rule);
+  const { candles, signals, data } = await seriesFor(symbol);
+  return { ...backtestDecisionRule(candles, signals, rule), data };
 }

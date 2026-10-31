@@ -41,7 +41,7 @@ export function AssetView({ symbol }: { symbol: string }) {
             <CardHeader>
               <CardTitle className='flex items-center gap-2'>
                 Daily price
-                <SampleDataBadge />
+                <SampleDataBadge origin={detail.data} />
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -54,7 +54,7 @@ export function SignalPanel({ detail }: { detail: AssetDetail }) {
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           QuFin signal
-          <SampleDataBadge />
+          <SampleDataBadge origin={detail.data} />
         </CardTitle>
         <CardDescription>
           {signal.horizonDays}-day outlook from the close of {signal.time}

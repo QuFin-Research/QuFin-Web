@@ -12,8 +12,23 @@ export type DataOrigin = 'live' | 'sample';
 export const SAMPLE_DATA_NOTE =
   'Sample data generated for development: not market data and not a trading signal.';
 
-/** Marks one card or value as sample data. Shown whether or not the user is signed in. */
-export function SampleDataBadge({ className }: { className?: string }) {
+/** Overall origin of a set of values: live only when every one of them is live. */
+export function originOf(items: { data?: DataOrigin }[] | undefined): DataOrigin {
+  return items?.length && items.every((i) => i.data === 'live') ? 'live' : 'sample';
+}
+
+/**
+ * Marks a card or value as sample data, signed in or not. Driven by the origin the API
+ * reports, so it disappears only when that data is live; a missing origin counts as sample.
+ */
+export function SampleDataBadge({
+  origin,
+  className
+}: {
+  origin: DataOrigin | undefined;
+  className?: string;
+}) {
+  if (origin === 'live') return null;
   return (
     <Badge variant='destructive' title={SAMPLE_DATA_NOTE} className={cn('shrink-0', className)}>
       Sample data
@@ -27,8 +42,7 @@ export function SampleDataBadge({ className }: { className?: string }) {
  */
 export function SampleDataBanner() {
   const { data: snapshots } = useQuery(marketQueries.snapshots());
-  const live = !!snapshots?.length && snapshots.every((s) => s.data === 'live');
-  if (live) return null;
+  if (originOf(snapshots) === 'live') return null;
   return (
     <div className='px-4 pt-3 md:px-6'>
       <Alert variant='destructive'>

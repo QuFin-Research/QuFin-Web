@@ -1,6 +1,6 @@
 'use client';
 
-import { SampleDataBadge } from '@/components/sample-data';
+import { SampleDataBadge, originOf } from '@/components/sample-data';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -112,7 +112,7 @@ export function JournalView() {
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             Decisions
-            {decisions.some((d) => d.data !== 'live') && <SampleDataBadge />}
+            {decisions.length > 0 && <SampleDataBadge origin={originOf(decisions)} />}
           </CardTitle>
           <CardDescription>
             Marked to the latest close. 1R is the distance from entry to stop. Decisions logged on

@@ -158,11 +158,10 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           Your decision
-          <SampleDataBadge />
+          <SampleDataBadge origin={detail.data} />
         </CardTitle>
         <CardDescription>
-          Set your plan, see how it would have performed, then log it to your journal. The
-          performance test runs on sample prices and signals.
+          Set your plan, see how it would have performed, then log it to your journal.
         </CardDescription>
       </CardHeader>
       <CardContent className='flex flex-col gap-5'>

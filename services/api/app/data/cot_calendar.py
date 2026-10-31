@@ -21,6 +21,7 @@ release date's close; point-in-time reads compare dates, never earlier.
 """
 
 from datetime import date, timedelta
+from functools import cache
 
 
 def _nth_weekday(year: int, month: int, weekday: int, n: int) -> date:
@@ -41,7 +42,8 @@ def _observed(day: date) -> date:
     return day
 
 
-def federal_holidays(year: int) -> set[date]:
+@cache
+def federal_holidays(year: int) -> frozenset[date]:
     """US federal holidays as observed (5 U.S.C. 6103)."""
     mon, thu = 0, 3
     days = {
@@ -61,7 +63,7 @@ def federal_holidays(year: int) -> set[date]:
     # New Year's Day falling on a Saturday is observed on the previous year's 31 December.
     if date(year + 1, 1, 1).weekday() == 5:
         days.add(date(year, 12, 31))
-    return days
+    return frozenset(days)
 
 
 def _is_business_day(day: date) -> bool:
