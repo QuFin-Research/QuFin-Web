@@ -4,8 +4,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.core.auth import DbSession
+from app.core.clock import Today
 from app.data.positioning_catalog import BY_SYMBOL, COT_CONTRACTS
 from app.domain import positioning
+from app.domain.freshness import Freshness
+from app.jobs.check_data import cot_status
+from app.schemas.freshness import DataFreshness
 from app.schemas.positioning import PositioningHistory, PositioningPoint, PositioningSnapshot
 from app.stores.positioning import PositioningStore
 
@@ -24,13 +28,20 @@ def get_store(session: DbSession) -> PositioningStore:
 Store = Annotated[PositioningStore, Depends(get_store)]
 
 
+def _freshness(f: Freshness) -> DataFreshness:
+    return DataFreshness.model_validate(f, from_attributes=True)
+
+
 def _point(p: positioning.PositioningPoint) -> PositioningPoint:
     return PositioningPoint.model_validate(p, from_attributes=True)
 
 
 @router.get("", response_model=list[PositioningSnapshot])
-def list_positioning(store: Store, as_of: AsOf = None) -> list[PositioningSnapshot]:
-    """Latest CFTC speculative positioning for every asset with ingested reports."""
+def list_positioning(store: Store, today: Today, as_of: AsOf = None) -> list[PositioningSnapshot]:
+    """Latest CFTC speculative positioning for every asset with ingested reports.
+
+    `freshness.usable` is false when the next weekly report is overdue as of `asOf` (or today).
+    """
     result = []
     for contract in COT_CONTRACTS:
         reports = store.history(contract.code, as_of)
@@ -44,6 +55,7 @@ def list_positioning(store: Store, as_of: AsOf = None) -> list[PositioningSnapsh
                 market_name=reports[-1].market_name,
                 latest=_point(points[-1]),
                 weekly_change=points[-1].net - points[-2].net if len(points) > 1 else None,
+                freshness=_freshness(cot_status(reports, as_of or today).freshness),
             )
         )
     return result
@@ -52,6 +64,7 @@ def list_positioning(store: Store, as_of: AsOf = None) -> list[PositioningSnapsh
 @router.get("/{symbol}", response_model=PositioningHistory)
 def get_positioning(
     store: Store,
+    today: Today,
     symbol: Annotated[str, Path(pattern=r"^[A-Za-z0-9]{2,12}$")],
     as_of: AsOf = None,
     weeks: Annotated[int, Query(ge=1, le=1040, description="Most recent weeks to return")] = 156,
@@ -69,5 +82,6 @@ def get_positioning(
         contract_code=contract.code,
         market_name=reports[-1].market_name,
         as_of=as_of,
+        freshness=_freshness(cot_status(reports, as_of or today).freshness),
         points=[_point(p) for p in points],
     )

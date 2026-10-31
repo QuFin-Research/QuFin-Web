@@ -118,6 +118,29 @@ the lag seen once archiving began). Revised series such as GDP or payrolls are l
 has them: before the archive starts there is no record of the first print, so they have no
 point-in-time values there. So is the broad dollar index, which was reweighted in 2019 and 2021.
 
+### Release checks and timeliness
+
+Every data series must still be published on schedule before QuFin relies on it (see
+[CLAUDE.md](./CLAUDE.md) for the full rules).
+
+```bash
+uv run python -m app.cli check-data    # every macro series and CFTC contract
+```
+
+- **Schedule.** A series is due one period after its latest observation plus its usual release
+  lag (median days from a period to the source's first release over the last three years) plus
+  any declared FRED delay. Past that, with grace for holidays (5 days daily, 7 weekly, 14
+  monthly, 30 quarterly), it is overdue. A series FRED marks discontinued fails outright.
+- **Real source.** Each series stores the agency that produces it and its release (from FRED's
+  release and source endpoints). FRED's own delay notices are stored too, and must match the
+  catalog's `fred_delay_days`, otherwise the series needs review. Today only the University of
+  Michigan's sentiment survey is delayed (one month, final reading only).
+- **Weight.** `timeliness.weight` halves for every 60 days between the end of a period and the
+  day QuFin can read it; scorecards use it so late data counts for less. Unusable series weigh 0.
+- **Enforced.** `ingest-fred`, `ingest-cftc` and `check-data` print the report and exit 1 if any
+  series is overdue, discontinued or needs review. The API returns `freshness` and `timeliness`
+  with every series, and the Macro and Positioning pages flag unusable data.
+
 ### CFTC positioning
 
 Weekly Commitments of Traders reports (legacy, futures only) from the CFTC's open data API, no

@@ -8,6 +8,7 @@ logs and error messages: httpx's request logging is turned down and errors never
 """
 
 import logging
+import re
 import ssl
 import time
 from collections.abc import Callable
@@ -45,6 +46,24 @@ class FredSeries:
     frequency: str
     seasonal_adjustment: str
     last_updated: datetime | None
+    notes: str = ""
+
+    @property
+    def delay_notice(self) -> str | None:
+        """FRED's own statement that it publishes the series later than its source does."""
+        match = _DELAY_NOTICE.search(self.notes)
+        return " ".join(match.group(0).split()) if match else None
+
+
+@dataclass(frozen=True)
+class FredRelease:
+    id: int
+    name: str
+    sources: tuple[str, ...]
+
+
+# e.g. "At the request of the source, the data is delayed by 1 month."
+_DELAY_NOTICE = re.compile(r"[^.]*\bdelayed\b[^.]*\.", re.IGNORECASE)
 
 
 def _parse_last_updated(value: str | None) -> datetime | None:
@@ -127,6 +146,18 @@ class FredClient:
             frequency=s.get("frequency", ""),
             seasonal_adjustment=s.get("seasonal_adjustment", ""),
             last_updated=_parse_last_updated(s.get("last_updated")),
+            notes=s.get("notes") or "",
+        )
+
+    def release(self, series_id: str) -> FredRelease:
+        """The release a series is published in and the agencies that produce it."""
+        releases = self._get("/series/release", {"series_id": series_id}).get("releases") or []
+        if not releases:
+            raise FredError(f"FRED has no release for {series_id}")
+        rel = releases[0]
+        sources = self._get("/release/sources", {"release_id": rel["id"]}).get("sources") or []
+        return FredRelease(
+            id=int(rel["id"]), name=rel.get("name", ""), sources=tuple(s["name"] for s in sources)
         )
 
     def vintage_dates(self, series_id: str) -> list[date]:

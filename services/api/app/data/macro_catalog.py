@@ -27,6 +27,13 @@ class CatalogSeries:
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
+    # Days FRED publishes after the source does (licensing). Must match FRED's own delay
+    # notice: a notice without a declared delay fails the release check until reviewed.
+    fred_delay_days: int = 0
+    delay_note: str | None = None
+    # For series FRED derives itself (spreads), the agencies whose data it uses; FRED's own
+    # metadata would otherwise name the St. Louis Fed as the source.
+    source_override: str | None = None
     # Market rates are not revised beyond rare error corrections, so periods from before
     # ALFRED started archiving the series can be dated by their usual release lag instead
     # of being dropped. Not for series that get rebased or reweighted.
@@ -34,9 +41,17 @@ class CatalogSeries:
 
 
 def _us(
-    id: str, dimension: Dimension, cycle: Cycle | None = None, *, market: bool = False
+    id: str,
+    dimension: Dimension,
+    cycle: Cycle | None = None,
+    *,
+    market: bool = False,
+    source: str | None = None,
 ) -> CatalogSeries:
-    return CatalogSeries(id, "fred", "US", dimension, cycle, market)
+    return CatalogSeries(id, "fred", "US", dimension, cycle, market=market, source_override=source)
+
+
+_H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
 
 CATALOG: tuple[CatalogSeries, ...] = (
@@ -48,10 +63,22 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("NOCDFSA066MSFRBPHI", "growth", "leading"),  # Philadelphia Fed new orders
     _us("PERMIT", "growth", "leading"),  # Building permits
     _us("HOUST", "growth", "leading"),  # Housing starts
-    _us("T10YFF", "policy", "leading", market=True),  # 10-year yield minus fed funds
-    _us("T10Y3M", "policy", "leading", market=True),  # 10-year minus 3-month yield
+    _us("T10YFF", "policy", "leading", market=True, source=_H15),  # 10-year yield minus fed funds
+    _us("T10Y3M", "policy", "leading", market=True, source=_H15),  # 10-year minus 3-month yield
     _us("NFCI", "sentiment", "leading"),  # Chicago Fed financial conditions, weekly
-    _us("UMCSENT", "sentiment", "leading"),  # Michigan consumer sentiment
+    CatalogSeries(
+        "UMCSENT",  # Michigan consumer sentiment
+        "fred",
+        "US",
+        "sentiment",
+        "leading",
+        fred_delay_days=30,
+        delay_note=(
+            "At the University of Michigan's request FRED shows this survey one month after "
+            "Michigan publishes it, and only the final monthly reading (Michigan also "
+            "publishes a preliminary one mid-month)."
+        ),
+    ),
     # --- Coincident: move with the economy -----------------------------------------------
     _us("GDPC1", "growth", "coincident"),  # Real GDP, quarterly
     _us("INDPRO", "growth", "coincident"),  # Industrial production
@@ -71,14 +98,19 @@ CATALOG: tuple[CatalogSeries, ...] = (
     # --- Not classified by cycle -----------------------------------------------------------
     _us("CPIAUCSL", "inflation"),  # CPI, all items
     _us("PCEPILFE", "inflation"),  # Core PCE price index
-    _us("T10YIE", "inflation", market=True),  # 10-year breakeven inflation
+    _us("T10YIE", "inflation", market=True, source=_H15),  # 10-year breakeven inflation
     _us("FEDFUNDS", "policy"),  # Effective fed funds rate
     _us("DGS2", "policy", market=True),  # 2-year Treasury yield
     _us("DGS10", "policy", market=True),  # 10-year Treasury yield
     _us("DFII10", "policy", market=True),  # 10-year real (TIPS) yield
     _us("WALCL", "policy", market=True),  # Fed balance sheet, weekly
     _us("M2SL", "policy"),  # M2 money supply
-    _us("BAA10Y", "sentiment", market=True),  # Baa credit spread
+    _us(
+        "BAA10Y",
+        "sentiment",
+        market=True,
+        source="Moody's (Baa yield) and Federal Reserve H.15; spread calculated by FRED",
+    ),  # Baa credit spread
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
     _us("DTWEXBGS", "sentiment"),
 )

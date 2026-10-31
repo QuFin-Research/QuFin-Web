@@ -4,6 +4,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.core.auth import DbSession
+from app.core.clock import Today
+from app.data.macro_catalog import BY_ID
+from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
+from app.schemas.freshness import DataFreshness, DataTimeliness
 from app.schemas.macro import (
     MacroObservation,
     MacroRevision,
@@ -38,8 +42,13 @@ def _require(store: MacroStore, series_id: str) -> SeriesMeta:
 
 
 @router.get("/series", response_model=list[MacroSeriesSummary])
-def list_series(store: Store) -> list[MacroSeriesSummary]:
-    """Macro series in the point-in-time store, with their coverage."""
+def list_series(store: Store, today: Today) -> list[MacroSeriesSummary]:
+    """Macro series in the point-in-time store, with their coverage and release status.
+
+    `freshness.usable` is false for a series that is overdue or discontinued; it must not be
+    treated as current data.
+    """
+    releases = store.first_releases(today - LAG_WINDOW)
     return [
         MacroSeriesSummary(
             **_series(s.meta).model_dump(),
@@ -47,14 +56,34 @@ def list_series(store: Store) -> list[MacroSeriesSummary]:
             first_period=s.first_period,
             last_period=s.last_period,
             vintage_rows=s.vintage_rows,
+            **_status(
+                s.meta, macro_status(s.meta, s.last_period, releases.get(s.meta.id, {}), today)
+            ),
         )
         for s in store.list_series()
     ]
 
 
+def _status(meta: SeriesMeta, status: SeriesStatus) -> dict:
+    entry = BY_ID.get(meta.id)
+    return {
+        "freshness": DataFreshness.model_validate(status.freshness, from_attributes=True),
+        "timeliness": DataTimeliness(
+            weight=status.timeliness.weight,
+            source_lag_days=status.timeliness.source_lag_days,
+            fred_delay_days=status.timeliness.fred_delay_days,
+            days_after_period_end=status.timeliness.days_after_period_end,
+            latest_source_release=status.latest_source_release,
+            latest_fred_release=status.latest_fred_release,
+            delay_note=(entry.delay_note if entry else None) or meta.delay_notice,
+        ),
+    }
+
+
 @router.get("/series/{series_id}", response_model=MacroSeriesData)
 def get_series(
     store: Store,
+    today: Today,
     series_id: SeriesId,
     as_of: Annotated[
         date | None,
@@ -72,8 +101,11 @@ def get_series(
         raise HTTPException(status_code=422, detail="start must not be after end")
     meta = _require(store, series_id)
     vintages = store.as_of(meta.id, as_of, start, end)
+    releases = store.first_releases(today - LAG_WINDOW, meta.id).get(meta.id, {})
+    status = macro_status(meta, store.last_period(meta.id), releases, today)
     return MacroSeriesData(
         series=_series(meta),
+        **_status(meta, status),
         as_of=as_of,
         observations=[
             MacroObservation(period=v.period, value=v.value, realtime_start=v.realtime_start)

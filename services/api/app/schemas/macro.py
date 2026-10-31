@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import Field
 
 from app.schemas.base import ApiModel
+from app.schemas.freshness import DataFreshness, DataTimeliness
 from app.schemas.market import ScoreDimension
 
 
@@ -20,6 +21,8 @@ class MacroSeries(ApiModel):
         description="When the series tends to turn relative to the business cycle"
     )
     last_updated: datetime | None = Field(description="When the source last revised the series")
+    source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
+    release_name: str | None = Field(description="The release the series is published in")
 
 
 class MacroSeriesSummary(MacroSeries):
@@ -27,6 +30,8 @@ class MacroSeriesSummary(MacroSeries):
     first_period: date | None
     last_period: date | None
     vintage_rows: int
+    freshness: DataFreshness
+    timeliness: DataTimeliness
 
 
 class MacroObservation(ApiModel):
@@ -37,6 +42,8 @@ class MacroObservation(ApiModel):
 
 class MacroSeriesData(ApiModel):
     series: MacroSeries
+    freshness: DataFreshness = Field(description="Release status of the series today")
+    timeliness: DataTimeliness
     as_of: date | None = Field(description="Real-time date of this view; null means latest")
     observations: list[MacroObservation]
 
