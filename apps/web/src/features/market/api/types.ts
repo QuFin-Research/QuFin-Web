@@ -61,11 +61,50 @@ export type AssetDetail = AssetSnapshot & {
 
 export type ScoreDimension = 'growth' | 'inflation' | 'labour' | 'policy' | 'sentiment';
 
+export type ScorecardIndicator = {
+  id: string;
+  title: string;
+  pillar: ScoreDimension;
+  sourceName: string | null;
+  /** Latest period used */
+  period: string | null;
+  /** Reading after the transform (level or % y/y) */
+  value: number | null;
+  /** −3..+3 against its own 10-year history */
+  score: number | null;
+  /** Importance × timeliness; 0 when not usable */
+  weight: number;
+  usable: boolean;
+  status: string;
+};
+
+export type PendingRelease = {
+  seriesId: string;
+  title: string;
+  sourceName: string | null;
+  /** The period expected next */
+  period: string | null;
+  /** When the source publishes (or did) */
+  sourceRelease: string | null;
+  /** When FRED shows it */
+  fredRelease: string | null;
+  reason: string;
+};
+
 export type CountryScore = {
   code: string;
   country: string;
   currency: string;
-  /** Each dimension scored −3 (very weak) to +3 (very strong) */
+  /** Each pillar −3 (very weak) to +3 (very strong): growth strong, inflation hot, labour tight, policy tight, sentiment upbeat */
   scores: Record<ScoreDimension, number>;
   overall: number;
+  /** live: computed from the point-in-time macro store */
+  data?: 'live' | 'sample';
+  /** Share of each pillar's full evidence that is fresh and usable; never changes the score */
+  confidence?: Record<ScoreDimension, number> | null;
+  overallConfidence?: number | null;
+  asOf?: string | null;
+  indicators?: ScorecardIndicator[];
+  /** Releases still to come that may move the scores */
+  pending?: PendingRelease[];
 };

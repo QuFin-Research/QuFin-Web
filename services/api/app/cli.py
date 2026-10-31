@@ -5,6 +5,7 @@ uv run python -m app.cli ingest-fred            # every series in the catalog
 uv run python -m app.cli ingest-fred CPIAUCSL UNRATE --start 2010-01-01
 uv run python -m app.cli ingest-cftc                 # CFTC positioning, no key needed
 uv run python -m app.cli check-data                  # release-schedule check of every source
+uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
 Ingest commands finish with the release-schedule check and exit non-zero when any series is
 overdue or discontinued, so a scheduler surfaces it.
@@ -13,7 +14,7 @@ overdue or discontinued, so a scheduler surfaces it.
 import argparse
 import logging
 import sys
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from app.connectors.cftc import CftcClient
 from app.connectors.fred import FredClient
@@ -23,6 +24,7 @@ from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import ingest_cftc
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest
+from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
 from app.stores.migrate import upgrade_to_head
 
@@ -80,6 +82,14 @@ def _check_data(_args: argparse.Namespace) -> int:
     return 0 if _all_usable(checks) else 1
 
 
+def _scorecard_bias(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        report = bias_backtest(session, args.start, args.end)
+    print(format_bias_report(report))
+    return 0 if report.passed else 1
+
+
 def _today() -> date:
     return datetime.now(UTC).date()
 
@@ -120,7 +130,22 @@ def main(argv: list[str] | None = None) -> int:
     )
     check.set_defaults(func=_check_data)
 
+    bias = sub.add_parser(
+        "scorecard-bias",
+        help="compare the scorecard users saw each month with complete information",
+    )
+    bias.add_argument("--start", type=date.fromisoformat, default=date(2012, 1, 1))
+    bias.add_argument(
+        "--end",
+        type=date.fromisoformat,
+        default=None,
+        help="last month to test (default: four months ago, so complete data exists)",
+    )
+    bias.set_defaults(func=_scorecard_bias)
+
     args = parser.parse_args(argv)
+    if getattr(args, "func", None) is _scorecard_bias and args.end is None:
+        args.end = _today() - timedelta(days=125)
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     return args.func(args)
 

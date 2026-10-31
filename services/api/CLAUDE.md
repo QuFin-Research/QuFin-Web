@@ -27,3 +27,38 @@ series, existing or new:
    (daily rates, weekly claims) keeps full weight.
 6. **Point in time only.** Backtests read data as it was published (`asOf`), never revised
    values before their release date.
+7. **Check the licence before relying on a series commercially.** Some sources restrict use in
+   a product sold to others, whatever channel the data arrives through. The University of
+   Michigan survey (UMCSENT) is free only for research or strictly internal use; a platform,
+   dashboard or investment advisory needs a licence from umsurvey@umich.edu. Moody's data
+   (BAA10Y) carries a similar proprietary notice. Record such limits in the catalog.
+
+## Scorecard correction mechanism (non-negotiable)
+
+A delayed or missing indicator must make a score **less certain, never more bullish or
+bearish**. Score and confidence are separate outputs (`app/domain/scorecard.py`):
+
+1. **Score each indicator point in time** against its own history as published then: a
+   z-score over ten years, clipped to -3..+3, flipped where higher means weaker.
+2. **Rescaled weighted average per pillar:** `score = Σ wᵢ·sᵢ / Σ wᵢ` over usable
+   indicators, with `wᵢ` = base importance × timeliness weight. Overdue, discontinued, missing
+   or unscorable indicators drop out (weight 0). Never count missing data as zero (a plain
+   sum pulls scores toward neutral: strong economies underrated, weak ones overrated), and
+   never carry an old value forward at full weight.
+3. **Confidence is reported separately:** `Σ wᵢ / Σ base importance`. It never changes the
+   score.
+4. **Caution goes into position size, not into the view.** Size trade ideas by confidence.
+5. **Fix delays at the source where the licence allows it**, rather than living with them.
+   An estimate for a missing release may be added only if it is labelled as an estimate,
+   at reduced weight, and replaced when the real figure lands.
+6. **Show what is pending:** every live scorecard lists the releases still to come, with the
+   source and FRED dates, so users know the score may move and why.
+7. **Prove there is no bias:** `uv run python -m app.cli scorecard-bias` compares the
+   scorecard users would have seen each month with complete information. The mean difference
+   must stay within ±0.25 for every pillar and overall; if it fails, the scorecard must not
+   be used until the cause is fixed. `tests/test_scorecard.py` enforces the rules above; do
+   not loosen it to make a change pass.
+8. **A currency pair is only as certain as its less certain side:** use
+   `pair_confidence(base, quote)` (the minimum), so a stale side cannot make a pair look
+   decisive.
+9. **Never mix live and sample scorecards** in one ranking; sample data is always labelled.

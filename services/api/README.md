@@ -141,6 +141,27 @@ uv run python -m app.cli check-data    # every macro series and CFTC contract
   series is overdue, discontinued or needs review. The API returns `freshness` and `timeliness`
   with every series, and the Macro and Positioning pages flag unusable data.
 
+### Country scorecard
+
+`GET /v1/scorecards/countries?asOf=` computes the live scorecard from the macro store (US
+today); without macro data it returns the sample scorecards, marked `data: "sample"`. The
+rules are in [CLAUDE.md](./CLAUDE.md) ("Scorecard correction mechanism"):
+
+- Each indicator in `app/data/scorecard_catalog.py` is scored against its own ten-year history
+  as published at the time (z-score, clipped to -3..+3, flipped where higher means weaker).
+- A pillar is the weighted average of its usable indicators with the weights rescaled, so a
+  late or missing indicator lowers `confidence` but never moves the score by itself.
+- Each scorecard lists its pending releases with source and FRED dates.
+
+```bash
+uv run python -m app.cli scorecard-bias   # must pass before the scorecard is used for trading
+```
+
+The bias backtest compares, for each month since 2012, the scorecard as users would have seen
+it with the one built once late releases arrived, at full weight. The mean difference must
+stay within ±0.25 for every pillar; the report also shows how far a plain sum would have
+drifted.
+
 ### CFTC positioning
 
 Weekly Commitments of Traders reports (legacy, futures only) from the CFTC's open data API, no
