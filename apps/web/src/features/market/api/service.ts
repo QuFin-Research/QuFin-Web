@@ -1,18 +1,19 @@
 // ============================================================
 // Market Service — Data Access Layer
 // ============================================================
-// This is the ONLY file to change when the FastAPI backend is ready.
-// Queries (queries.ts) and components import from here and stay the same.
+// Queries (queries.ts) and components import from here and stay the same
+// whichever source is active.
 //
-// Target endpoints (FastAPI, per the QuFin Platform Blueprint):
+// With NEXT_PUBLIC_API_URL set, data comes from the QuFin API (services/api):
 //   GET /v1/assets                     → getSnapshots()
 //   GET /v1/assets/{symbol}            → getAssetDetail(symbol)
 //   GET /v1/scorecards/countries       → getCountryScores()
-// Replace each body with:  return apiClient<T>('/v1/...')
 //
-// Current: deterministic mock data (src/features/market/lib/mock-data.ts)
+// Without it, the deterministic mock (src/features/market/lib/mock-data.ts)
+// serves the same numbers locally, so the app also runs offline.
 // ============================================================
 
+import { ApiError, apiClient, isApiConfigured } from '@/lib/api-client';
 import {
   ASSETS,
   countryScores,
@@ -45,10 +46,19 @@ function snapshotFor(symbol: string): AssetSnapshot | undefined {
 }
 
 export async function getSnapshots(): Promise<AssetSnapshot[]> {
+  if (isApiConfigured) return apiClient<AssetSnapshot[]>('/v1/assets');
   return ASSETS.map((a) => snapshotFor(a.symbol)!);
 }
 
 export async function getAssetDetail(symbol: string): Promise<AssetDetail | null> {
+  if (isApiConfigured) {
+    try {
+      return await apiClient<AssetDetail>(`/v1/assets/${encodeURIComponent(symbol)}`);
+    } catch (error) {
+      if (error instanceof ApiError && (error.status === 404 || error.status === 422)) return null;
+      throw error;
+    }
+  }
   const snapshot = snapshotFor(symbol.toUpperCase());
   const series = getSeries(symbol.toUpperCase());
   if (!snapshot || !series) return null;
@@ -61,9 +71,11 @@ export async function getAssetDetail(symbol: string): Promise<AssetDetail | null
 }
 
 export async function getCountryScores(): Promise<CountryScore[]> {
+  if (isApiConfigured) return apiClient<CountryScore[]>('/v1/scorecards/countries');
   return countryScores();
 }
 
+/** Static asset universe (same list the API serves); used for routing and pickers. */
 export function listAssets(): Asset[] {
   return ASSETS.map(toAsset);
 }
