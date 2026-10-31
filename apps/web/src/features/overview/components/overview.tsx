@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -165,19 +166,68 @@ function ScoreCell({ value }: { value: number }) {
       }}
     >
       {value > 0 ? '+' : ''}
-      {value}
+      {Number.isInteger(value) ? value : value.toFixed(1)}
     </span>
+  );
+}
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+/** Confidence: how much fresh evidence stands behind a score. It never changes the score. */
+function ConfidenceText({ value }: { value: number | null | undefined }) {
+  if (value === null || value === undefined) return null;
+  return (
+    <div
+      className={cn(
+        'mt-0.5 font-mono text-[10px] tabular-nums',
+        value < 0.6 ? 'text-bear' : 'text-muted-foreground'
+      )}
+    >
+      {pct(value)}
+    </div>
+  );
+}
+
+function PendingList({ row }: { row: CountryScore }) {
+  const pending = row.pending ?? [];
+  if (pending.length === 0) return null;
+  return (
+    <div className='border-t px-4 pt-3 text-xs'>
+      <div className='mb-1 font-medium'>Pending releases that may move the {row.code} scores</div>
+      <ul className='text-muted-foreground flex flex-col gap-0.5'>
+        {pending.map((p) => (
+          <li key={p.seriesId}>
+            <span className='text-foreground font-mono'>{p.seriesId}</span>
+            {p.period ? ` ${p.period.endsWith('-01') ? p.period.slice(0, 7) : p.period}` : ''} (
+            {p.sourceName ?? 'unknown source'}): {p.reason}
+            {p.sourceRelease && p.fredRelease && p.sourceRelease !== p.fredRelease
+              ? `, source ${p.sourceRelease}, FRED ~${p.fredRelease}`
+              : p.fredRelease
+                ? `, ${p.fredRelease}`
+                : ''}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
 export function CountryScorecard() {
   const { data: rows } = useSuspenseQuery(marketQueries.countryScores());
+  const live = rows.some((r) => r.data === 'live');
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Macro scorecard</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          Macro scorecard
+          <Badge variant={live ? 'outline' : 'secondary'}>
+            {live ? `Live · as of ${rows[0].asOf}` : 'Sample data'}
+          </Badge>
+        </CardTitle>
         <CardDescription>
-          Each pillar scored −3 to +3 from official releases versus trend and consensus.
+          {live
+            ? 'Each pillar −3 to +3: indicators scored against their own 10-year history as published at the time, averaged over the fresh, usable ones. The percentage is confidence, the share of evidence that is fresh; late data lowers it, never the score. Size positions by confidence. Other economies appear once their data sources are connected.'
+            : 'Illustrative scores. Connect the QuFin API and load macro data for live scorecards.'}
         </CardDescription>
       </CardHeader>
       <CardContent className='px-0'>
@@ -203,6 +253,7 @@ export function CountryScorecard() {
                 {DIMENSIONS.map((d) => (
                   <TableCell key={d.key} className='hidden text-center sm:table-cell'>
                     <ScoreCell value={row.scores[d.key]} />
+                    <ConfidenceText value={row.confidence?.[d.key]} />
                   </TableCell>
                 ))}
                 <TableCell
@@ -213,11 +264,17 @@ export function CountryScorecard() {
                 >
                   {row.overall > 0 ? '+' : ''}
                   {row.overall.toFixed(1)}
+                  <ConfidenceText value={row.overallConfidence} />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+        {rows
+          .filter((r) => r.data === 'live')
+          .map((r) => (
+            <PendingList key={r.code} row={r} />
+          ))}
       </CardContent>
     </Card>
   );

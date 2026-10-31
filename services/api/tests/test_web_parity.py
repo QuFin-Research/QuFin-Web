@@ -38,8 +38,14 @@ def dump(model):
     return model.model_dump(by_alias=True)
 
 
+# Fields only live (API-computed) scorecards fill; the offline mock has sample scores only.
+LIVE_ONLY = {"data", "confidence", "overall_confidence", "as_of", "indicators", "pending"}
+
+
 def test_country_scores_match_web():
-    assert_matches([dump(c) for c in repo.get_country_scores()], FIXTURE["countries"])
+    sample = [c.model_dump(by_alias=True, exclude=LIVE_ONLY) for c in repo.get_country_scores()]
+    assert_matches(sample, FIXTURE["countries"])
+    assert all(c.data == "sample" for c in repo.get_country_scores())
 
 
 @pytest.mark.parametrize("symbol", sorted(FIXTURE["assets"]))

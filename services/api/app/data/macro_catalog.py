@@ -34,6 +34,8 @@ class CatalogSeries:
     # For series FRED derives itself (spreads), the agencies whose data it uses; FRED's own
     # metadata would otherwise name the St. Louis Fed as the source.
     source_override: str | None = None
+    # Limits on commercial use set by the producer, whatever channel the data arrives through.
+    licence_note: str | None = None
     # Market rates are not revised beyond rare error corrections, so periods from before
     # ALFRED started archiving the series can be dated by their usual release lag instead
     # of being dropped. Not for series that get rebased or reweighted.
@@ -47,8 +49,18 @@ def _us(
     *,
     market: bool = False,
     source: str | None = None,
+    licence: str | None = None,
 ) -> CatalogSeries:
-    return CatalogSeries(id, "fred", "US", dimension, cycle, market=market, source_override=source)
+    return CatalogSeries(
+        id,
+        "fred",
+        "US",
+        dimension,
+        cycle,
+        market=market,
+        source_override=source,
+        licence_note=licence,
+    )
 
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
@@ -77,6 +89,12 @@ CATALOG: tuple[CatalogSeries, ...] = (
             "At the University of Michigan's request FRED shows this survey one month after "
             "Michigan publishes it, and only the final monthly reading (Michigan also "
             "publishes a preliminary one mid-month)."
+        ),
+        licence_note=(
+            "Free for research or strictly internal use only (CC-BY-NC-ND). Use in a product "
+            "sold to others, or redistribution via a platform, dashboard or investment "
+            "advisory, needs a licence from umsurvey@umich.edu "
+            "(https://data.sca.isr.umich.edu/agreement.php)."
         ),
     ),
     # --- Coincident: move with the economy -----------------------------------------------
@@ -110,6 +128,10 @@ CATALOG: tuple[CatalogSeries, ...] = (
         "sentiment",
         market=True,
         source="Moody's (Baa yield) and Federal Reserve H.15; spread calculated by FRED",
+        licence=(
+            "Moody's states its data is proprietary and licensed; confirm terms before "
+            "redistributing it in a commercial product."
+        ),
     ),  # Baa credit spread
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
     _us("DTWEXBGS", "sentiment"),
