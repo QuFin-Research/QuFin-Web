@@ -1,17 +1,18 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response
-from sqlalchemy.orm import Session
 
+from app.core.auth import CurrentUser, DbSession
 from app.data.repository import MarketRepository, get_market_repository
 from app.schemas.decisions import Decision, DecisionCreate
-from app.stores.decisions import DecisionStore, get_session
+from app.stores.decisions import DecisionStore
 
 router = APIRouter(prefix="/v1/decisions", tags=["decisions"])
 
 
-def get_store(session: Annotated[Session, Depends(get_session)]) -> DecisionStore:
-    return DecisionStore(session)
+def get_store(session: DbSession, user: CurrentUser) -> DecisionStore:
+    """The signed-in user's journal; every endpoint here requires a session."""
+    return DecisionStore(session, user.id)
 
 
 Store = Annotated[DecisionStore, Depends(get_store)]
@@ -19,7 +20,7 @@ Store = Annotated[DecisionStore, Depends(get_store)]
 
 @router.get("", response_model=list[Decision])
 def list_decisions(store: Store) -> list[Decision]:
-    """Logged decisions, newest first."""
+    """The signed-in user's logged decisions, newest first."""
     return store.list()
 
 

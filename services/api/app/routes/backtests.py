@@ -3,6 +3,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 
+from app.core.auth import CurrentUser
 from app.data.repository import MarketRepository, get_market_repository
 from app.domain.backtest import backtest_decision_rule, run_backtest
 from app.schemas.backtest import (
@@ -20,9 +21,11 @@ router = APIRouter(prefix="/v1", tags=["backtests"])
 def create_backtest(
     request: Annotated[BacktestRequest, Body()],
     repo: Annotated[MarketRepository, Depends(get_market_repository)],
+    _user: CurrentUser,
 ) -> StrategyBacktestResult | DecisionRuleBacktestResult:
     """Run a strategy backtest (`kind: "strategy"`) or replay a trade plan on past signals
-    (`kind: "decision-rule"`). Results are hypothetical and exclude financing costs."""
+    (`kind: "decision-rule"`). Results are hypothetical and exclude financing costs.
+    Requires a signed-in user."""
     candles = repo.get_candles(request.symbol)
     signals = repo.get_signals(request.symbol)
     if len(candles) < 2:

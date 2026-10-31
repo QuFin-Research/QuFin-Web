@@ -17,17 +17,17 @@ def decision_body(**overrides):
     return body | overrides
 
 
-def test_decision_lifecycle(client):
-    assert client.get("/v1/decisions").json() == []
+def test_decision_lifecycle(user_client):
+    assert user_client.get("/v1/decisions").json() == []
 
-    first = client.post("/v1/decisions", json=decision_body())
+    first = user_client.post("/v1/decisions", json=decision_body())
     assert first.status_code == 201
     created = first.json()
     assert uuid.UUID(created["id"])
     assert created["createdAt"].endswith(("Z", "+00:00"))
     assert created["backtest"] == {"trades": 42, "winRate": 0.52, "avgR": 0.11}
 
-    second = client.post(
+    second = user_client.post(
         "/v1/decisions",
         json=decision_body(
             symbol="wti", direction="short", entry=78, stop=80, target=74, backtest=None
@@ -35,16 +35,16 @@ def test_decision_lifecycle(client):
     ).json()
     assert second["symbol"] == "WTI"
 
-    listed = client.get("/v1/decisions").json()
+    listed = user_client.get("/v1/decisions").json()
     assert [d["id"] for d in listed] == [second["id"], created["id"]]
     assert listed[1] == created
 
-    assert client.delete(f"/v1/decisions/{created['id']}").status_code == 204
-    assert [d["id"] for d in client.get("/v1/decisions").json()] == [second["id"]]
-    assert client.delete(f"/v1/decisions/{created['id']}").status_code == 404
+    assert user_client.delete(f"/v1/decisions/{created['id']}").status_code == 204
+    assert [d["id"] for d in user_client.get("/v1/decisions").json()] == [second["id"]]
+    assert user_client.delete(f"/v1/decisions/{created['id']}").status_code == 404
 
 
-def test_decision_validation(client):
+def test_decision_validation(user_client):
     without_note = decision_body()
     del without_note["note"]
     cases = [
@@ -58,18 +58,33 @@ def test_decision_validation(client):
         decision_body(maxHoldDays=0),
         decision_body(note="x" * 2001),
         decision_body(backtest={"trades": -1, "winRate": 0.5, "avgR": 0}),
-        decision_body(id="client-chosen"),
+        decision_body(id="user_client-chosen"),
         without_note,
     ]
     for body in cases:
-        assert client.post("/v1/decisions", json=body).status_code == 422, body
-    assert client.get("/v1/decisions").json() == []
+        assert user_client.post("/v1/decisions", json=body).status_code == 422, body
+    assert user_client.get("/v1/decisions").json() == []
 
 
-def test_decision_for_unknown_symbol(client):
-    res = client.post("/v1/decisions", json=decision_body(symbol="DOGEUSD"))
+def test_decision_for_unknown_symbol(user_client):
+    res = user_client.post("/v1/decisions", json=decision_body(symbol="DOGEUSD"))
     assert res.status_code == 422
 
 
-def test_delete_requires_a_uuid(client):
-    assert client.delete("/v1/decisions/not-a-uuid").status_code == 422
+def test_delete_requires_a_uuid(user_client):
+    assert user_client.delete("/v1/decisions/not-a-uuid").status_code == 422
+
+
+def test_users_only_see_their_own_decisions(app, user_client):
+    from fastapi.testclient import TestClient
+
+    from tests.conftest import sign_up
+
+    mine = user_client.post("/v1/decisions", json=decision_body()).json()
+
+    with TestClient(app) as other:
+        sign_up(other, "other@example.com")
+        assert other.get("/v1/decisions").json() == []
+        assert other.delete(f"/v1/decisions/{mine['id']}").status_code == 404
+
+    assert [d["id"] for d in user_client.get("/v1/decisions").json()] == [mine["id"]]

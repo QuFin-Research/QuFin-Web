@@ -35,6 +35,7 @@ def test_cors_allows_configured_origin_only(client):
 def test_settings_from_environment(monkeypatch):
     monkeypatch.setenv("QUFIN_CORS_ORIGINS", "https://app.qufin.ai, http://localhost:3000")
     monkeypatch.setenv("QUFIN_ENVIRONMENT", "production")
+    monkeypatch.setenv("QUFIN_COOKIE_SECURE", "true")
     settings = Settings(_env_file=None)
     assert settings.cors_origins == ["https://app.qufin.ai", "http://localhost:3000"]
     assert not settings.docs_enabled
@@ -47,6 +48,8 @@ def test_wildcard_cors_is_rejected(monkeypatch):
 
 
 def test_docs_hidden_in_production():
-    client = TestClient(create_app(Settings(_env_file=None, environment="production")))
+    client = TestClient(
+        create_app(Settings(_env_file=None, environment="production", cookie_secure=True))
+    )
     assert client.get("/docs").status_code == 404
     assert client.get("/openapi.json").status_code == 404
