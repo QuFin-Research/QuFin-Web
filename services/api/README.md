@@ -18,6 +18,12 @@ cp .env.example .env    # optional: every setting has a safe local default
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
+Or start it from the repository root with one command, in any shell (PowerShell, cmd or bash):
+
+```bash
+uv run --directory services/api uvicorn app.main:app --reload --port 8000
+```
+
 Interactive docs: <http://localhost:8000/docs> (hidden when `QUFIN_ENVIRONMENT=production`).
 
 To point the web app at it, set this in `apps/web/.env.local` and restart `npm run dev`:
@@ -29,7 +35,8 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 Without that variable the web app keeps using its built-in mock, which returns the same numbers.
 
 > Behind a TLS-inspecting proxy, `uv sync` may fail with `invalid peer certificate`.
-> Set `UV_SYSTEM_CERTS=1` so uv uses the Windows certificate store.
+> Set `UV_SYSTEM_CERTS=1` so uv uses the Windows certificate store
+> (PowerShell: `$env:UV_SYSTEM_CERTS = "1"`; bash: `export UV_SYSTEM_CERTS=1`).
 
 ## Endpoints
 
