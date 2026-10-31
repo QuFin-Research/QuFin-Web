@@ -1,7 +1,7 @@
 # QuFin API
 
-FastAPI backend for QuFin: market snapshots and signals, macro scorecards, backtests and the
-decision journal. Research and decision support, not investment advice.
+FastAPI backend for QuFin: accounts, market snapshots and signals, macro scorecards, backtests
+and the decision journal. Research and decision support, not investment advice.
 
 This first version serves the same deterministic sample data as the web app's offline mock
 (`apps/web/src/features/market/lib/mock-data.ts`), behind a data-access layer that real
@@ -39,10 +39,32 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `GET` | `/v1/assets` | `AssetSnapshot[]`: price, 1-day change, regime, latest signal, walk-forward hit rate |
 | `GET` | `/v1/assets/{symbol}` | `AssetDetail`: snapshot plus candles, signals and signal drivers; `404` if unknown |
 | `GET` | `/v1/scorecards/countries` | `CountryScore[]`, strongest overall first |
-| `POST` | `/v1/backtests` | Strategy or decision-rule backtest (see below) |
-| `GET` | `/v1/decisions` | Logged decisions, newest first |
-| `POST` | `/v1/decisions` | Log a decision; returns it with `id` and `createdAt` (`201`) |
-| `DELETE` | `/v1/decisions/{id}` | `204`, or `404` if not found |
+| `POST` | `/v1/auth/sign-up` | Create an account and sign in (`201`); `409` if the email is taken |
+| `POST` | `/v1/auth/sign-in` | Sign in; `401` with the same message for unknown email or wrong password |
+| `POST` | `/v1/auth/sign-out` | End the session (`204`) |
+| `GET` | `/v1/auth/me` | The signed-in user, or `401` |
+| `POST` | `/v1/backtests` | Strategy or decision-rule backtest (see below). Signed in |
+| `GET` | `/v1/decisions` | Your logged decisions, newest first. Signed in |
+| `POST` | `/v1/decisions` | Log a decision; returns it with `id` and `createdAt` (`201`). Signed in |
+| `DELETE` | `/v1/decisions/{id}` | `204`, or `404` if not found or not yours. Signed in |
+
+Market data and scorecards are public for now (sample data); they move behind sign-in when
+licensed data arrives.
+
+### Accounts and sessions
+
+- Passwords: 12–128 characters, no composition rules (ASVS 2.1), hashed with Argon2id and
+  re-hashed on sign-in when the parameters change.
+- Sessions: a 256-bit random token in an `httpOnly`, `SameSite=Lax` cookie (`Secure` when
+  `QUFIN_COOKIE_SECURE=true`). Only its SHA-256 digest is stored, it expires after
+  `QUFIN_SESSION_TTL_HOURS`, is replaced on every sign-in and deleted on sign-out.
+- Sign-in and sign-up are rate limited per IP and per email (`429` with `Retry-After`).
+- Writes (`POST`/`DELETE`) carrying an `Origin` outside `QUFIN_CORS_ORIGINS` are refused with
+  `403`, on top of the SameSite cookie and the CORS preflight.
+- Browsers send the cookie because the web app calls the API with `credentials: 'include'`.
+  `localhost:3000` and `localhost:8000` are the same site, so this works locally. In
+  production, serve both from one registrable domain (e.g. `app.qufin.ai` and `api.qufin.ai`)
+  and set `QUFIN_COOKIE_DOMAIN` if the web app needs to read the session server-side.
 
 JSON uses camelCase, matching the TypeScript types in `apps/web/src/features/market/api/types.ts`
 and the `Decision` type in `apps/web/src/features/journal/utils/store.ts`.
@@ -76,19 +98,27 @@ Settings come from `QUFIN_*` environment variables or a local `.env` (never comm
 | --- | --- | --- |
 | `QUFIN_ENVIRONMENT` | `development` | `production` hides `/docs` and `/openapi.json` |
 | `QUFIN_CORS_ORIGINS` | `http://localhost:3000` | Comma-separated; `*` is rejected |
-| `QUFIN_DATABASE_URL` | `sqlite:///./qufin.db` | Decision journal store; Postgres 16 later |
+| `QUFIN_DATABASE_URL` | `sqlite:///./qufin.db` | Users, sessions and decisions; Postgres 16 later |
+| `QUFIN_SESSION_TTL_HOURS` | `168` | Session lifetime (1–720) |
+| `QUFIN_COOKIE_SECURE` | `false` | Must be `true` over HTTPS; required in production |
+| `QUFIN_COOKIE_DOMAIN` | unset | Parent domain when the web app and API are on subdomains |
+| `QUFIN_AUTH_RATE_LIMIT` | `10` | Sign-in/sign-up attempts per IP and per email in each window |
+| `QUFIN_AUTH_RATE_WINDOW_SECONDS` | `900` | Rate-limit window |
+
+Tables are created on startup. There are no migrations yet, so after a schema change delete
+the local `qufin.db` (this version added users and sessions, and a `user_id` on decisions).
 
 ## Layout
 
 ```
 app/
-  main.py            app factory: CORS, security headers, routers
-  core/config.py     pydantic-settings
+  main.py            app factory: CORS, origin check, security headers, routers
   schemas/           Pydantic v2 request/response models (camelCase on the wire)
   data/repository.py MarketRepository protocol + the sample implementation
   data/sample.py     port of the web app's deterministic generator
   domain/            snapshots, regime, hit rate; backtest engine
-  stores/            decision journal (SQLAlchemy)
+  core/              settings, auth dependencies, password/token security, rate limiting
+  stores/            users, sessions and the decision journal (SQLAlchemy)
   routes/            HTTP endpoints
 tests/               pytest, including parity with the TypeScript code
 scripts/             web-parity-fixture.mts
@@ -118,7 +148,7 @@ Python and V8.
 
 ## Not yet
 
-- Authentication, and decisions scoped to a user (needed before this is exposed publicly)
-- Postgres/TimescaleDB, migrations (Alembic) and point-in-time macro storage
+- Alembic migrations, then Postgres/TimescaleDB and point-in-time macro storage
+- Email verification, password reset and MFA; a breached-password check on sign-up
+- Shared rate-limit store (Redis or the reverse proxy) once there is more than one worker
 - Real data connectors and the model service
-- Rate limiting

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -20,14 +20,13 @@ import {
   ProbabilityLabel
 } from '@/features/market/components/signal-badge';
 import { formatPrice } from '@/features/market/lib/format';
-import { useHydrated } from '@/features/journal/hooks/use-hydrated';
-import { useJournalStore } from '@/features/journal/utils/store';
+import { journalQueries } from '@/features/journal/api/queries';
 import { cn } from '@/lib/utils';
 
 export function OverviewKpis() {
   const { data: snapshots } = useSuspenseQuery(marketQueries.snapshots());
-  const decisions = useJournalStore((s) => s.decisions);
-  const hydrated = useHydrated();
+  // Client-only: the journal needs the user's session (or this browser's storage).
+  const { data: decisions } = useQuery(journalQueries.list());
   const highConviction = snapshots.filter((s) => s.signal.conviction === 'high');
   const avgHitRate = snapshots.reduce((s, a) => s + a.hitRate, 0) / snapshots.length;
   const bullish = highConviction.filter((s) => s.signal.direction === 'long').length;
@@ -50,7 +49,7 @@ export function OverviewKpis() {
     },
     {
       label: 'Decisions logged',
-      value: hydrated ? String(decisions.length) : '–',
+      value: decisions ? String(decisions.length) : '–',
       hint: 'In your decision journal'
     }
   ];

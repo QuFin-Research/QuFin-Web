@@ -24,7 +24,11 @@ import {
   SidebarMenuSubItem,
   SidebarRail
 } from '@/components/ui/sidebar';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { navGroups } from '@/config/nav-config';
+import { authMutations, authQueries } from '@/features/auth/api/queries';
+import { authEnabled } from '@/features/auth/api/service';
 import { useFilteredNavGroups } from '@/hooks/use-nav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -35,6 +39,16 @@ export default function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const filteredGroups = useFilteredNavGroups(navGroups);
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery({ ...authQueries.me(), enabled: authEnabled });
+  const signOut = useMutation({
+    ...authMutations.signOut(),
+    onSuccess: () => {
+      queryClient.clear();
+      router.replace('/auth/sign-in');
+    },
+    onError: () => toast.error('Could not sign out. Try again.')
+  });
 
   return (
     <Sidebar collapsible='icon'>
@@ -113,7 +127,8 @@ export default function AppSidebar() {
                   />
                 }
               >
-                <span className='truncate'>Account</span>
+                <Icons.account className='size-4 shrink-0' />
+                <span className='truncate'>{user?.email ?? 'Account'}</span>
                 <Icons.chevronsDown className='ml-auto size-4' />
               </DropdownMenuTrigger>
               <DropdownMenuContent
@@ -124,8 +139,8 @@ export default function AppSidebar() {
               >
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className='p-0 font-normal'>
-                    <div className='text-muted-foreground px-1 py-1.5 text-sm'>
-                      Sign in to manage your account
+                    <div className='text-muted-foreground truncate px-1 py-1.5 text-sm'>
+                      {user ? `Signed in as ${user.email}` : 'Demo mode on sample data'}
                     </div>
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
@@ -136,6 +151,15 @@ export default function AppSidebar() {
                     Notifications
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
+                {user && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem disabled={signOut.isPending} onClick={() => signOut.mutate()}>
+                      <Icons.logout className='mr-2 h-4 w-4' />
+                      Sign out
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>

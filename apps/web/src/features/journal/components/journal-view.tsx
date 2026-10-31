@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,8 +21,8 @@ import { marketQueries } from '@/features/market/api/queries';
 import { formatPct, formatPrice } from '@/features/market/lib/format';
 import { formatDate } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useHydrated } from '../hooks/use-hydrated';
-import { useJournalStore, type Decision } from '../utils/store';
+import { journalMutations, journalQueries } from '../api/queries';
+import type { Decision } from '../api/types';
 
 function openR(d: Decision, lastPrice: number) {
   const sign = d.direction === 'long' ? 1 : -1;
@@ -31,12 +32,26 @@ function openR(d: Decision, lastPrice: number) {
 }
 
 export function JournalView() {
-  const hydrated = useHydrated();
-  const decisions = useJournalStore((s) => s.decisions);
-  const removeDecision = useJournalStore((s) => s.removeDecision);
+  const queryClient = useQueryClient();
+  const { data: decisions, error } = useQuery(journalQueries.list());
   const { data: snapshots } = useQuery(marketQueries.snapshots());
+  const remove = useMutation({
+    ...journalMutations.delete(),
+    onError: (e) => toast.error(`Could not remove the decision: ${e.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: journalQueries.all() })
+  });
 
-  if (!hydrated) return <Skeleton className='h-80 w-full rounded-xl' />;
+  if (error) {
+    return (
+      <Empty className='border'>
+        <EmptyHeader>
+          <EmptyTitle>Could not load your journal</EmptyTitle>
+          <EmptyDescription>{error.message}</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+  if (!decisions) return <Skeleton className='h-80 w-full rounded-xl' />;
 
   if (decisions.length === 0) {
     return (
@@ -164,7 +179,8 @@ export function JournalView() {
                         variant='ghost'
                         size='icon-sm'
                         aria-label={`Remove ${d.symbol} decision`}
-                        onClick={() => removeDecision(d.id)}
+                        disabled={remove.isPending && remove.variables === d.id}
+                        onClick={() => remove.mutate(d.id)}
                       >
                         <Icons.trash />
                       </Button>

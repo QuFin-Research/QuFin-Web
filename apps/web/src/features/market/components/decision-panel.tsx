@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from 'recharts';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -11,10 +12,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
 import { Icons } from '@/components/icons';
-import { backtestDecisionRule } from '@/features/backtest/lib/engine';
-import { useJournalStore } from '@/features/journal/utils/store';
+import { backtestQueries } from '@/features/backtest/api/queries';
+import type { DecisionRuleBacktestParams } from '@/features/backtest/api/types';
+import { journalMutations, journalQueries } from '@/features/journal/api/queries';
+import { useDebounce } from '@/hooks/use-debounce';
 import { cn } from '@/lib/utils';
 import type { AssetClass, AssetDetail, Direction } from '../api/types';
 import { formatPct, formatPrice } from '../lib/format';
@@ -79,7 +83,18 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
   const [account, setAccount] = useState(10000);
   const [riskPct, setRiskPct] = useState(1);
   const [note, setNote] = useState('');
-  const addDecision = useJournalStore((s) => s.addDecision);
+  const queryClient = useQueryClient();
+  const create = useMutation({
+    ...journalMutations.create(),
+    onSuccess: (decision) => {
+      toast.success(`${decision.direction === 'long' ? 'Long' : 'Short'} ${decision.symbol} logged`, {
+        description: 'Track it in your decision journal.'
+      });
+      setNote('');
+    },
+    onError: (e) => toast.error(`Could not log the decision: ${e.message}`),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: journalQueries.all() })
+  });
 
   const sign = direction === 'long' ? 1 : -1;
   const stop = entry * (1 - sign * stopDist);
@@ -87,23 +102,40 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
   const units = (account * (riskPct / 100)) / Math.abs(entry - stop || 1);
   const againstSignal = signal.conviction !== 'low' && direction !== signal.direction;
 
-  const result = useMemo(
-    () =>
-      backtestDecisionRule(detail.candles, detail.signals, {
-        direction,
-        stopPct: stopDist,
-        targetPct: stopDist * rewardRisk,
-        maxHoldDays,
-        minEdge: Number(minEdge),
-        costBps
-      }),
-    [detail, direction, stopDist, rewardRisk, maxHoldDays, minEdge, costBps]
+  const rule = useDebounce<DecisionRuleBacktestParams>(
+    {
+      symbol: asset.symbol,
+      direction,
+      stopPct: stopDist,
+      targetPct: stopDist * rewardRisk,
+      maxHoldDays,
+      minEdge: Number(minEdge),
+      costBps
+    },
+    250
   );
+  // Same limits the API validates, so a half-typed value never reaches it.
+  const ruleValid =
+    rule.stopPct > 0 &&
+    rule.stopPct <= 0.5 &&
+    rule.targetPct > 0 &&
+    rule.targetPct <= 2 &&
+    Number.isInteger(rule.maxHoldDays) &&
+    rule.maxHoldDays >= 1 &&
+    rule.maxHoldDays <= 250 &&
+    rule.costBps >= 0 &&
+    rule.costBps <= 500;
+  const { data: result, error: backtestError } = useQuery({
+    ...backtestQueries.decisionRule(rule),
+    enabled: ruleValid,
+    placeholderData: keepPreviousData
+  });
 
-  const valid = entry > 0 && stopDist > 0 && rewardRisk > 0 && maxHoldDays > 0;
+  const valid =
+    entry > 0 && stopDist > 0 && rewardRisk > 0 && maxHoldDays >= 1 && riskPct > 0 && riskPct <= 10;
 
   function logDecision() {
-    addDecision({
+    create.mutate({
       symbol: asset.symbol,
       direction,
       entry,
@@ -112,15 +144,12 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
       riskPct,
       maxHoldDays,
       signalProbUp: signal.probUp,
-      backtest: result.trades.length
-        ? { trades: result.trades.length, winRate: result.winRate, avgR: result.avgR }
-        : null,
+      backtest:
+        ruleValid && result?.trades.length
+          ? { trades: result.trades.length, winRate: result.winRate, avgR: result.avgR }
+          : null,
       note
     });
-    toast.success(`${direction === 'long' ? 'Long' : 'Short'} ${asset.symbol} logged`, {
-      description: 'Track it in your decision journal.'
-    });
-    setNote('');
   }
 
   return (
@@ -236,7 +265,17 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
             </div>
           </div>
 
-          {result.trades.length === 0 ? (
+          {!ruleValid ? (
+            <p className='text-muted-foreground text-sm'>
+              Adjust the plan to backtest it: stop up to 50%, target up to 200%, hold 1–250 days.
+            </p>
+          ) : backtestError ? (
+            <p className='text-muted-foreground text-sm'>
+              Could not run the backtest: {backtestError.message}
+            </p>
+          ) : !result ? (
+            <Skeleton className='h-56 w-full rounded-lg' />
+          ) : result.trades.length === 0 ? (
             <p className='text-muted-foreground text-sm'>No past setups matched this plan.</p>
           ) : (
             <>
@@ -273,7 +312,7 @@ export function DecisionPanel({ detail }: { detail: AssetDetail }) {
           <Textarea id='note' rows={2} placeholder='Why are you taking this trade?' value={note} onChange={(e) => setNote(e.target.value)} />
         </div>
         <div className='flex flex-wrap items-center gap-3'>
-          <Button size='lg' disabled={!valid} onClick={logDecision}>
+          <Button size='lg' disabled={!valid || create.isPending} onClick={logDecision}>
             <Icons.add />
             Log decision
           </Button>
