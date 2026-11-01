@@ -3,6 +3,7 @@
 import statistics
 from dataclasses import dataclass
 from datetime import date, timedelta
+from typing import cast
 
 from sqlalchemy.orm import Session
 
@@ -23,6 +24,7 @@ from app.schemas.market import (
     CountryScores,
     PillarConfidence,
     ScorecardIndicator,
+    ScoreDimension,
 )
 from app.schemas.market import PendingRelease as PendingReleaseOut
 from app.stores.macro import MacroStore
@@ -180,7 +182,7 @@ def to_country_score(card: CountryScorecard) -> CountryScore:
             ScorecardIndicator(
                 id=i.score.id,
                 title=i.title,
-                pillar=i.score.pillar,
+                pillar=cast(ScoreDimension, i.score.pillar),
                 source_name=i.source_name,
                 period=i.score.period,
                 value=None if i.score.value is None else round(i.score.value, 3),
@@ -284,8 +286,9 @@ def bias_backtest(session: Session, start: date, end: date) -> BiasReport:
             a, b = seen.pillars[pillar].score, complete.pillars[pillar].score
             if a is not None and b is not None:
                 diffs[pillar].append(a - b)
-            if seen_naive[pillar] is not None and b is not None:
-                naive[pillar].append(seen_naive[pillar] - b)
+            plain = seen_naive[pillar]
+            if plain is not None and b is not None:
+                naive[pillar].append(plain - b)
         if seen.overall is not None and complete.overall is not None:
             diffs["overall"].append(seen.overall - complete.overall)
             naive_overall = rescaled_average(

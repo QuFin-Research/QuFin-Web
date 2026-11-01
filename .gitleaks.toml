@@ -1,0 +1,14 @@
+title = "QuFin secret scan"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Test fixtures and example values, never real credentials"
+paths = [
+  '''services/api/tests/''',
+  '''\.env\.example$''',
+  '''env\.example\.txt$''',
+  '''package-lock\.json$''',
+  '''uv\.lock$''',
+]
