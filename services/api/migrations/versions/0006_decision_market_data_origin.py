@@ -23,9 +23,7 @@ def upgrade() -> None:
     # Every decision logged so far was logged on sample data.
     with op.batch_alter_table("decisions") as batch_op:
         batch_op.add_column(
-            sa.Column(
-                "market_data", sa.String(length=8), nullable=False, server_default="sample"
-            )
+            sa.Column("market_data", sa.String(length=8), nullable=False, server_default="sample")
         )
 
 

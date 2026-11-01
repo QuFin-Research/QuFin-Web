@@ -21,7 +21,7 @@ def test_upgrade_is_idempotent():
     upgrade_to_head(engine)
     with engine.connect() as conn:
         version = conn.execute(text("select version_num from alembic_version")).scalar()
-    assert version == "0006"
+    assert version == "0007"
 
 
 def test_database_from_before_migrations_is_adopted():
