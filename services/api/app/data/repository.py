@@ -10,11 +10,14 @@ from collections.abc import Sequence
 from typing import Protocol
 
 from app.data import sample
+from app.schemas.base import DataOrigin
 from app.schemas.market import Asset, Candle, CountryScore, Signal, SignalDriver
 
 
 class MarketRepository(Protocol):
     as_of: str
+    # "sample" until real prices and a validated signal model replace the generator.
+    origin: DataOrigin
 
     def list_assets(self) -> list[Asset]: ...
 
@@ -33,6 +36,7 @@ class SampleMarketRepository:
     """Serves the same deterministic data as the web app's offline mock."""
 
     as_of = sample.AS_OF
+    origin: DataOrigin = "sample"
 
     def list_assets(self) -> list[Asset]:
         return [spec.to_asset() for spec in sample.ASSETS]

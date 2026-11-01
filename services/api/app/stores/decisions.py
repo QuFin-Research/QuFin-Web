@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Text, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.schemas.base import DataOrigin
 from app.schemas.decisions import Decision, DecisionBacktestSummary, DecisionCreate
 from app.stores.db import Base, as_utc
 
@@ -28,6 +29,8 @@ class DecisionRow(Base):
     signal_prob_up: Mapped[float] = mapped_column(Float)
     backtest_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     note: Mapped[str] = mapped_column(Text, default="")
+    # Origin of the market data the decision was logged on ("sample" or "live").
+    market_data: Mapped[str] = mapped_column(String(8), default="sample")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
     def to_schema(self) -> Decision:
@@ -46,6 +49,7 @@ class DecisionRow(Base):
             else None,
             note=self.note,
             created_at=as_utc(self.created_at),
+            data=self.market_data,  # type: ignore[arg-type]
         )
 
 
@@ -64,7 +68,7 @@ class DecisionStore:
         )
         return [row.to_schema() for row in rows]
 
-    def add(self, data: DecisionCreate) -> Decision:
+    def add(self, data: DecisionCreate, market_data: DataOrigin) -> Decision:
         row = DecisionRow(
             id=str(uuid.uuid4()),
             user_id=self.user_id,
@@ -81,6 +85,7 @@ class DecisionStore:
             else None,
             note=data.note,
             created_at=datetime.now(UTC),
+            market_data=market_data,
         )
         self.session.add(row)
         self.session.commit()

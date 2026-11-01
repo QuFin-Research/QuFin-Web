@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { SampleDataBadge, originOf, type DataOrigin } from '@/components/sample-data';
 import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,19 +33,23 @@ export function OverviewKpis() {
   const avgHitRate = snapshots.reduce((s, a) => s + a.hitRate, 0) / snapshots.length;
   const bullish = highConviction.filter((s) => s.signal.direction === 'long').length;
 
-  const kpis = [
+  const marketOrigin = originOf(snapshots);
+  const kpis: { label: string; value: string; hint: string; origin?: DataOrigin }[] = [
     {
       label: 'High-conviction signals',
+      origin: marketOrigin,
       value: String(highConviction.length),
       hint: `${bullish} bullish · ${highConviction.length - bullish} bearish`
     },
     {
       label: 'Model hit rate (5-day)',
+      origin: marketOrigin,
       value: `${(avgHitRate * 100).toFixed(1)}%`,
       hint: 'Walk-forward, all assets, all signals'
     },
     {
       label: 'Assets covered',
+      origin: marketOrigin,
       value: String(snapshots.length),
       hint: 'FX · Metals · Energy · Crypto'
     },
@@ -60,7 +65,10 @@ export function OverviewKpis() {
       {kpis.map((kpi) => (
         <Card key={kpi.label} size='sm'>
           <CardHeader>
-            <CardDescription>{kpi.label}</CardDescription>
+            <CardDescription className='flex items-center justify-between gap-2'>
+              {kpi.label}
+              {kpi.origin && <SampleDataBadge origin={kpi.origin} />}
+            </CardDescription>
             <CardTitle className='font-mono text-2xl tabular-nums'>{kpi.value}</CardTitle>
           </CardHeader>
           <CardContent className='text-muted-foreground text-xs'>{kpi.hint}</CardContent>
@@ -79,7 +87,10 @@ export function SignalsTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Today&apos;s signals</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          Today&apos;s signals
+          <SampleDataBadge origin={originOf(snapshots)} />
+        </CardTitle>
         <CardDescription>
           5-day directional outlook, sorted by conviction. Select an asset to decide and backtest.
         </CardDescription>

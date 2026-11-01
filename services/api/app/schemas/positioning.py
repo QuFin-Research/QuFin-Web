@@ -23,6 +23,7 @@ class PositioningSnapshot(ApiModel):
     market_name: str
     latest: PositioningPoint
     weekly_change: int | None = Field(description="Change in net contracts from the prior week")
+    caveat: str | None = Field(description="Limits of this contract as a view of the market")
     freshness: DataFreshness = Field(description="Release status as of the requested date")
 
 
@@ -31,5 +32,6 @@ class PositioningHistory(ApiModel):
     contract_code: str
     market_name: str
     as_of: date | None
+    caveat: str | None = Field(description="Limits of this contract as a view of the market")
     freshness: DataFreshness = Field(description="Release status as of the requested date")
     points: list[PositioningPoint]

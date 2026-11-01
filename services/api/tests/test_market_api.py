@@ -7,7 +7,8 @@ def test_list_assets_returns_a_snapshot_per_asset(client):
     body = res.json()
     assert [s["asset"]["symbol"] for s in body] == [a.symbol for a in ASSETS]
     first = body[0]
-    assert set(first) == {"asset", "lastPrice", "changePct", "regime", "signal", "hitRate"}
+    assert set(first) == {"data", "asset", "lastPrice", "changePct", "regime", "signal", "hitRate"}
+    assert all(s["data"] == "sample" for s in body)  # never presented as market data
     assert set(first["asset"]) == {"symbol", "name", "assetClass", "precision"}
     assert set(first["signal"]) == {"time", "probUp", "direction", "conviction", "horizonDays"}
     assert first["signal"]["time"] == "2026-10-30"

@@ -50,6 +50,7 @@ def snapshot_for(repo: MarketRepository, symbol: str) -> AssetSnapshot | None:
         return None
     last, prev = candles[-1], candles[-2]
     return AssetSnapshot(
+        data=repo.origin,
         asset=asset,
         last_price=last.close,
         change_pct=(last.close / prev.close - 1) * 100,

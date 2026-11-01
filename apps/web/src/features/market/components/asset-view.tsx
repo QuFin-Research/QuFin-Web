@@ -1,5 +1,6 @@
 'use client';
 
+import { SampleDataBadge } from '@/components/sample-data';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
@@ -38,10 +39,17 @@ export function AssetView({ symbol }: { symbol: string }) {
         <div className='flex flex-col gap-4 xl:col-span-3'>
           <Card>
             <CardHeader>
-              <CardTitle>Daily price</CardTitle>
+              <CardTitle className='flex items-center gap-2'>
+                Daily price
+                <SampleDataBadge origin={detail.data} />
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <PriceChart candles={detail.candles} signals={detail.signals} precision={asset.precision} />
+              <PriceChart
+                candles={detail.candles}
+                signals={detail.signals}
+                precision={asset.precision}
+              />
             </CardContent>
           </Card>
           <SignalPanel detail={detail} />

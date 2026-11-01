@@ -126,6 +126,7 @@ def get_revisions(
     if not revisions:
         raise HTTPException(status_code=404, detail="No observation for that period")
     return MacroRevisionHistory(
+        data="live",
         series=_series(meta),
         period=period,
         revisions=[

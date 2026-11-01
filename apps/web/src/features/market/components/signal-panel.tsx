@@ -1,3 +1,4 @@
+import { SampleDataBadge } from '@/components/sample-data';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { AssetDetail } from '../api/types';
@@ -12,7 +13,10 @@ function DriverBars({ drivers }: { drivers: AssetDetail['drivers'] }) {
         const width = `${(Math.abs(d.contribution) / max) * 50}%`;
         const positive = d.contribution >= 0;
         return (
-          <li key={d.name} className='grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_3rem] items-center gap-3'>
+          <li
+            key={d.name}
+            className='grid grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)_3rem] items-center gap-3'
+          >
             <div className='min-w-0'>
               <div className='truncate text-sm'>{d.name}</div>
               <div className='text-muted-foreground text-xs'>{d.category}</div>
@@ -48,7 +52,10 @@ export function SignalPanel({ detail }: { detail: AssetDetail }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>QuFin signal</CardTitle>
+        <CardTitle className='flex items-center gap-2'>
+          QuFin signal
+          <SampleDataBadge origin={detail.data} />
+        </CardTitle>
         <CardDescription>
           {signal.horizonDays}-day outlook from the close of {signal.time}
         </CardDescription>

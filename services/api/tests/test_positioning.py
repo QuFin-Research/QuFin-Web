@@ -185,3 +185,22 @@ def test_positioning_errors(client, ingested):
     assert client.get("/v1/positioning/EURUSD").status_code == 404  # mapped, not ingested
     assert client.get("/v1/positioning/XAUUSD", params={"weeks": 0}).status_code == 422
     assert client.get("/v1/positioning/XAU-USD").status_code == 422
+
+
+def test_incremental_ingest_corrects_release_dates_stored_before_the_calendar(db_session):
+    from app.stores.positioning import PositioningStore
+
+    # Stored by the old rule (report date + 3 days): six weeks before the CFTC published it.
+    shutdown_week = date(2025, 10, 7)
+    stale = CotReport(
+        "088691", shutdown_week, date(2025, 10, 10), "GOLD", 100_000, 60_000, 50_000, 0, 0, 0, 0, 0
+    )
+    PositioningStore(db_session).upsert([stale])
+    rows = {"088691": weekly_rows("088691", [0, 1_000], start=date(2026, 1, 6))}
+    client = CftcClient(transport=httpx.MockTransport(handler_for(rows)), sleep=lambda _s: None)
+    ingest_cftc.ingest(client, db_session, ["XAUUSD"], start=date(2025, 1, 1))
+
+    [old] = [
+        r for r in PositioningStore(db_session).history("088691") if r.report_date == shutdown_week
+    ]
+    assert old.release_date == date(2025, 11, 21)

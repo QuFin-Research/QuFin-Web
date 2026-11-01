@@ -255,8 +255,11 @@ export function BacktestLab() {
               </CardContent>
             </Card>
             <p className='text-muted-foreground text-xs'>
-              Sample data for now. Production backtests will use point-in-time data and purged
-              walk-forward validation. Past performance does not guarantee future results.
+              {result.data === 'live'
+                ? 'Point-in-time data. '
+                : 'Sample prices and signals, not market data. '}
+              Production backtests will use point-in-time data and purged walk-forward validation.
+              Past performance does not guarantee future results.
             </p>
           </>
         )}

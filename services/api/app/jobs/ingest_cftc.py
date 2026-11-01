@@ -32,6 +32,8 @@ def ingest(
     full: bool = False,
 ) -> list[CotIngestResult]:
     store = PositioningStore(session)
+    if corrected := store.correct_release_dates():
+        log.warning("Corrected %d stored CFTC release dates to the CFTC calendar", corrected)
     results = []
     for symbol in symbols:
         contract = BY_SYMBOL.get(symbol)

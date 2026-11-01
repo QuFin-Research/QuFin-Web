@@ -1,5 +1,6 @@
 'use client';
 
+import { SampleDataBadge, originOf } from '@/components/sample-data';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -109,8 +110,14 @@ export function JournalView() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Decisions</CardTitle>
-          <CardDescription>Marked to the latest close. 1R is the distance from entry to stop.</CardDescription>
+          <CardTitle className='flex items-center gap-2'>
+            Decisions
+            {decisions.length > 0 && <SampleDataBadge origin={originOf(decisions)} />}
+          </CardTitle>
+          <CardDescription>
+            Marked to the latest close. 1R is the distance from entry to stop. Decisions logged on
+            sample data are marked to sample prices, not the market.
+          </CardDescription>
         </CardHeader>
         <CardContent className='px-0'>
           <Table>

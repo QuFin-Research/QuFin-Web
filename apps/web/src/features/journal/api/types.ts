@@ -1,3 +1,4 @@
+import type { DataOrigin } from '@/components/sample-data';
 import type { Direction } from '@/features/market/api/types';
 
 export type Decision = {
@@ -16,6 +17,8 @@ export type Decision = {
   backtest: { trades: number; winRate: number; avgR: number } | null;
   note: string;
   createdAt: string;
+  /** Origin of the market data the decision was logged on; older entries lack it */
+  data?: DataOrigin;
 };
 
-export type NewDecision = Omit<Decision, 'id' | 'createdAt'>;
+export type NewDecision = Omit<Decision, 'id' | 'createdAt' | 'data'>;

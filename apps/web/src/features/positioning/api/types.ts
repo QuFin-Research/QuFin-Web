@@ -20,6 +20,8 @@ export type PositioningSnapshot = {
   marketName: string;
   latest: PositioningPoint;
   weeklyChange: number | null;
+  /** Limits of this contract as a view of the market */
+  caveat: string | null;
   /** Release status as of the requested date */
   freshness: DataFreshness;
 };
@@ -29,6 +31,8 @@ export type PositioningHistory = {
   contractCode: string;
   marketName: string;
   asOf: string | null;
+  /** Limits of this contract as a view of the market */
+  caveat: string | null;
   /** Release status as of the requested date */
   freshness: DataFreshness;
   points: PositioningPoint[];

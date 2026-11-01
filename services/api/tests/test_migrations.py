@@ -21,7 +21,7 @@ def test_upgrade_is_idempotent():
     upgrade_to_head(engine)
     with engine.connect() as conn:
         version = conn.execute(text("select version_num from alembic_version")).scalar()
-    assert version == "0005"
+    assert version == "0006"
 
 
 def test_database_from_before_migrations_is_adopted():
@@ -30,6 +30,8 @@ def test_database_from_before_migrations_is_adopted():
     import_models()
     legacy = [Base.metadata.tables[name] for name in ("users", "sessions", "decisions")]
     Base.metadata.create_all(engine, tables=legacy)
+    with engine.begin() as conn:  # columns added by later revisions did not exist yet
+        conn.execute(text("alter table decisions drop column market_data"))
     with engine.begin() as conn:
         conn.execute(
             text(

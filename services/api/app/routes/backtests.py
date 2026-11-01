@@ -34,11 +34,16 @@ def create_backtest(
     if isinstance(request, StrategyBacktestRequest):
         run = run_backtest(candles, signals, request)
         return StrategyBacktestResult(
-            symbol=request.symbol, as_of=repo.as_of, equity=run.equity, stats=run.stats
+            data=repo.origin,
+            symbol=request.symbol,
+            as_of=repo.as_of,
+            equity=run.equity,
+            stats=run.stats,
         )
 
     rule = backtest_decision_rule(candles, signals, request)
     return DecisionRuleBacktestResult(
+        data=repo.origin,
         symbol=request.symbol,
         as_of=repo.as_of,
         trades=rule.trades,

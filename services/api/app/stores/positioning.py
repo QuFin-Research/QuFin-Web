@@ -12,6 +12,7 @@ from datetime import date
 from sqlalchemy import Date, Integer, String, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.data.cot_calendar import release_date
 from app.stores.db import Base
 
 
@@ -64,6 +65,22 @@ class PositioningStore:
             count += 1
         self.session.commit()
         return count
+
+    def correct_release_dates(self) -> int:
+        """Re-derive every stored release date from the CFTC calendar; returns rows changed.
+
+        Rows ingested before a calendar fix (or before the calendar existed) would otherwise keep
+        a too-early date, since a normal ingest only re-reads the latest weeks.
+        """
+        changed = 0
+        for row in self.session.scalars(select(CotReportRow)):
+            expected = release_date(row.report_date)
+            if row.release_date != expected:
+                row.release_date = expected
+                changed += 1
+        if changed:
+            self.session.commit()
+        return changed
 
     def latest_report_date(self, contract_code: str) -> date | None:
         return self.session.scalar(

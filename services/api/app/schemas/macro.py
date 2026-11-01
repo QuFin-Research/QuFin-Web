@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.schemas.base import ApiModel
+from app.schemas.base import ORIGIN_DESCRIPTION, ApiModel, DataOrigin
 from app.schemas.freshness import DataFreshness, DataTimeliness
 from app.schemas.market import ScoreDimension
 
@@ -55,6 +55,7 @@ class MacroRevision(ApiModel):
 
 
 class MacroRevisionHistory(ApiModel):
+    data: DataOrigin = Field(description=ORIGIN_DESCRIPTION)
     series: MacroSeries
     period: date
     revisions: list[MacroRevision] = Field(description="First release first")

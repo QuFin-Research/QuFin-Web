@@ -34,10 +34,13 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Icons } from '@/components/icons';
 import { QuFinLogo } from '@/components/layout/logo';
+import { originOf } from '@/components/sample-data';
+import { marketQueries } from '@/features/market/api/queries';
 
 export default function AppSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: snapshots } = useQuery(marketQueries.snapshots());
   const filteredGroups = useFilteredNavGroups(navGroups);
   const queryClient = useQueryClient();
   const { data: user } = useQuery({ ...authQueries.me(), enabled: authEnabled });
@@ -53,7 +56,10 @@ export default function AppSidebar() {
   return (
     <Sidebar collapsible='icon'>
       <SidebarHeader>
-        <Link href='/dashboard/overview' className='flex h-10 items-center px-2 group-data-[collapsible=icon]:px-0'>
+        <Link
+          href='/dashboard/overview'
+          className='flex h-10 items-center px-2 group-data-[collapsible=icon]:px-0'
+        >
           <QuFinLogo />
         </Link>
       </SidebarHeader>
@@ -140,8 +146,13 @@ export default function AppSidebar() {
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className='p-0 font-normal'>
                     <div className='text-muted-foreground truncate px-1 py-1.5 text-sm'>
-                      {user ? `Signed in as ${user.email}` : 'Demo mode on sample data'}
+                      {user ? `Signed in as ${user.email}` : 'Not signed in'}
                     </div>
+                    {originOf(snapshots) === 'sample' && (
+                      <div className='text-destructive px-1 pb-1.5 text-xs'>
+                        Prices and signals: sample data
+                      </div>
+                    )}
                   </DropdownMenuLabel>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
