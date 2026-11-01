@@ -27,6 +27,7 @@ from app.jobs.ingest_fred import ingest
 from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
 from app.stores.migrate import upgrade_to_head
+from app.stores.raw_zone import RawZone
 
 
 def _migrate(_args: argparse.Namespace) -> int:
@@ -47,7 +48,9 @@ def _ingest_fred(args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     series_ids = args.series or [s.id for s in CATALOG]
     with (
-        FredClient(settings.fred_api_key.get_secret_value(), settings.fred_base_url) as client,
+        FredClient(
+            settings.fred_api_key.get_secret_value(), settings.fred_base_url, raw=_raw_zone()
+        ) as client,
         session_scope() as session,
     ):
         results = ingest(client, session, series_ids, args.start)
@@ -63,7 +66,7 @@ def _ingest_fred(args: argparse.Namespace) -> int:
 def _ingest_cftc(args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     symbols = [s.upper() for s in args.symbols] or [c.symbol for c in COT_CONTRACTS]
-    with CftcClient() as client, session_scope() as session:
+    with CftcClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_cftc.ingest(client, session, symbols, args.start, args.full)
         checks = check_positioning(session, _today())
     for r in results:
@@ -88,6 +91,11 @@ def _scorecard_bias(args: argparse.Namespace) -> int:
         report = bias_backtest(session, args.start, args.end)
     print(format_bias_report(report))
     return 0 if report.passed else 1
+
+
+def _raw_zone() -> RawZone | None:
+    raw_dir = get_settings().raw_dir
+    return RawZone(raw_dir) if raw_dir else None
 
 
 def _today() -> date:

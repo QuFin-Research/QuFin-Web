@@ -3,20 +3,15 @@
 Open data (Socrata API), no key needed: https://publicreporting.cftc.gov/
 """
 
-import ssl
-import time
-from collections.abc import Callable
 from datetime import date
+from typing import Any
 
-import httpx
-import truststore
-
+from app.connectors.base import HttpSource, SourceError
 from app.data.cot_calendar import release_date
 from app.stores.positioning import CotReport
 
 LEGACY_FUTURES_URL = "https://publicreporting.cftc.gov/resource/6dca-aqww.json"
 PAGE_LIMIT = 5000
-RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 FIELDS = {
     "open_interest": "open_interest_all",
@@ -30,7 +25,7 @@ FIELDS = {
 }
 
 
-class CftcError(Exception):
+class CftcError(SourceError):
     pass
 
 
@@ -46,49 +41,17 @@ def parse_report(row: dict) -> CotReport:
     )
 
 
-class CftcClient:
-    def __init__(
-        self,
-        url: str = LEGACY_FUTURES_URL,
-        *,
-        transport: httpx.BaseTransport | None = None,
-        max_retries: int = 3,
-        sleep: Callable[[float], None] = time.sleep,
-    ) -> None:
+class CftcClient(HttpSource):
+    source = "cftc"
+    error = CftcError
+
+    def __init__(self, url: str = LEGACY_FUTURES_URL, **kwargs: Any) -> None:
+        kwargs.setdefault("timeout", 60.0)
+        super().__init__(**kwargs)
         self._url = url
-        self._client = httpx.Client(
-            timeout=60.0,
-            transport=transport,
-            verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
-        )
-        self._max_retries = max_retries
-        self._sleep = sleep
 
-    def close(self) -> None:
-        self._client.close()
-
-    def __enter__(self) -> "CftcClient":
-        return self
-
-    def __exit__(self, *_exc: object) -> None:
-        self.close()
-
-    def _get(self, params: dict[str, str | int]) -> list[dict]:
-        for attempt in range(self._max_retries + 1):
-            try:
-                res = self._client.get(self._url, params=params)
-            except httpx.HTTPError as exc:
-                if attempt == self._max_retries:
-                    raise CftcError(f"CFTC request failed: {type(exc).__name__}") from None
-                self._sleep(2**attempt)
-                continue
-            if res.status_code in RETRY_STATUSES and attempt < self._max_retries:
-                self._sleep(2**attempt)
-                continue
-            if res.status_code != 200:
-                raise CftcError(f"CFTC returned {res.status_code}: {res.text[:200]}")
-            return res.json()
-        raise CftcError("CFTC kept failing")  # pragma: no cover
+    def _get(self, params: dict[str, str | int], raw_name: str | None = None) -> list[dict]:
+        return self.get_json(self._url, params, raw_name)
 
     def reports(self, contract_code: str, since: date) -> list[CotReport]:
         """Weekly reports for one contract from `since`, oldest first."""
@@ -107,7 +70,8 @@ class CftcClient:
                     "$order": "report_date_as_yyyy_mm_dd ASC",
                     "$limit": PAGE_LIMIT,
                     "$offset": offset,
-                }
+                },
+                f"{contract_code}-{since.isoformat()}-{offset}",
             )
             result.extend(parse_report(row) for row in page)
             if len(page) < PAGE_LIMIT:
