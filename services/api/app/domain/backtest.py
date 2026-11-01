@@ -8,6 +8,7 @@ with purged walk-forward validation; the maths here stays the same.
 import math
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Literal
 
 from app.data.sample import js_sum, js_to_fixed
 from app.schemas.backtest import (
@@ -151,7 +152,7 @@ def backtest_decision_rule(
         stop = entry * (1 - sign * rule.stop_pct)
         target = entry * (1 + sign * rule.target_pct)
         exit_idx = min(i + rule.max_hold_days, last)
-        outcome = "time"
+        outcome: Literal["target", "stop", "time"] = "time"
         exit_price = candles[exit_idx].close
 
         for j in range(i + 1, min(i + rule.max_hold_days, last) + 1):
