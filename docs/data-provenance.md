@@ -19,7 +19,8 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Asset page: your decision | Rule backtest of the plan | **Sample** prices and signals | Badge and description |
 | Journal | Decisions (user input), marks to latest close, backtest summary | User input + **sample** prices | Badge when any decision was logged on sample data; each decision stores its origin |
 | Backtest lab | Equity curve, statistics | **Sample** | Banner and in-card note, from the result's origin |
-| Macro data | Series, vintages, revisions, release status, weight | **Live** (FRED/ALFRED) | Source, release dates and status per series |
+| Macro data | Series, vintages, revisions, release status, weight, 1m/3m/1y change | **Live** (FRED/ALFRED) | Source, release dates and status per series; changes in % or points per the series' kind |
+| Macro data: Markets | Daily reference prices: 7 FX pairs (Fed H.10), WTI, Brent, Henry Hub (EIA) | **Live** (FRED/ALFRED), reference prices, not tradable quotes | "markets" group; not scored; asset prices elsewhere stay sample until wired |
 | Positioning | COT net, % OI, COT index | **Live** (CFTC legacy futures) | Report and release dates; caveat on partial contracts (Brent) |
 | Notifications | — | None yet | Empty until real event sources exist (invented alerts removed) |
 
@@ -32,6 +33,8 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | COT release = report + 3 days | CFTC release schedule and special announcements | **Wrong for 71 reports** (holidays, 2018-19 and 2025 shutdowns, 2023 ION incident) → real calendar in `cot_calendar.py`; every load also re-derives stored release dates, so older databases are corrected |
 | Scorecard signs (NFCI, T10Y3M, BAA10Y, Philly Fed, unemployment, claims) | FRED series notes | Correct |
 | Growth indicators in real terms | FRED units | **Three were nominal** (RSAFS, PI, NEWORDER) → real RRSFS and W875RX1 scored; NEWORDER unscored |
+| No series is changed twice | FRED units and notes of all 43 series | None published as a change, except WEI ("Index" units, but scaled to GDP growth per its notes): declared `published_as_change`, scored as published |
+| VIX as an early sentiment read | FRED notes | Copyright Cboe: not added (licence needed) |
 | University of Michigan licence | Michigan usage agreement | Commercial use needs a licence; kept for now by the owner's decision |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's

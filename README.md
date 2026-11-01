@@ -7,8 +7,16 @@ Web platform for **QuFin**, an AI trading-intelligence companion for FX, metals,
 | Path | What it is |
 |---|---|
 | `apps/web` | Next.js 16 web app: public landing page and the research dashboard |
-| `services/api` | *(Phase 1)* FastAPI backend: data APIs, signals, backtests, auth |
-| `apps/mobile` | *(later)* Expo React Native app sharing the same API |
+| `services/api` | FastAPI backend: point-in-time macro and positioning data, scorecard, backtests, accounts |
+| `apps/mobile` | *(Phase 5)* Expo React Native app sharing the same API |
+| `data` | Data platform notes; connectors move here with orchestration |
+| `ml` | Models and validation (Phase 3-4) |
+| `infra/terraform` | AWS foundation skeleton, not applied yet |
+| `docs` | ADRs, licence register, coverage universe, validation standard, release calendars, data provenance |
+
+CI (`.github/workflows`) runs lint, types and tests for both apps, a gitleaks secret scan and
+CodeQL on every pull request; Dependabot keeps dependencies current. Optional local hooks:
+`uvx pre-commit install`.
 
 ## Run the web app
 

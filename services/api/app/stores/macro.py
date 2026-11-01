@@ -11,7 +11,20 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Index, String, Text, delete, func, select
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    delete,
+    func,
+    select,
+    text,
+)
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
 from app.stores.db import Base, as_utc
@@ -40,6 +53,10 @@ class MacroSeriesRow(Base):
     delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    # Coverage, stored at ingest so listing series never aggregates the observations.
+    first_period: Mapped[date | None] = mapped_column(Date, nullable=True)
+    last_period: Mapped[date | None] = mapped_column(Date, nullable=True)
+    vintage_rows: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class MacroObservationRow(Base):
@@ -54,8 +71,16 @@ class MacroObservationRow(Base):
     # None where the source published "no value" for that vintage.
     value: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    # Every hot query is served by an index (tests/test_query_plans.py):
+    # - the primary key (series_id, period, realtime_start): one period's revisions;
+    # - asof_end: the latest view (realtime_end = open) of one series over a period range;
+    # - asof / asof_end: a series as published on a date, from either end of the vintage range
+    #   (the planner picks the narrower one after ANALYZE);
+    # - period: first releases of every series since a date.
     __table_args__ = (
         Index("ix_macro_observations_asof", "series_id", "realtime_start", "realtime_end"),
+        Index("ix_macro_observations_asof_end", "series_id", "realtime_end", "period"),
+        Index("ix_macro_observations_period", "period", "series_id", "realtime_start"),
     )
 
 
@@ -149,6 +174,10 @@ class MacroStore:
         series.delay_notice = meta.delay_notice
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
+        periods = [r.period for r in rows]
+        series.first_period = min(periods, default=None)
+        series.last_period = max(periods, default=None)
+        series.vintage_rows = len(rows)
         self.session.add(series)
         self.session.flush()
         self.session.execute(
@@ -161,31 +190,26 @@ class MacroStore:
     # --- reads -----------------------------------------------------------------------------
 
     def list_series(self) -> list[SeriesSummary]:
-        stats = (
-            select(
-                MacroObservationRow.series_id,
-                func.min(MacroObservationRow.period).label("first_period"),
-                func.max(MacroObservationRow.period).label("last_period"),
-                func.count().label("vintage_rows"),
+        rows = self.session.scalars(
+            select(MacroSeriesRow).order_by(
+                MacroSeriesRow.country, MacroSeriesRow.dimension, MacroSeriesRow.id
             )
-            .group_by(MacroObservationRow.series_id)
-            .subquery()
-        )
-        result = self.session.execute(
-            select(MacroSeriesRow, stats.c.first_period, stats.c.last_period, stats.c.vintage_rows)
-            .outerjoin(stats, stats.c.series_id == MacroSeriesRow.id)
-            .order_by(MacroSeriesRow.country, MacroSeriesRow.dimension, MacroSeriesRow.id)
         )
         return [
             SeriesSummary(
                 meta=_meta(row),
                 ingested_at=as_utc(row.ingested_at),
-                first_period=first,
-                last_period=last,
-                vintage_rows=count or 0,
+                first_period=row.first_period,
+                last_period=row.last_period,
+                vintage_rows=row.vintage_rows or 0,
             )
-            for row, first, last, count in result
+            for row in rows
         ]
+
+    def analyze(self) -> None:
+        """Refresh the planner's statistics after a bulk load, so it picks the right index."""
+        self.session.execute(text("ANALYZE macro_observations"))
+        self.session.commit()
 
     def first_releases(
         self, since: date, series_id: str | None = None
@@ -206,11 +230,8 @@ class MacroStore:
         return result
 
     def last_period(self, series_id: str) -> date | None:
-        return self.session.scalar(
-            select(func.max(MacroObservationRow.period)).where(
-                MacroObservationRow.series_id == series_id
-            )
-        )
+        row = self.session.get(MacroSeriesRow, series_id)
+        return row.last_period if row else None
 
     def get_series(self, series_id: str) -> SeriesMeta | None:
         row = self.session.get(MacroSeriesRow, series_id)

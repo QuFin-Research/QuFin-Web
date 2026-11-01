@@ -13,8 +13,12 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment"]
+Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment", "markets"]
 Cycle = Literal["leading", "coincident", "lagging"]
+# How a change is measured. pct: percent change, for quantities and price indexes. diff:
+# change in the series' own units (percentage points, index points), for rates, spreads,
+# ratios and indexes that can be zero or negative; a percent change of those misleads.
+ChangeKind = Literal["pct", "diff"]
 
 # Enough history for the walk-forward windows without pulling every vintage since 1939.
 DEFAULT_OBSERVATION_START = date(2000, 1, 1)
@@ -40,6 +44,12 @@ class CatalogSeries:
     # ALFRED started archiving the series can be dated by their usual release lag instead
     # of being dropped. Not for series that get rebased or reweighted.
     market: bool = False
+    # Set from the series' definition, never assumed. See DIFF_SERIES below.
+    change: ChangeKind = "pct"
+    # The source already publishes it as a change or growth rate (e.g. WEI is scaled to GDP
+    # growth): taking a change again would be a change of a change. Forces `change="diff"`,
+    # and the release check fails if a percent change or y/y transform is configured for it.
+    published_as_change: bool = False
 
 
 def _us(
@@ -50,6 +60,7 @@ def _us(
     market: bool = False,
     source: str | None = None,
     licence: str | None = None,
+    published_as_change: bool = False,
 ) -> CatalogSeries:
     return CatalogSeries(
         id,
@@ -60,8 +71,35 @@ def _us(
         market=market,
         source_override=source,
         licence_note=licence,
+        change="diff" if published_as_change or id in DIFF_SERIES else "pct",
+        published_as_change=published_as_change,
     )
 
+
+# Rates, spreads, ratios, hours, weeks, surveys and diffusion or conditions indexes: their
+# change is measured in their own units. Everything else is a quantity or price index.
+DIFF_SERIES = frozenset(
+    {
+        "AWHMAN",
+        "NOCDFSA066MSFRBPHI",
+        "T10YFF",
+        "T10Y3M",
+        "T10Y2Y",
+        "NFCI",
+        "STLFSI4",
+        "UMCSENT",
+        "UEMPMEAN",
+        "UNRATE",
+        "ISRATIO",
+        "MPRIME",
+        "T10YIE",
+        "FEDFUNDS",
+        "DGS2",
+        "DGS10",
+        "DFII10",
+        "BAA10Y",
+    }
+)
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
@@ -77,7 +115,9 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("HOUST", "growth", "leading"),  # Housing starts
     _us("T10YFF", "policy", "leading", market=True, source=_H15),  # 10-year yield minus fed funds
     _us("T10Y3M", "policy", "leading", market=True, source=_H15),  # 10-year minus 3-month yield
+    _us("T10Y2Y", "policy", "leading", market=True, source=_H15),  # 10-year minus 2-year
     _us("NFCI", "sentiment", "leading"),  # Chicago Fed financial conditions, weekly
+    _us("STLFSI4", "sentiment", "leading"),  # St. Louis Fed financial stress, weekly
     CatalogSeries(
         "UMCSENT",  # Michigan consumer sentiment
         "fred",
@@ -99,6 +139,8 @@ CATALOG: tuple[CatalogSeries, ...] = (
     ),
     # --- Coincident: move with the economy -----------------------------------------------
     _us("GDPC1", "growth", "coincident"),  # Real GDP, quarterly
+    # NY Fed Weekly Economic Index: scaled to four-quarter GDP growth, so already a growth rate.
+    _us("WEI", "growth", "coincident", published_as_change=True),
     _us("INDPRO", "growth", "coincident"),  # Industrial production
     _us("RRSFS", "growth", "coincident"),  # Real retail sales (CPI-adjusted)
     _us("W875RX1", "growth", "coincident"),  # Real personal income less transfers
@@ -109,6 +151,7 @@ CATALOG: tuple[CatalogSeries, ...] = (
     # --- Lagging: turn after the economy -------------------------------------------------
     _us("UEMPMEAN", "labour", "lagging"),  # Average weeks unemployed
     _us("UNRATE", "labour", "lagging"),  # Unemployment rate
+    _us("CCSA", "labour", "lagging"),  # Continued claims (insured unemployment), weekly
     _us("ISRATIO", "growth", "lagging"),  # Business inventories to sales
     _us("ULCMFG", "inflation", "lagging"),  # Unit labour costs, manufacturing, quarterly
     _us("CUSR0000SAS", "inflation", "lagging"),  # CPI, services
@@ -118,6 +161,7 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("TOTALSL", "policy", "lagging"),  # Consumer credit outstanding
     # --- Not classified by cycle -----------------------------------------------------------
     _us("CPIAUCSL", "inflation"),  # CPI, all items
+    _us("GASREGW", "inflation"),  # Retail gasoline price, weekly (EIA)
     _us("PCEPILFE", "inflation"),  # Core PCE price index
     _us("T10YIE", "inflation", market=True, source=_H15),  # 10-year breakeven inflation
     _us("FEDFUNDS", "policy"),  # Effective fed funds rate
@@ -136,6 +180,22 @@ CATALOG: tuple[CatalogSeries, ...] = (
             "redistributing it in a commercial product."
         ),
     ),  # Baa credit spread
+    # --- Markets: daily reference prices (P1-25), not scored ---------------------------
+    # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
+    # pair; published weekly for the previous week.
+    _us("DEXUSEU", "markets", market=True),  # EURUSD
+    _us("DEXUSUK", "markets", market=True),  # GBPUSD
+    _us("DEXJPUS", "markets", market=True),  # USDJPY
+    _us("DEXUSAL", "markets", market=True),  # AUDUSD
+    _us("DEXUSNZ", "markets", market=True),  # NZDUSD
+    _us("DEXCAUS", "markets", market=True),  # USDCAD
+    _us("DEXSZUS", "markets", market=True),  # USDCHF
+    # EIA spot prices (public domain).
+    _us("DCOILWTICO", "markets", market=True),  # WTI, Cushing
+    _us("DCOILBRENTEU", "markets", market=True),  # Brent, Europe
+    _us("DHHNGSP", "markets", market=True),  # Henry Hub natural gas
+    # Not on FRED, or not allowed: gold and silver (LBMA withdrawn from FRED, licensed source
+    # needed); bitcoin and ether (Coinbase forbids reproduction without written permission).
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
     _us("DTWEXBGS", "sentiment"),
 )

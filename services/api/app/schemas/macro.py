@@ -16,7 +16,9 @@ class MacroSeries(ApiModel):
     frequency: str
     seasonal_adjustment: str
     country: str
-    dimension: ScoreDimension
+    dimension: ScoreDimension | Literal["markets"] = Field(
+        description='Scorecard pillar, or "markets" for reference prices (not scored)'
+    )
     cycle: Literal["leading", "coincident", "lagging"] | None = Field(
         description="When the series tends to turn relative to the business cycle"
     )
@@ -25,11 +27,28 @@ class MacroSeries(ApiModel):
     release_name: str | None = Field(description="The release the series is published in")
 
 
+class SeriesChange(ApiModel):
+    horizon: str = Field(description='"1m", "3m", "1y"; "q/q" and "y/y" for quarterly series')
+    value: float
+    unit: str = Field(description='"%", "% ann." (annualised) or "pt" (in the series\' units)')
+
+
 class MacroSeriesSummary(MacroSeries):
     ingested_at: datetime
     first_period: date | None
     last_period: date | None
     vintage_rows: int
+    change_kind: Literal["pct", "diff"] = Field(
+        description="pct: percent change (quantities, price indexes); diff: change in the "
+        "series' own units (rates, spreads, indexes that can be zero or negative)"
+    )
+    published_as_change: bool = Field(
+        description="The source already publishes it as a change or growth rate"
+    )
+    changes: list[SeriesChange] = Field(
+        description="Latest moves, each within one vintage; daily and weekly series as "
+        "28-day averages"
+    )
     freshness: DataFreshness
     timeliness: DataTimeliness
 
@@ -43,6 +62,7 @@ class MacroObservation(ApiModel):
 class MacroSeriesData(ApiModel):
     series: MacroSeries
     freshness: DataFreshness = Field(description="Release status of the series today")
+    changes: list[SeriesChange] = Field(description="Latest moves as published on asOf")
     timeliness: DataTimeliness
     as_of: date | None = Field(description="Real-time date of this view; null means latest")
     observations: list[MacroObservation]

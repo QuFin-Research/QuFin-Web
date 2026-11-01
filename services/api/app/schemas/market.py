@@ -89,6 +89,8 @@ class ScorecardIndicator(ApiModel):
     period: date | None = Field(description="Latest period used")
     value: float | None = Field(description="Reading after the transform (level or % y/y)")
     score: float | None = Field(description="-3..+3 against its own 10-year history")
+    level_score: float | None = Field(description="Where it stands (level or change over a year)")
+    momentum_score: float | None = Field(description="How fast it is moving (3-month change)")
     weight: float = Field(description="Importance x timeliness; 0 when not usable")
     usable: bool
     status: str

@@ -32,7 +32,7 @@ import { FRESHNESS_LABEL } from '@/lib/data-quality';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
 import { macroAvailable } from '../api/service';
-import type { BusinessCycle, MacroSeriesSummary } from '../api/types';
+import type { BusinessCycle, MacroSeriesSummary, SeriesChange } from '../api/types';
 
 type CycleFilter = BusinessCycle | 'all';
 
@@ -69,6 +69,34 @@ function chartStart(series: MacroSeriesSummary) {
   const d = new Date(`${series.lastPeriod}T00:00:00Z`);
   d.setUTCFullYear(d.getUTCFullYear() - 5);
   return d.toISOString().slice(0, 10);
+}
+
+const formatChange = (c: SeriesChange) =>
+  `${c.value > 0 ? '+' : ''}${c.value.toLocaleString('en-US', { maximumFractionDigits: 2 })}${c.unit === 'pt' ? ' pt' : '%'}`;
+
+/** Latest moves: percent for quantities, points for rates and indexes, in one vintage. */
+function ChangeCell({ series }: { series: MacroSeriesSummary }) {
+  if (series.changes.length === 0) return <span className='text-muted-foreground'>—</span>;
+  return (
+    <div className='flex flex-col items-end gap-0.5'>
+      {series.changes.map((c) => (
+        <span
+          key={c.horizon}
+          className={cn(
+            c.value > 0 ? 'text-bull' : c.value < 0 ? 'text-bear' : 'text-muted-foreground'
+          )}
+          title={c.unit === '% ann.' ? 'Annualised' : undefined}
+        >
+          <span className='text-muted-foreground mr-1'>{c.horizon}</span>
+          {formatChange(c)}
+          {c.unit === '% ann.' ? ' ann.' : ''}
+        </span>
+      ))}
+      {series.publishedAsChange && (
+        <span className='text-muted-foreground'>published as a growth rate</span>
+      )}
+    </div>
+  );
 }
 
 function StatusBadge({ series }: { series: MacroSeriesSummary }) {
@@ -253,6 +281,7 @@ export function MacroView() {
                 <TableHead>Pillar</TableHead>
                 <TableHead className='hidden lg:table-cell'>Cycle</TableHead>
                 <TableHead className='text-right'>Latest period</TableHead>
+                <TableHead className='text-right'>Change</TableHead>
                 <TableHead className='hidden md:table-cell'>Released</TableHead>
                 <TableHead className='hidden text-right sm:table-cell'>Weight</TableHead>
                 <TableHead className='pr-4'>Status</TableHead>
@@ -290,6 +319,9 @@ export function MacroView() {
                   </TableCell>
                   <TableCell className='text-right font-mono text-xs tabular-nums'>
                     {s.lastPeriod ?? '—'}
+                  </TableCell>
+                  <TableCell className='text-right font-mono text-xs tabular-nums'>
+                    <ChangeCell series={s} />
                   </TableCell>
                   <TableCell className='hidden font-mono text-xs tabular-nums md:table-cell'>
                     <span className='block'>{s.timeliness.latestSourceRelease ?? '—'}</span>

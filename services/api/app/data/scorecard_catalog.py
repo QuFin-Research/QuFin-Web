@@ -40,18 +40,21 @@ SCORED: dict[str, ScoreSpec] = {
     "W875RX1": ScoreSpec("yoy"),
     "PERMIT": ScoreSpec("yoy"),
     "NOCDFSA066MSFRBPHI": ScoreSpec("level"),
+    "WEI": ScoreSpec("level"),  # already a growth rate: scored as published
     # Inflation
     "CPIAUCSL": ScoreSpec("yoy"),
     "CPILFESL": ScoreSpec("yoy"),
     "PCEPILFE": ScoreSpec("yoy"),
     "CUSR0000SAS": ScoreSpec("yoy"),
     "T10YIE": ScoreSpec("level"),
+    "GASREGW": ScoreSpec("yoy"),  # weekly: the earliest read on consumer prices
     # Labour
     "UNRATE": ScoreSpec("level", -1),
     "PAYEMS": ScoreSpec("yoy"),
     "ICSA": ScoreSpec("level", -1),
     "AWHMAN": ScoreSpec("level"),
     "UEMPMEAN": ScoreSpec("level", -1),
+    "CCSA": ScoreSpec("level", -1),
     # Policy (tight = strong)
     "FEDFUNDS": ScoreSpec("level"),
     "DGS2": ScoreSpec("level"),
@@ -63,4 +66,5 @@ SCORED: dict[str, ScoreSpec] = {
     "UMCSENT": ScoreSpec("level"),
     "NFCI": ScoreSpec("level", -1),  # higher NFCI = tighter financial conditions
     "BAA10Y": ScoreSpec("level", -1),
+    "STLFSI4": ScoreSpec("level", -1),  # higher = more financial stress
 }

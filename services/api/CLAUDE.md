@@ -48,6 +48,24 @@ series, existing or new:
 12. **Assumptions are listed and checked, not trusted.** Before adding or changing any data
     path, list every assumption (mapping, sign, unit, release timing, licence, coverage),
     verify each against the primary source, and report any that could not be verified.
+13. **Measure change in the right units, and never change a change.** Quantities and price
+    indexes change in percent; rates, spreads, ratios and indexes that can be zero or negative
+    change in their own units (points). Each catalog series declares its `change` kind, and a
+    series the source already publishes as a change or growth rate is marked
+    `published_as_change` (read the source's notes, not just the units: WEI's units say
+    "Index" but it is a GDP growth rate). The release check fails a percent change or y/y on
+    such a series. Changes are taken within one vintage, never across vintages.
+14. **Prefer the earliest honest read.** Where a weekly or daily series measures the same
+    thing as a monthly one, carry it too; the scorecard averages it into the current month as
+    soon as each week lands, and its momentum part (3-month change) catches turns before the
+    level does.
+15. **Every hot query is indexed; nothing aggregates a data table on a page load.** Data grows
+    with every country and series, so a full scan gets slower with each one added. Each read a
+    page or job relies on is listed in `tests/test_query_plans.py`, which fails if the planner
+    scans a data table; a new read is added there with the index that serves it, in a
+    migration. Summaries a page needs (coverage, counts, latest period) are stored at ingest,
+    not computed per request. Bulk loads end with `ANALYZE` so the planner picks the right
+    index. Indexes belong to the table, so rows for series added later are indexed on insert.
 
 ## Scorecard correction mechanism (non-negotiable)
 
@@ -55,7 +73,8 @@ A delayed or missing indicator must make a score **less certain, never more bull
 bearish**. Score and confidence are separate outputs (`app/domain/scorecard.py`):
 
 1. **Score each indicator point in time** against its own history as published then: a
-   z-score over ten years, clipped to -3..+3, flipped where higher means weaker.
+   z-score over ten years, clipped to -3..+3, flipped where higher means weaker, on two
+   parts averaged equally: where it stands and its 3-month momentum (`MOMENTUM_WEIGHT`).
 2. **Rescaled weighted average per pillar:** `score = Σ wᵢ·sᵢ / Σ wᵢ` over usable
    indicators, with `wᵢ` = base importance × timeliness weight. Overdue, discontinued, missing
    or unscorable indicators drop out (weight 0). Never count missing data as zero (a plain
