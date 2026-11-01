@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment"]
+Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment", "markets"]
 Cycle = Literal["leading", "coincident", "lagging"]
 # How a change is measured. pct: percent change, for quantities and price indexes. diff:
 # change in the series' own units (percentage points, index points), for rates, spreads,
@@ -180,6 +180,22 @@ CATALOG: tuple[CatalogSeries, ...] = (
             "redistributing it in a commercial product."
         ),
     ),  # Baa credit spread
+    # --- Markets: daily reference prices (P1-25), not scored ---------------------------
+    # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
+    # pair; published weekly for the previous week.
+    _us("DEXUSEU", "markets", market=True),  # EURUSD
+    _us("DEXUSUK", "markets", market=True),  # GBPUSD
+    _us("DEXJPUS", "markets", market=True),  # USDJPY
+    _us("DEXUSAL", "markets", market=True),  # AUDUSD
+    _us("DEXUSNZ", "markets", market=True),  # NZDUSD
+    _us("DEXCAUS", "markets", market=True),  # USDCAD
+    _us("DEXSZUS", "markets", market=True),  # USDCHF
+    # EIA spot prices (public domain).
+    _us("DCOILWTICO", "markets", market=True),  # WTI, Cushing
+    _us("DCOILBRENTEU", "markets", market=True),  # Brent, Europe
+    _us("DHHNGSP", "markets", market=True),  # Henry Hub natural gas
+    # Not on FRED, or not allowed: gold and silver (LBMA withdrawn from FRED, licensed source
+    # needed); bitcoin and ether (Coinbase forbids reproduction without written permission).
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
     _us("DTWEXBGS", "sentiment"),
 )

@@ -18,6 +18,8 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Moody's via FRED (BAA10Y, Baa yield) | Credit spread | Proprietary, licensed to FRED: *to confirm* before commercial display | "Moody's" | Unknown | Spread calculated by FRED from Moody's Baa yield and H.15 |
 | Federal Reserve Banks of Chicago (NFCI), Philadelphia (survey), St. Louis (STLFSI4) | Financial conditions, new orders, stress | Free reuse with attribution: *to confirm* per bank | Name the bank | Free | — |
 | Lewis-Mertens-Stock Weekly Economic Index (WEI) | Weekly activity | *to confirm* | Authors and FRED | Free | Published as a growth rate |
+| Fed H.10 daily FX (via FRED: DEXUSEU, DEXUSUK, DEXJPUS, DEXUSAL, DEXUSNZ, DEXCAUS, DEXSZUS) | Daily reference FX rates, 7 pairs | Public domain | "Board of Governors of the Federal Reserve System" | Free | Noon buying rates in New York, published weekly; reference prices, not tradable quotes |
+| EIA spot prices (via FRED: DCOILWTICO, DCOILBRENTEU, DHHNGSP) | WTI, Brent, Henry Hub daily | Public domain | "U.S. Energy Information Administration" | Free | Spot reference prices |
 | CFTC Commitments of Traders (Public Reporting API) | Positioning, 11 contracts | Public domain | "Source: CFTC" | Free | — |
 
 ## Planned (Phase 1 connectors)
@@ -49,5 +51,7 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Source | Why |
 |---|---|
 | Cboe VIX (on FRED) | Cboe copyright; licence needed |
+| Coinbase bitcoin and ether (on FRED: CBBTCUSD, CBETHUSD) | "Reproduction of Coinbase data in any form is prohibited except with the prior written permission of Coinbase" |
+| LBMA gold and silver | Withdrawn from FRED; licensed price feed needed |
 | Forex Factory, Investing.com, Yahoo Finance, Trading Economics web pages | Terms forbid scraping; design references only |
 | S&P 500 on FRED | 10 years only and no vintages; licensed price source instead |

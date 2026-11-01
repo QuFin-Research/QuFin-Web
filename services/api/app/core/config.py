@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -22,6 +23,8 @@ class Settings(BaseSettings):
     # FRED/ALFRED (St. Louis Fed). Free key: https://fred.stlouisfed.org/docs/api/api_key.html
     fred_api_key: SecretStr | None = None
     fred_base_url: str = "https://api.stlouisfed.org/fred"
+    # Raw zone: every fetched payload kept as received. Unset disables it (tests).
+    raw_dir: Path | None = None
 
     # Sign-in sessions: an opaque token in an httpOnly cookie, stored server-side as a hash.
     session_cookie_name: str = "qufin_session"

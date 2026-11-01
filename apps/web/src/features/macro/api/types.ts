@@ -11,7 +11,8 @@ export type MacroSeries = {
   frequency: string;
   seasonalAdjustment: string;
   country: string;
-  dimension: ScoreDimension;
+  /** Scorecard pillar, or 'markets' for reference prices (not scored) */
+  dimension: ScoreDimension | 'markets';
   /** When the series tends to turn relative to the business cycle */
   cycle: BusinessCycle | null;
   /** When the source last revised the series */

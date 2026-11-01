@@ -9,15 +9,13 @@ logs and error messages: httpx's request logging is turned down and errors never
 
 import logging
 import re
-import ssl
-import time
-from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
+from typing import Any
 
 import httpx
-import truststore
 
+from app.connectors.base import HttpSource, SourceError
 from app.stores.macro import Vintage
 
 # httpx logs every request URL at INFO, which would include api_key.
@@ -31,10 +29,9 @@ VINTAGE_DATES_LIMIT = 10_000
 # ALFRED rejects an observations request whose real-time period spans more than 2,000 vintage
 # dates, and its count can include a date its vintage list does not, so stay well under.
 MAX_VINTAGES_PER_REQUEST = 1_900
-RETRY_STATUSES = {429, 500, 502, 503, 504}
 
 
-class FredError(Exception):
+class FredError(SourceError):
     pass
 
 
@@ -82,59 +79,28 @@ def _parse_value(value: str) -> float | None:
     return None if value in (".", "") else float(value)
 
 
-class FredClient:
+class FredClient(HttpSource):
+    source = "fred"
+    error = FredError
+
     def __init__(
         self,
         api_key: str,
         base_url: str = "https://api.stlouisfed.org/fred",
-        *,
-        transport: httpx.BaseTransport | None = None,
-        max_retries: int = 3,
-        sleep: Callable[[float], None] = time.sleep,
+        **kwargs: Any,
     ) -> None:
+        super().__init__(base_url, **kwargs)
         self._api_key = api_key
-        self._client = httpx.Client(
-            base_url=base_url.rstrip("/"),
-            timeout=30.0,
-            transport=transport,
-            # Trust the operating system's certificate store, so corporate TLS inspection
-            # proxies that are trusted on the machine work too.
-            verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
-        )
-        self._max_retries = max_retries
-        self._sleep = sleep
 
-    def close(self) -> None:
-        self._client.close()
+    def describe_error(self, res: httpx.Response) -> str:
+        return _error_message(res)
 
-    def __enter__(self) -> "FredClient":
-        return self
-
-    def __exit__(self, *_exc: object) -> None:
-        self.close()
-
-    def _get(self, path: str, params: dict[str, str | int]) -> dict:
+    def _get(self, path: str, params: dict[str, str | int], raw_name: str | None = None) -> dict:
         query = {**params, "api_key": self._api_key, "file_type": "json"}
-        for attempt in range(self._max_retries + 1):
-            try:
-                res = self._client.get(path, params=query)
-            except httpx.HTTPError as exc:
-                if attempt == self._max_retries:
-                    raise FredError(
-                        f"FRED request to {path} failed: {type(exc).__name__}"
-                    ) from None
-                self._sleep(2**attempt)
-                continue
-            if res.status_code in RETRY_STATUSES and attempt < self._max_retries:
-                self._sleep(float(res.headers.get("retry-after", 2**attempt)))
-                continue
-            if res.status_code != 200:
-                raise FredError(f"FRED {path} returned {res.status_code}: {_error_message(res)}")
-            return res.json()
-        raise FredError(f"FRED {path} kept failing")  # pragma: no cover
+        return self.get_json(path, query, raw_name)
 
     def series(self, series_id: str) -> FredSeries:
-        body = self._get("/series", {"series_id": series_id})
+        body = self._get("/series", {"series_id": series_id}, f"{series_id}-series")
         items = body.get("seriess") or []
         if not items:
             raise FredError(f"FRED has no series {series_id}")
@@ -211,7 +177,11 @@ class FredClient:
 
         result: list[Vintage] = []
         while True:
-            body = self._get("/series/observations", {**params, "offset": len(result)})
+            body = self._get(
+                "/series/observations",
+                {**params, "offset": len(result)},
+                f"{series_id}-observations",
+            )
             page = body.get("observations") or []
             result.extend(
                 Vintage(
