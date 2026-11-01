@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="QuFin: AI-powered trading intelligence platform leveraging quantum-inspired algorithms and alternative data for unmatched market insights.">
+    <meta name="keywords" content="QuFin, AI trading, financial analytics, quantum algorithms, alternative data, market intelligence, trading signals">
+    <meta property="og:title" content="QuFin - AI-Powered Trading Intelligence">
+    <meta property="og:description" content="Harness quantum algorithms and machine learning for unparalleled market insights. Start your journey with QuFin today.">
+    <meta property="og:image" content="assets/images/qufin-og-image.jpg">
+    <meta property="og:image" content="logo.png">
+    <meta property="og:url" content="https://www.qufin.ai">
+    <meta name="robots" content="index, follow">
+    <title>QuFin - AI-Powered Trading Intelligence for the Quantum Age</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/fontawesome-free-7.0.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --quantum-blue: #0ea5e9;
+            --ai-purple: #8b5cf6;
+            --data-green: #10b981;
+            --risk-orange: #f59e0b;
+            --dark-bg: #0f172a;
+            --dark-card: #1e293b;
+            --dark-text: #f1f5f9;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            transition: background-color 0.3s, color 0.3s;
+            overflow-x: hidden;
+        }
+        
+        body.dark {
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header Styles */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        
+        body.dark header {
+            background-color: var(--dark-card);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-img {
+            height: 2.50rem;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, var(--quantum-blue), var(--ai-purple));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--quantum-blue), var(--ai-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .nav-desktop {
+            display: flex;
+            gap: 8px;
+        }
+        
+        @media (max-width: 1024px) {
+            .nav-desktop {
+                display: none;
+            }
+        }
+        
+        .nav-item {
+            position: relative;
+        }
+        
+        .nav-link {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            color: inherit;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-link:hover {
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+        
+        body.dark .nav-link:hover {
+            background-color: rgba(14, 165, 233, 0.2);
+        }
+        
+        .nav-link i {
+            margin-right: 8px;
+        }
+        
+        .mega-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            min-width: 800px;
+            background: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 12px 12px;
+            padding: 24px;
+            display: none;
+            z-index: 1000;
+        }
+        
+        body.dark .mega-menu {
+            background: var(--dark-card);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .nav-item:hover .mega-menu {
+            display: block;
+        }
+        
+        .nav-categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        
+        .nav-category h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--quantum-blue);
+        }
+        
+        .nav-category ul {
+            list-style: none;
+        }
+        
+        .nav-category li {
+            margin-bottom: 8px;
+        }
+        
+        .nav-category a {
+            color: #64748b;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        body.dark .nav-category a {
+            color: #94a3b8;
+        }
+        
+        .nav-category a:hover {
+            color: var(--quantum-blue);
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .theme-toggle {
+            padding: 8px;
+            border-radius: 50%;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #0f172a;
+        }
+        
+        body.dark .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+        }
+        
+        .btn-primary {
+            padding: 10px 20px;
+            background: var(--quantum-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            background: #0284c7;
+        }
+        
+        .mobile-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: inherit;
+        }
+        
+        @media (max-width: 1024px) {
+            .mobile-toggle {
+                display: block;
+            }
+        }
+        
+        .mobile-menu {
+            position: fixed;
+            top: 72px;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            display: none;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+        
+        body.dark .mobile-menu {
+            background: var(--dark-card);
+        }
+        
+        .mobile-menu.open {
+            display: block;
+        }
+        
+        .mobile-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .mobile-nav-item {
+            padding: 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        
+        .mobile-nav-item:hover {
+            background-color: rgba(14, 165, 233, 0.1);
+        }
+        
+        body.dark .mobile-nav-item:hover {
+            background-color: rgba(14, 165, 233, 0.2);
+        }
+        
+        .mobile-nav-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .mobile-nav-link i {
+            margin-right: 12px;
+            width: 20px;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #05374e 0%, #0ea5e9 50%, #8b5cf6 100%);
+            color: white;
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(14, 165, 233, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+            z-index: 1;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .hero h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            line-height: 1.2;
+        }
+        
+        .hero p {
+            font-size: 20px;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .hero-actions {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 60px;
+        }
+        
+        .btn-white {
+            padding: 12px 32px;
+            background: white;
+            color: var(--quantum-blue);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-white:hover {
+            background: #f1f5f9;
+            transform: translateY(-2px);
+        }
+        
+        .btn-outline-white {
+            padding: 12px 32px;
+            background: transparent;
+            color: white;
+            border: 2px solid white;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-outline-white:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .hero-metrics {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+        }
+        
+        .metric {
+            text-align: center;
+        }
+        
+        .metric .number {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .metric .label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .hero p {
+                font-size: 18px;
+            }
+            
+            .hero-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-metrics {
+                flex-direction: column;
+                gap: 24px;
+            }
+        }
+        
+        /* AI Products Section */
+        .section {
+            padding: 80px 0;
+        }
+        
+        .section-light {
+            background: white;
+        }
+        
+        body.dark .section-light {
+            background: var(--dark-card);
+        }
+        
+        .section-dark {
+            background: #f8fafc;
+        }
+        
+        body.dark .section-dark {
+            background: var(--dark-bg);
+        }
+        
+        .section-header {
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto 60px;
+        }
+        
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .section-subtitle {
+            font-size: 18px;
+            color: #64748b;
+        }
+        
+        body.dark .section-subtitle {
+            color: #94a3b8;
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 24px;
+        }
+        
+        .product-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s;
+            cursor: pointer;
+            border-left: 4px solid var(--quantum-blue);
+        }
+        
+        body.dark .product-card {
+            background: #1e293b;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        body.dark .product-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+        
+        .product-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            background: rgba(14, 165, 233, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--quantum-blue);
+            font-size: 20px;
+        }
+        
+        .product-status {
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--data-green);
+        }
+        
+        .product-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .product-description {
+            color: #64748b;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        
+        body.dark .product-description {
+            color: #94a3b8;
+        }
+        
+        .product-metrics {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .metric-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .accuracy {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--data-green);
+        }
+        
+        .speed {
+            background: rgba(14, 165, 233, 0.1);
+            color: var(--quantum-blue);
+        }
+        
+        /* Dashboard Section */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+        }
+        
+        @media (max-width: 968px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        body.dark .dashboard-card {
+            background: var(--dark-card);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .time-selector {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .time-btn {
+            padding: 6px 12px;
+            background: #f1f5f9;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        body.dark .time-btn {
+            background: #334155;
+            color: white;
+        }
+        
+        .time-btn.active {
+            background: var(--quantum-blue);
+            color: white;
+        }
+        
+        .market-metrics {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .market-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        body.dark .market-metric {
+            border-bottom-color: #334155;
+        }
+        
+        .market-metric:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        
+        .metric-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .metric-name {
+            font-weight: 500;
+        }
+        
+        .metric-symbol {
+            font-size: 14px;
+            color: #64748b;
+        }
+        
+        body.dark .metric-symbol {
+            color: #94a3b8;
+        }
+        
+        .metric-value {
+            font-weight: 500;
+        }
+        
+        .metric-change {
+            font-size: 14px;
+        }
+        
+        .positive {
+            color: var(--data-green);
+        }
+        
+        .negative {
+            color: #ef4444;
+        }
+        
+        .signals-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .signal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        body.dark .signal-item {
+            background: #334155;
+        }
+        
+        .signal-item.buy {
+            border-left: 4px solid var(--data-green);
+        }
+        
+        .signal-item.sell {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .signal-item.hold {
+            border-left: 4px solid var(--risk-orange);
+        }
+        
+        .signal-asset {
+            font-weight: 500;
+        }
+        
+        .signal-timeframe {
+            font-size: 12px;
+            color: #64748b;
+        }
+        
+        body.dark .signal-timeframe {
+            color: #94a3b8;
+        }
+        
+        .signal-action {
+            font-weight: 600;
+        }
+        
+        .signal-buy {
+            color: var(--data-green);
+        }
+        
+        .signal-sell {
+            color: #ef4444;
+        }
+        
+        .signal-hold {
+            color: var(--risk-orange);
+        }
+        
+        .signal-confidence {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        
+        body.dark .signal-confidence {
+            color: #94a3b8;
+        }
+        
+        .confidence-bar {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 4px;
+            width: 80px;
+        }
+        
+        body.dark .confidence-bar {
+            background: #475569;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+        
+        .buy .confidence-fill {
+            background: var(--data-green);
+        }
+        
+        .sell .confidence-fill {
+            background: #ef4444;
+        }
+        
+        .hold .confidence-fill {
+            background: var(--risk-orange);
+        }
+        
+        /* World Map Section */
+        .world-map-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: #f8fafc;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        body.dark .world-map-container {
+            background: #1e293b;
+        }
+        
+        .map-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #64748b;
+        }
+        
+        body.dark .map-placeholder {
+            color: #94a3b8;
+        }
+        
+        .map-placeholder i {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .map-btn {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        body.dark .map-btn {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+        
+        .map-btn:hover {
+            background: #f1f5f9;
+        }
+        
+        body.dark .map-btn:hover {
+            background: #475569;
+        }
+        
+        .map-btn.active {
+            background: var(--quantum-blue);
+            color: white;
+            border-color: var(--quantum-blue);
+        }
+        
+        /* Footer */
+        footer {
+            background: #1e293b;
+            color: #94a3b8;
+            padding: 60px 0 30px;
+        }
+        
+        .footer-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        @media (max-width: 968px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+        }
+        
+        .footer-logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .footer-logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .footer-description {
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .social-link {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s;
+        }
+        
+        .social-link:hover {
+            background: var(--quantum-blue);
+        }
+        
+        .footer-column h3 {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        
+        .footer-links {
+            list-style: none;
+        }
+        
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+        
+        .footer-links a {
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-links a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 30px;
+            border-top: 1px solid #334155;
+            font-size: 14px;
+        }
+        
+        /* Auth Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-modal.open {
+            display: flex;
+        }
+        
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        body.dark .auth-container {
+            background: var(--dark-card);
+        }
+        
+        .auth-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 24px;
+        }
+        
+        body.dark .auth-tabs {
+            border-bottom-color: #334155;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .auth-tab.active {
+            color: var(--quantum-blue);
+            border-bottom: 2px solid var(--quantum-blue);
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        body.dark .form-group input {
+            background: #334155;
+            border-color: #475569;
+            color: white;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--quantum-blue);
+        }
+        
+        .auth-submit {
+            width: 100%;
+            padding: 12px;
+            background: var(--quantum-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .auth-submit:hover {
+            background: #0284c7;
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 16px;
+        }
+        
+        .auth-footer a {
+            color: var(--quantum-blue);
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="logo-text">QuFin.ai</div>
+                </div>
+                
+                <nav class="nav-desktop">
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-chart-line"></i>
+                            AI Analytics
+                        </a>
+                        <div class="mega-menu">
+                            <div class="nav-categories">
+                                <div class="nav-category">
+                                    <h4>Market Intelligence</h4>
+                                    <ul>
+                                        <li><a href="#">AI Score Grid</a></li>
+                                        <li><a href="#">Quantum Signals</a></li>
+                                        <li><a href="#">Predictive Models</a></li>
+                                        <li><a href="#">Sentiment Analysis</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Data Analytics</h4>
+                                    <ul>
+                                        <li><a href="#">Alternative Data</a></li>
+                                        <li><a href="#">Economic Indicators</a></li>
+                                        <li><a href="#">Sector Analysis</a></li>
+                                        <li><a href="#">Risk Assessment</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Visualization</h4>
+                                    <ul>
+                                        <li><a href="#">Global Heatmaps</a></li>
+                                        <li><a href="#">Portfolio Analytics</a></li>
+                                        <li><a href="#">Performance Metrics</a></li>
+                                        <li><a href="#">Custom Dashboards</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-robot"></i>
+                            Trading Intelligence
+                        </a>
+                        <div class="mega-menu">
+                            <div class="nav-categories">
+                                <div class="nav-category">
+                                    <h4>Strategy Tools</h4>
+                                    <ul>
+                                        <li><a href="#">Strategy Builder</a></li>
+                                        <li><a href="#">Backtesting Engine</a></li>
+                                        <li><a href="#">Portfolio Optimization</a></li>
+                                        <li><a href="#">Risk Analytics</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Execution</h4>
+                                    <ul>
+                                        <li><a href="#">Algorithmic Trading</a></li>
+                                        <li><a href="#">Signal Generation</a></li>
+                                        <li><a href="#">Order Management</a></li>
+                                        <li><a href="#">Performance Tracking</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Analysis</h4>
+                                    <ul>
+                                        <li><a href="#">Technical Analysis</a></li>
+                                        <li><a href="#">Fundamental Analysis</a></li>
+                                        <li><a href="#">Quantitative Models</a></li>
+                                        <li><a href="#">Market Regimes</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-cube"></i>
+                            AI Products
+                        </a>
+                        <div class="mega-menu">
+                            <div class="nav-categories">
+                                <div class="nav-category">
+                                    <h4>Core Products</h4>
+                                    <ul>
+                                        <li><a href="#">CurrenQ™</a></li>
+                                        <li><a href="#">EnergAI™</a></li>
+                                        <li><a href="#">MetalAI™</a></li>
+                                        <li><a href="#">FuturAI™</a></li>
+                                        <li><a href="#">CryptAI™</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Advanced Tools</h4>
+                                    <ul>
+                                        <li><a href="#">NeuroLock™</a></li>
+                                        <li><a href="#">Strategy DNA™</a></li>
+                                        <li><a href="#">Signal Sieve™</a></li>
+                                        <li><a href="#">Capital Guard™</a></li>
+                                        <li><a href="#">Glass Book™</a></li>
+                                    </ul>
+                                </div>
+                                <div class="nav-category">
+                                    <h4>Data Products</h4>
+                                    <ul>
+                                        <li><a href="#">Commoditas™</a></li>
+                                        <li><a href="#">Equivestia™</a></li>
+                                        <li><a href="#">Indicem™</a></li>
+                                        <li><a href="#">TradeFit Quotient™</a></li>
+                                        <li><a href="#">Corelation Matrix™</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-globe"></i>
+                            Global Data
+                        </a>
+                    </div>
+                    
+                    <div class="nav-item">
+                        <a href="#" class="nav-link">
+                            <i class="fas fa-book"></i>
+                            Resources
+                        </a>
+                    </div>
+                </nav>
+                
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="btn-primary" id="loginBtn">
+                        <i class="fas fa-user"></i>
+                        Login
+                    </button>
+                    <button class="mobile-toggle" id="mobileToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobileMenu">
+            <div class="container">
+                <nav class="mobile-nav">
+                    <div class="mobile-nav-item">
+                        <a href="#" class="mobile-nav-link">
+                            <i class="fas fa-chart-line"></i>
+                            AI Analytics
+                        </a>
+                    </div>
+                    <div class="mobile-nav-item">
+                        <a href="#" class="mobile-nav-link">
+                            <i class="fas fa-robot"></i>
+                            Trading Intelligence
+                        </a>
+                    </div>
+                    <div class="mobile-nav-item">
+                        <a href="#" class="mobile-nav-link">
+                            <i class="fas fa-cube"></i>
+                            AI Products
+                        </a>
+                    </div>
+                    <div class="mobile-nav-item">
+                        <a href="#" class="mobile-nav-link">
+                            <i class="fas fa-globe"></i>
+                            Global Data
+                        </a>
+                    </div>
+                    <div class="mobile-nav-item">
+                        <a href="#" class="mobile-nav-link">
+                            <i class="fas fa-book"></i>
+                            Resources
+                        </a>
+                    </div>
+                    <div class="mobile-nav-item">
+                        <button class="btn-primary" style="width: 100%; justify-content: center;" id="mobileLoginBtn">
+                            <i class="fas fa-user"></i>
+                            Login
+                        </button>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <h1>AI-Powered Trading Intelligence for the <span style="background: linear-gradient(135deg, #fff, #e0f2fe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Quantum Age</span></h1>
+                <p>Harness alternative data, quantum algorithms, and machine learning for unparalleled market insights</p>
+                <div class="hero-actions">
+                    <button class="btn-white" id="trialBtn">Start Free Trial</button>
+                    <button class="btn-outline-white">View Live Demo</button>
+                </div>
+                <div class="hero-metrics">
+                    <div class="metric">
+                        <div class="number">2.4M+</div>
+                        <div class="label">Data Points Analyzed</div>
+                    </div>
+                    <div class="metric">
+                        <div class="number">98.7%</div>
+                        <div class="label">Prediction Accuracy</div>
+                    </div>
+                    <div class="metric">
+                        <div class="number">24/7</div>
+                        <div class="label">Real-time Monitoring</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Products Section -->
+    <section class="section section-light">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Our AI Product Suite</h2>
+                <p class="section-subtitle">Powered by quantum-inspired algorithms and cutting-edge machine learning techniques</p>
+            </div>
+            
+            <div class="products-grid">
+                <div class="product-card" onclick="alert('Learn more about Quantum Forecast Engine')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">Quantum Forecast Engine</h3>
+                    <p class="product-description">Advanced time-series prediction using quantum-inspired algorithms</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            96.3% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            Real-time
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="product-card" onclick="alert('Learn more about NeuroLock Risk Manager')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">NeuroLock Risk Manager</h3>
+                    <p class="product-description">AI-powered risk assessment and portfolio protection</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            94.7% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            &lt;100ms
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="product-card" onclick="alert('Learn more about Signal Sieve')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-filter"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">Signal Sieve</h3>
+                    <p class="product-description">Filters market noise to identify high-probability trading signals</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            92.1% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            Real-time
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="product-card" onclick="alert('Learn more about Strategy DNA')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-dna"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">Strategy DNA</h3>
+                    <p class="product-description">Genetic algorithm optimization for trading strategy development</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            95.8% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            Batch
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="product-card" onclick="alert('Learn more about Capital Guard')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">Capital Guard</h3>
+                    <p class="product-description">Dynamic position sizing and drawdown control</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            98.2% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            Real-time
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="product-card" onclick="alert('Learn more about Glass Book Analytics')">
+                    <div class="product-header">
+                        <div class="product-icon">
+                            <i class="fas fa-book-open"></i>
+                        </div>
+                        <span class="product-status status-active">Active</span>
+                    </div>
+                    <h3 class="product-title">Glass Book Analytics</h3>
+                    <p class="product-description">Market microstructure and order flow analysis</p>
+                    <div class="product-metrics">
+                        <span class="metric-badge accuracy">
+                            <i class="fas fa-bullseye"></i>
+                            91.5% Accuracy
+                        </span>
+                        <span class="metric-badge speed">
+                            <i class="fas fa-bolt"></i>
+                            &lt;50ms
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Global Intelligence Section -->
+    <section class="section section-dark">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Global Economic Intelligence</h2>
+                <p class="section-subtitle">Monitor country economic performance with our interactive heatmap and access powerful AI tools for investment decisions</p>
+            </div>
+            
+            <div class="world-map-container">
+                <div class="map-controls">
+                    <button class="map-btn active">
+                        <i class="fas fa-star"></i>
+                        Economic Score
+                    </button>
+                    <button class="map-btn">
+                        <i class="fas fa-chart-line"></i>
+                        GDP Growth
+                    </button>
+                    <button class="map-btn">
+                        <i class="fas fa-money-bill-wave"></i>
+                        Inflation
+                    </button>
+                    <button class="map-btn">
+                        <i class="fas fa-briefcase"></i>
+                        Employment
+                    </button>
+                </div>
+                
+                <div class="map-placeholder">
+                    <i class="fas fa-globe-americas"></i>
+                    <h3>Interactive World Map</h3>
+                    <p>Economic data visualization would be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section class="section section-light">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Real-Time Trading Intelligence</h2>
+                <p class="section-subtitle">Monitor your investments and market trends with our clean, customizable dashboard</p>
+            </div>
+            
+            <div class="dashboard">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Market Overview</h3>
+                        <div class="time-selector">
+                            <button class="time-btn active">1D</button>
+                            <button class="time-btn">1W</button>
+                            <button class="time-btn">1M</button>
+                            <button class="time-btn">1Y</button>
+                        </div>
+                    </div>
+                    
+                    <div class="market-metrics">
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">S&P 500</span>
+                                <span class="metric-symbol">US Equities</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">4,567.89</div>
+                                <div class="metric-change positive">+1.24%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">NASDAQ</span>
+                                <span class="metric-symbol">US Tech</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">14,253.27</div>
+                                <div class="metric-change positive">+2.03%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">BTC/USD</span>
+                                <span class="metric-symbol">Cryptocurrency</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">$63,452.34</div>
+                                <div class="metric-change positive">+3.72%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">Gold</span>
+                                <span class="metric-symbol">Commodities</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">$1,987.50</div>
+                                <div class="metric-change negative">-0.45%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">Crude Oil</span>
+                                <span class="metric-symbol">Energy</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">$78.45</div>
+                                <div class="metric-change negative">-0.87%</div>
+                            </div>
+                        </div>
+                        
+                        <div class="market-metric">
+                            <div class="metric-info">
+                                <span class="metric-name">EUR/USD</span>
+                                <span class="metric-symbol">Forex</span>
+                            </div>
+                            <div class="metric-values">
+                                <div class="metric-value">1.0845</div>
+                                <div class="metric-change positive">+0.12%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h3 class="card-title">AI Trading Signals</h3>
+                    </div>
+                    
+                    <div class="signals-container">
+                        <div class="signal-item buy">
+                            <div>
+                                <div class="signal-asset">AAPL</div>
+                                <div class="signal-timeframe">1D</div>
+                            </div>
+                            <div>
+                                <div class="signal-action signal-buy">BUY</div>
+                                <div class="signal-confidence">87% confidence</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 87%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="signal-item sell">
+                            <div>
+                                <div class="signal-asset">TSLA</div>
+                                <div class="signal-timeframe">3D</div>
+                            </div>
+                            <div>
+                                <div class="signal-action signal-sell">SELL</div>
+                                <div class="signal-confidence">72% confidence</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 72%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="signal-item buy">
+                            <div>
+                                <div class="signal-asset">BTC/USD</div>
+                                <div class="signal-timeframe">1W</div>
+                            </div>
+                            <div>
+                                <div class="signal-action signal-buy">BUY</div>
+                                <div class="signal-confidence">91% confidence</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 91%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="signal-item hold">
+                            <div>
+                                <div class="signal-asset">EUR/USD</div>
+                                <div class="signal-timeframe">4H</div>
+                            </div>
+                            <div>
+                                <div class="signal-action signal-hold">HOLD</div>
+                                <div class="signal-confidence">65% confidence</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 65%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="signal-item buy">
+                            <div>
+                                <div class="signal-asset">Gold</div>
+                                <div class="signal-timeframe">2D</div>
+                            </div>
+                            <div>
+                                <div class="signal-action signal-buy">BUY</div>
+                                <div class="signal-confidence">78% confidence</div>
+                                <div class="confidence-bar">
+                                    <div class="confidence-fill" style="width: 78%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div>
+                    <div class="footer-logo">
+                        <div class="footer-logo-text">QuFin.ai</div>
+                    </div>
+                    <p class="footer-description">AI-powered trading intelligence platform providing cutting-edge analytics and alternative data signals for modern investors.</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="social-link"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3>Products</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">AI Score Grid</a></li>
+                        <li><a href="#">Market Data</a></li>
+                        <li><a href="#">Trading Strategies</a></li>
+                        <li><a href="#">Backtesting</a></li>
+                        <li><a href="#">Risk Management</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Resources</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Learning Academy</a></li>
+                        <li><a href="#">Market Reports</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Webinars</a></li>
+                        <li><a href="#">API Documentation</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Company</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">About Us</a></li>
+                        <li><a href="#">Careers</a></li>
+                        <li><a href="#">Contact</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3>Support</h3>
+                    <ul class="footer-links">
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Contact Support</a></li>
+                        <li><a href="#">Service Status</a></li>
+                        <li><a href="#">Feature Requests</a></li>
+                        <li><a href="#">System Requirements</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>© 2025 QuFin.ai. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-container">
+            <button class="auth-close" id="authClose">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Login</div>
+                <div class="auth-tab" data-tab="signup">Sign Up</div>
+            </div>
+            
+            <form class="auth-form active" id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter your password">
+                </div>
+                
+                <button type="submit" class="auth-submit">Login</button>
+                
+                <div class="auth-footer">
+                    <a href="#">Forgot your password?</a>
+                </div>
+            </form>
+            
+            <form class="auth-form" id="signupForm">
+                <div class="form-group">
+                    <label for="signupName">Full Name</label>
+                    <input type="text" id="signupName" placeholder="Enter your full name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" placeholder="Create a password">
+                </div>
+                
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" placeholder="Confirm your password">
+                </div>
+                
+                <button type="submit" class="auth-submit">Sign Up</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('i');
+        
+        // Check for saved theme or prefer-color-scheme
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.body.classList.add('dark');
+            themeIcon.classList.remove('fa-moon');
+            themeIcon.classList.add('fa-sun');
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            
+            if (document.body.classList.contains('dark')) {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        
+        // Mobile Menu Toggle
+        const mobileToggle = document.getElementById('mobileToggle');
+        const mobileMenu = document.getElementById('mobileMenu');
+        
+        mobileToggle.addEventListener('click', () => {
+            mobileMenu.classList.toggle('open');
+            
+            // Change icon
+            const icon = mobileToggle.querySelector('i');
+            if (mobileMenu.classList.contains('open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
+            } else {
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
+            }
+        });
+        
+        // Auth Modal
+        const authModal = document.getElementById('authModal');
+        const loginBtn = document.getElementById('loginBtn');
+        const mobileLoginBtn = document.getElementById('mobileLoginBtn');
+        const trialBtn = document.getElementById('trialBtn');
+        const authClose = document.getElementById('authClose');
+        const authTabs = document.querySelectorAll('.auth-tab');
+        const authForms = document.querySelectorAll('.auth-form');
+        
+        // Open modal
+        [loginBtn, mobileLoginBtn, trialBtn].forEach(btn => {
+            btn.addEventListener('click', () => {
+                authModal.classList.add('open');
+            });
+        });
+        
+        // Close modal
+        authClose.addEventListener('click', () => {
+            authModal.classList.remove('open');
+        });
+        
+        // Switch tabs
+        authTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.getAttribute('data-tab');
+                
+                // Update active tab
+                authTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Show corresponding form
+                authForms.forEach(form => {
+                    form.classList.remove('active');
+                    if (form.id === `${targetTab}Form`) {
+                        form.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // Form submission
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Login functionality would be implemented here');
+            authModal.classList.remove('open');
+        });
+        
+        document.getElementById('signupForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Sign up functionality would be implemented here');
+            authModal.classList.remove('open');
+        });
+        
+        // Map controls
+        const mapBtns = document.querySelectorAll('.map-btn');
+        mapBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                mapBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        
+        // Time selector
+        const timeBtns = document.querySelectorAll('.time-btn');
+        timeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        
+        // Product card interactions
+        const productCards = document.querySelectorAll('.product-card');
+        productCards.forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                card.style.transform = 'translateY(-8px)';
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
