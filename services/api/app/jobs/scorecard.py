@@ -105,7 +105,9 @@ def indicator_statuses(
         last_period = observations[-1].period if observations else None
         status = macro_status(meta, last_period, releases, as_of)
         weight = 1.0 if full_weights else status.timeliness.weight
-        score = score_indicator(series_id, entry.dimension, spec, meta.frequency, points, weight)
+        score = score_indicator(
+            series_id, entry.dimension, spec, meta.frequency, points, weight, entry.change
+        )
         result.append(
             IndicatorStatus(
                 score, status, meta.title, meta.source_name, meta.frequency, last_period
@@ -183,6 +185,10 @@ def to_country_score(card: CountryScorecard) -> CountryScore:
                 period=i.score.period,
                 value=None if i.score.value is None else round(i.score.value, 3),
                 score=None if i.score.score is None else round(i.score.score, 2),
+                level_score=None if i.score.level_score is None else round(i.score.level_score, 2),
+                momentum_score=None
+                if i.score.momentum_score is None
+                else round(i.score.momentum_score, 2),
                 weight=round(i.score.weight, 2),
                 usable=i.status is not None and i.status.freshness.usable,
                 status=i.status.freshness.status if i.status else "missing",

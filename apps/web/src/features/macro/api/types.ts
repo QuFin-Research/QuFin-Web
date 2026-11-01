@@ -22,11 +22,25 @@ export type MacroSeries = {
   releaseName: string | null;
 };
 
+export type SeriesChange = {
+  /** "1m", "3m", "1y"; "q/q" and "y/y" for quarterly series */
+  horizon: string;
+  value: number;
+  /** "%", "% ann." (annualised) or "pt" (in the series' own units) */
+  unit: string;
+};
+
 export type MacroSeriesSummary = MacroSeries & {
   ingestedAt: string;
   firstPeriod: string | null;
   lastPeriod: string | null;
   vintageRows: number;
+  /** pct: percent change; diff: change in the series' own units */
+  changeKind: 'pct' | 'diff';
+  /** The source already publishes it as a change or growth rate */
+  publishedAsChange: boolean;
+  /** Latest moves, each within one vintage */
+  changes: SeriesChange[];
   freshness: DataFreshness;
   timeliness: DataTimeliness;
 };
@@ -43,6 +57,8 @@ export type MacroSeriesData = {
   /** Release status of the series today */
   freshness: DataFreshness;
   timeliness: DataTimeliness;
+  /** Latest moves as published on asOf */
+  changes: SeriesChange[];
   /** Real-time date of this view; null means latest */
   asOf: string | null;
   observations: MacroObservation[];

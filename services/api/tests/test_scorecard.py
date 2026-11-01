@@ -168,7 +168,7 @@ def _store_series(store, series_id, title, values, release_lag, skip=frozenset()
 
 
 def test_bias_backtest_finds_no_bias_where_a_plain_sum_would(db_session, monkeypatch):  # noqa: F811
-    # Two labour indicators tracking the same steadily improving labour market. One goes
+    # Two labour indicators tracking the same improving labour market. One goes
     # missing for whole stretches (a delayed or suspended release): the rescaled scorecard
     # keeps the view, the plain sum would have underrated the economy.
     monkeypatch.setattr(
@@ -177,9 +177,9 @@ def test_bias_backtest_finds_no_bias_where_a_plain_sum_would(db_session, monkeyp
         {"AWHMAN": ScoreSpec("level"), "PAYEMS": ScoreSpec("level")},
     )
     rng = random.Random(3)  # noqa: S311  (reproducible test data)
-    trend = [i * 0.05 + rng.gauss(0, 0.2) for i in range(144)]
+    trend = [0.0004 * i**2 + rng.gauss(0, 0.2) for i in range(144)]  # accelerating
     values = monthly_points(trend, start=date(2008, 1, 1))
-    gaps = {p for p, _ in values if p.year in (2016, 2018) and p.month >= 3}
+    gaps = {p for p, _ in values if p.year in (2015, 2016, 2017, 2018) and p.month >= 3}
     store = MacroStore(db_session)
     _store_series(store, "AWHMAN", "Hours", values, release_lag=5)
     _store_series(store, "PAYEMS", "Payrolls", values, release_lag=5, skip=gaps)

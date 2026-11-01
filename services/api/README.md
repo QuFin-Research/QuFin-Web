@@ -148,7 +148,12 @@ today); without macro data it returns the sample scorecards, marked `data: "samp
 rules are in [CLAUDE.md](./CLAUDE.md) ("Scorecard correction mechanism"):
 
 - Each indicator in `app/data/scorecard_catalog.py` is scored against its own ten-year history
-  as published at the time (z-score, clipped to -3..+3, flipped where higher means weaker).
+  as published at the time (z-score, clipped to -3..+3, flipped where higher means weaker), on
+  where it stands and on its 3-month momentum, averaged equally. Weekly and daily series enter
+  the current month as each week lands.
+- `/v1/macro/series` returns each series' latest moves (1m, 3m annualised, 1y; q/q and y/y for
+  quarterly), in percent for quantities and in points for rates and indexes, within one
+  vintage. Series the source already publishes as a change are never changed again.
 - A pillar is the weighted average of its usable indicators with the weights rescaled, so a
   late or missing indicator lowers `confidence` but never moves the score by itself.
 - Each scorecard lists its pending releases with source and FRED dates.
