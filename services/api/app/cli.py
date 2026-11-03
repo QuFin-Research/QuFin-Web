@@ -23,7 +23,7 @@ from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import ingest_cftc
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
-from app.jobs.ingest_fred import ingest
+from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
 from app.stores.migrate import upgrade_to_head
@@ -54,10 +54,13 @@ def _ingest_fred(args: argparse.Namespace) -> int:
         session_scope() as session,
     ):
         results = ingest(client, session, series_ids, args.start)
+        removed = [] if args.series else prune(session)
         checks = check_macro(session, _today())
     for r in results:
         status = f"{r.rows} vintage rows" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<10} {status}")
+    for series_id in removed:
+        print(f"{series_id:<10} removed: no longer in the catalog")
     print()
     print(format_report(checks))
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1

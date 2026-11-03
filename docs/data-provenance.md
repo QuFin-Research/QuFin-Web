@@ -35,6 +35,9 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Growth indicators in real terms | FRED units | **Three were nominal** (RSAFS, PI, NEWORDER) → real RRSFS and W875RX1 scored; NEWORDER unscored |
 | No series is changed twice | FRED units and notes of all 43 series | None published as a change, except WEI ("Index" units, but scaled to GDP growth per its notes): declared `published_as_change`, scored as published |
 | VIX as an early sentiment read | FRED notes | Copyright Cboe: not added (licence needed) |
+| BLS and BEA leading/lagging indicators missing on FRED | FRED API (4 Nov 2026) | None missing: temp help, JOLTS openings and quits, PPI final demand, real PCE, trade balance, current account, budget balance and debt/GDP are all on FRED with vintages; no direct BLS or BEA connector needed |
+| EIA weekly petroleum status on FRED | FRED API | Not on FRED (crude, Cushing, SPR, production, refinery use, product stocks and demand): EIA API v2 is the source for oil, verified with the key |
+| Duplicated data in the catalog | Series definitions | Removed four exactly derivable series: DGS10 (= DFII10 + T10YIE), T10Y2Y, MPRIME (= fed funds + 3), RSAFS (= RRSFS × CPI) |
 | University of Michigan licence | Michigan usage agreement | Commercial use needs a licence; kept for now by the owner's decision |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's

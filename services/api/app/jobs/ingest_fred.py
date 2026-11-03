@@ -86,6 +86,16 @@ def date_pre_archive_periods(vintages: Sequence[Vintage]) -> list[Vintage]:
     return result
 
 
+def prune(session: Session) -> list[str]:
+    """Delete stored series that are no longer in the catalog; returns their ids."""
+    store = MacroStore(session)
+    removed = [s.meta.id for s in store.list_series() if s.meta.id not in BY_ID]
+    for series_id in removed:
+        store.delete_series(series_id)
+        log.info("Removed %s: no longer in the catalog", series_id)
+    return removed
+
+
 def ingest(
     client: FredClient,
     session: Session,

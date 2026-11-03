@@ -7,6 +7,7 @@ from typing import cast
 
 from sqlalchemy.orm import Session
 
+from app.data.indicator_concepts import concept_for
 from app.data.macro_catalog import BY_ID
 from app.data.scorecard_catalog import SCORED
 from app.domain.freshness import STEP_DAYS, frequency_code
@@ -27,7 +28,7 @@ from app.schemas.market import (
     ScoreDimension,
 )
 from app.schemas.market import PendingRelease as PendingReleaseOut
-from app.stores.macro import MacroStore
+from app.stores.macro import MacroStore, SeriesMeta
 
 # Ten years of z-score history plus a year for the year-over-year change.
 LOOKBACK = timedelta(days=366 * 11 + 31)
@@ -73,6 +74,11 @@ def _next_period(period: date, frequency: str) -> date:
     return date(period.year + y, m + 1, 1)
 
 
+def _name(meta: SeriesMeta) -> str:
+    concept = concept_for(meta.country, meta.id)
+    return concept.name if concept else meta.title
+
+
 def indicator_statuses(
     store: MacroStore,
     as_of: date,
@@ -93,7 +99,10 @@ def indicator_statuses(
             empty = IndicatorScore(
                 series_id, entry.dimension, None, None, None, spec.importance, 0.0
             )
-            result.append(IndicatorStatus(empty, None, series_id, None))
+            concept = concept_for("US", series_id)
+            result.append(
+                IndicatorStatus(empty, None, concept.name if concept else series_id, None)
+            )
             continue
         observations = store.as_of(series_id, as_of, start=as_of - LOOKBACK, end=period_end)
         points = [(o.period, o.value) for o in observations]
@@ -112,7 +121,7 @@ def indicator_statuses(
         )
         result.append(
             IndicatorStatus(
-                score, status, meta.title, meta.source_name, meta.frequency, last_period
+                score, status, _name(meta), meta.source_name, meta.frequency, last_period
             )
         )
     return result

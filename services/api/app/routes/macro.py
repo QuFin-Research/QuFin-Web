@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.core.auth import DbSession
 from app.core.clock import Today
+from app.data.indicator_concepts import CONCEPTS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID, ChangeKind
 from app.domain.changes import change_measures
 from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
@@ -36,7 +37,32 @@ Store = Annotated[MacroStore, Depends(get_store)]
 
 
 def _series(meta: SeriesMeta) -> MacroSeries:
-    return MacroSeries.model_validate(meta, from_attributes=True)
+    key = SERIES_CONCEPTS.get((meta.country, meta.id))
+    if key is None:  # every catalog series has a concept (tests/test_indicator_concepts.py)
+        raise HTTPException(status_code=404, detail="Series not in the catalog")
+    concept = CONCEPTS[key]
+    return MacroSeries(
+        **{f: getattr(meta, f) for f in _META_FIELDS},
+        name=concept.name,
+        explanation=concept.explanation,
+        concept=key,
+    )
+
+
+_META_FIELDS = (
+    "id",
+    "source",
+    "title",
+    "units",
+    "frequency",
+    "seasonal_adjustment",
+    "country",
+    "dimension",
+    "cycle",
+    "last_updated",
+    "source_name",
+    "release_name",
+)
 
 
 def _require(store: MacroStore, series_id: str) -> SeriesMeta:
@@ -69,6 +95,8 @@ def list_series(store: Store, today: Today) -> list[MacroSeriesSummary]:
             ),
         )
         for s in store.list_series()
+        # Only catalog series: a series removed from the catalog is never shown.
+        if (s.meta.country, s.meta.id) in SERIES_CONCEPTS
     ]
 
 

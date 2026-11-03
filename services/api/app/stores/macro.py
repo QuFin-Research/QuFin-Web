@@ -144,6 +144,16 @@ class MacroStore:
 
     # --- writes (ingestion) ----------------------------------------------------------------
 
+    def delete_series(self, series_id: str) -> None:
+        """Remove a series and all its vintages (e.g. dropped from the catalog as redundant)."""
+        self.session.execute(
+            delete(MacroObservationRow).where(MacroObservationRow.series_id == series_id)
+        )
+        row = self.session.get(MacroSeriesRow, series_id)
+        if row is not None:
+            self.session.delete(row)
+        self.session.commit()
+
     def replace_series(self, meta: SeriesMeta, vintages: Iterable[Vintage]) -> int:
         """Store a series and its full vintage history, replacing what was there.
 
