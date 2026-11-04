@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
 from app.core.auth import DbSession
 from app.core.clock import Today
-from app.data.positioning_catalog import BY_SYMBOL, COT_CONTRACTS
+from app.data.positioning_catalog import BY_SYMBOL, COT_CONTRACTS, GROUPS
 from app.domain import positioning
 from app.domain.freshness import Freshness
 from app.jobs.check_data import cot_status
@@ -44,7 +44,7 @@ def list_positioning(store: Store, today: Today, as_of: AsOf = None) -> list[Pos
     """
     result = []
     for contract in COT_CONTRACTS:
-        reports = store.history(contract.code, as_of)
+        reports = store.positions(contract, as_of)
         if not reports:
             continue
         points = positioning.series(contract, reports)
@@ -53,6 +53,8 @@ def list_positioning(store: Store, today: Today, as_of: AsOf = None) -> list[Pos
                 symbol=contract.symbol,
                 contract_code=contract.code,
                 market_name=reports[-1].market_name,
+                report=contract.report,
+                group=GROUPS[contract.report],
                 caveat=contract.caveat,
                 latest=_point(points[-1]),
                 weekly_change=points[-1].net - points[-2].net if len(points) > 1 else None,
@@ -74,7 +76,7 @@ def get_positioning(
     contract = BY_SYMBOL.get(symbol.upper())
     if contract is None:
         raise HTTPException(status_code=404, detail="No CFTC contract for that symbol")
-    reports = store.history(contract.code, as_of)
+    reports = store.positions(contract, as_of)
     if not reports:
         raise HTTPException(status_code=404, detail="No reports ingested for that symbol")
     points = positioning.series(contract, reports)[-weeks:]
@@ -82,6 +84,8 @@ def get_positioning(
         symbol=contract.symbol,
         contract_code=contract.code,
         market_name=reports[-1].market_name,
+        report=contract.report,
+        group=GROUPS[contract.report],
         as_of=as_of,
         caveat=contract.caveat,
         freshness=_freshness(cot_status(reports, as_of or today).freshness),

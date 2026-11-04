@@ -10,7 +10,7 @@ from app.data.positioning_catalog import BY_SYMBOL
 from app.domain.positioning import series
 from app.jobs import ingest_cftc
 from app.stores.db import get_session
-from app.stores.positioning import CotReport
+from app.stores.positioning import CotReport, legacy_positions
 
 TUESDAY = date(2026, 1, 6)
 
@@ -37,7 +37,9 @@ def weekly_rows(code, nets, start=TUESDAY):
 
 def report(code, i, net, oi=100_000):
     d = TUESDAY + timedelta(weeks=i)
-    return CotReport(code, d, d + timedelta(days=3), "M", oi, 50_000 + net, 50_000, 0, 0, 0, 0, 0)
+    return legacy_positions(
+        CotReport(code, d, d + timedelta(days=3), "M", oi, 50_000 + net, 50_000, 0, 0, 0, 0, 0)
+    )
 
 
 # --- connector -----------------------------------------------------------------------------

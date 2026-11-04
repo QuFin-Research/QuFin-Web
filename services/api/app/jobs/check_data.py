@@ -13,7 +13,7 @@ from app.data.scorecard_catalog import SCORED
 from app.domain.duplicates import find_duplicates
 from app.domain.freshness import Freshness, Timeliness, assess, timeliness
 from app.stores.macro import MacroStore, SeriesMeta
-from app.stores.positioning import CotReport, PositioningStore
+from app.stores.positioning import PositioningStore, Positions
 
 # Release lags are measured over recent periods, so a changed release calendar shows up.
 LAG_WINDOW = timedelta(days=3 * 365)
@@ -100,7 +100,7 @@ def macro_status(
     )
 
 
-def cot_status(reports: Sequence[CotReport], today: date) -> SeriesStatus:
+def cot_status(reports: Sequence[Positions], today: date) -> SeriesStatus:
     recent = reports[-52:]
     lags = [(r.release_date - r.report_date).days for r in recent]
     fresh = assess(
@@ -152,7 +152,7 @@ def check_positioning(session: Session, today: date) -> list[DataCheck]:
     store = PositioningStore(session)
     checks = []
     for contract in COT_CONTRACTS:
-        reports = store.history(contract.code)
+        reports = store.positions(contract)
         last = reports[-1].report_date if reports else None
         checks.append(
             DataCheck("cftc", contract.symbol, COT_FREQUENCY, last, cot_status(reports, today))
