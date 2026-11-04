@@ -32,7 +32,7 @@ import { FRESHNESS_LABEL } from '@/lib/data-quality';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
 import { macroAvailable } from '../api/service';
-import type { BusinessCycle, MacroSeriesSummary, SeriesChange } from '../api/types';
+import type { BusinessCycle, MacroSeries, MacroSeriesSummary, SeriesChange } from '../api/types';
 
 type CycleFilter = BusinessCycle | 'all';
 
@@ -99,6 +99,11 @@ function ChangeCell({ series }: { series: MacroSeriesSummary }) {
   );
 }
 
+/** For professionals: the source's official title, series code and publisher. */
+function officialTooltip(s: MacroSeries) {
+  return `${s.title}\nSource code: ${s.id}${s.sourceName ? `\nPublisher: ${s.sourceName}` : ''}`;
+}
+
 function StatusBadge({ series }: { series: MacroSeriesSummary }) {
   const f = series.freshness;
   return (
@@ -131,8 +136,8 @@ function DataChecks({ list }: { list: MacroSeriesSummary[] }) {
             <ul className='list-disc pl-4'>
               {unusable.map((s) => (
                 <li key={s.id}>
-                  <span className='font-mono'>{s.id}</span> ({s.sourceName ?? 'unknown source'}):{' '}
-                  {s.freshness.reason}
+                  <span className='font-medium'>{s.name}</span> ({s.sourceName ?? 'unknown source'}
+                  ): {s.freshness.reason}
                 </li>
               ))}
             </ul>
@@ -153,7 +158,7 @@ function DataChecks({ list }: { list: MacroSeriesSummary[] }) {
             <ul className='mt-2 list-disc pl-4'>
               {delayed.map((s) => (
                 <li key={s.id}>
-                  <span className='font-mono'>{s.id}</span> ({s.sourceName}) reaches FRED{' '}
+                  <span className='font-medium'>{s.name}</span> ({s.sourceName}) reaches FRED{' '}
                   {s.timeliness.fredDelayDays} days after the source publishes it.{' '}
                   {s.timeliness.delayNote} Weight {s.timeliness.weight.toFixed(2)}.
                 </li>
@@ -166,7 +171,7 @@ function DataChecks({ list }: { list: MacroSeriesSummary[] }) {
               {late
                 .map(
                   (s) =>
-                    `${s.id} ${s.timeliness.weight.toFixed(2)} (${s.timeliness.daysAfterPeriodEnd} days after its period ends)`
+                    `${s.name} ${s.timeliness.weight.toFixed(2)} (${s.timeliness.daysAfterPeriodEnd} days after its period ends)`
                 )
                 .join(', ')}
               .
@@ -298,10 +303,15 @@ export function MacroView() {
                   }}
                 >
                   <TableCell className='pl-4'>
-                    <button type='button' className='text-left' aria-pressed={s.id === selected.id}>
-                      <span className='font-mono text-sm font-medium'>{s.id}</span>
+                    <button
+                      type='button'
+                      className='text-left'
+                      aria-pressed={s.id === selected.id}
+                      title={officialTooltip(s)}
+                    >
+                      <span className='text-sm font-medium'>{s.name}</span>
                       <span className='text-muted-foreground block max-w-80 truncate text-xs'>
-                        {s.title}
+                        {s.explanation}
                       </span>
                       <span className='text-muted-foreground/80 block max-w-80 truncate text-xs'>
                         {s.sourceName}
@@ -347,7 +357,7 @@ export function MacroView() {
       <div className='grid grid-cols-1 gap-4 xl:grid-cols-3'>
         <Card className='xl:col-span-2'>
           <CardHeader>
-            <CardTitle>{selected.title}</CardTitle>
+            <CardTitle title={officialTooltip(selected)}>{selected.name}</CardTitle>
             <CardDescription>
               {selected.units} · {selected.frequency} · {selected.seasonalAdjustment}
               <span className='block'>

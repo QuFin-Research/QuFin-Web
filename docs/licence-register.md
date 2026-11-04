@@ -5,7 +5,7 @@ in `services/api/CLAUDE.md`). "Free to download" is not "free to show to paying 
 source moves to **In use** only when its redistribution terms allow display in a paid product,
 or a licence is signed.
 
-**Status:** In use · Planned · Needs licence · Excluded. **Last reviewed:** 1 Nov 2026.
+**Status:** In use · Planned · Needs licence · Excluded. **Last reviewed:** 4 Nov 2026.
 Rows marked *to confirm* have not yet been checked against the publisher's terms page.
 
 ## In use
@@ -20,6 +20,7 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Lewis-Mertens-Stock Weekly Economic Index (WEI) | Weekly activity | *to confirm* | Authors and FRED | Free | Published as a growth rate |
 | Fed H.10 daily FX (via FRED: DEXUSEU, DEXUSUK, DEXJPUS, DEXUSAL, DEXUSNZ, DEXCAUS, DEXSZUS) | Daily reference FX rates, 7 pairs | Public domain | "Board of Governors of the Federal Reserve System" | Free | Noon buying rates in New York, published weekly; reference prices, not tradable quotes |
 | EIA spot prices (via FRED: DCOILWTICO, DCOILBRENTEU, DHHNGSP) | WTI, Brent, Henry Hub daily | Public domain | "U.S. Energy Information Administration" | Free | Spot reference prices |
+| EIA API v2 (Weekly Petroleum Status Report) | 12 weekly oil series: crude, Cushing and SPR stocks, production, refinery use, product stocks, imports, exports, demand | Public domain (US government work) | "Source: U.S. Energy Information Administration" | Free (API key) | Not on FRED; EIA serves no vintages, so QuFin records revisions as it sees them |
 | CFTC Commitments of Traders (Public Reporting API) | Positioning, 11 contracts | Public domain | "Source: CFTC" | Free | — |
 
 ## Planned (Phase 1 connectors)
@@ -27,7 +28,6 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Source | Data | Redistribution | Cost |
 |---|---|---|---|
 | BLS, BEA, Census, Treasury Fiscal Data | US primary releases, fiscal data | Public domain | Free (BLS, BEA keys) |
-| EIA API v2 | Energy inventories, production | Public domain | Free (key) |
 | ECB Data Portal, Eurostat | Euro-area macro, reference FX rates | Reuse with attribution | Free |
 | OECD Data Explorer | Leading indicators, BCI, CCI | Reuse with attribution, *to confirm* commercial terms | Free |
 | IMF, World Bank, BIS | Cross-country macro, policy rates, REER | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |

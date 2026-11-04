@@ -21,6 +21,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Backtest lab | Equity curve, statistics | **Sample** | Banner and in-card note, from the result's origin |
 | Macro data | Series, vintages, revisions, release status, weight, 1m/3m/1y change | **Live** (FRED/ALFRED) | Source, release dates and status per series; changes in % or points per the series' kind |
 | Macro data: Markets | Daily reference prices: 7 FX pairs (Fed H.10), WTI, Brent, Henry Hub (EIA) | **Live** (FRED/ALFRED), reference prices, not tradable quotes | "markets" group; not scored; asset prices elsewhere stay sample until wired |
+| Macro data: Energy | 12 weekly oil series (stocks, production, refinery use, trade, demand) | **Live** (EIA API v2, Weekly Petroleum Status Report) | "energy" group; not scored; release dates derived from EIA's weekly rule; revisions stored as vintages from the day QuFin sees them |
 | Positioning | COT net, % OI, COT index | **Live** (CFTC legacy futures) | Report and release dates; caveat on partial contracts (Brent) |
 | Notifications | — | None yet | Empty until real event sources exist (invented alerts removed) |
 
@@ -35,6 +36,9 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Growth indicators in real terms | FRED units | **Three were nominal** (RSAFS, PI, NEWORDER) → real RRSFS and W875RX1 scored; NEWORDER unscored |
 | No series is changed twice | FRED units and notes of all 43 series | None published as a change, except WEI ("Index" units, but scaled to GDP growth per its notes): declared `published_as_change`, scored as published |
 | VIX as an early sentiment read | FRED notes | Copyright Cboe: not added (licence needed) |
+| BLS and BEA leading/lagging indicators missing on FRED | FRED API (4 Nov 2026) | None missing: temp help, JOLTS openings and quits, PPI final demand, real PCE, trade balance, current account, budget balance and debt/GDP are all on FRED with vintages; no direct BLS or BEA connector needed |
+| EIA weekly petroleum status on FRED | FRED API | Not on FRED (crude, Cushing, SPR, production, refinery use, product stocks and demand): EIA API v2 is the source for oil, verified with the key |
+| Duplicated data in the catalog | Series definitions | Removed four exactly derivable series: DGS10 (= DFII10 + T10YIE), T10Y2Y, MPRIME (= fed funds + 3), RSAFS (= RRSFS × CPI) |
 | University of Michigan licence | Michigan usage agreement | Commercial use needs a licence; kept for now by the owner's decision |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's

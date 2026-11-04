@@ -67,6 +67,22 @@ series, existing or new:
     not computed per request. Bulk loads end with `ANALYZE` so the planner picks the right
     index. Indexes belong to the table, so rows for series added later are indexed on insert.
 
+16. **No duplicated indicators or data, at any cost.** A country has at most one series per
+    concept (`app/data/indicator_concepts.py`), and a series that can be derived exactly from
+    stored ones is not stored (`REDUNDANT`, e.g. the 10y-2y spread from the two yields).
+    `tests/test_indicator_concepts.py` fails otherwise.
+17. **FRED/ALFRED first, at least for the US.** Use an agency's own API (BLS, BEA, EIA, ...)
+    only for a leading indicator FRED does not carry, or a lagging one that is mandatory to
+    gauge an economy, currency, country or asset; record the reason in `NON_FRED_ALLOWED`. An
+    agency API may also be used as a release-time fast lane for a FRED series, stored as a
+    vintage of the same series and reconciled against FRED, never as a second series.
+18. **Every series has a human-readable name, shared across countries.** Each maps to a
+    concept with a short name and a one-sentence plain explanation; the same concept key
+    matches the indicator in every country (US and UK unemployment are both
+    `unemployment_rate`, "Unemployment Rate"). The API returns the name and the official
+    title; pages show the name, with the official title, source code and publisher in a
+    tooltip. A series without a name fails the tests.
+
 ## Scorecard correction mechanism (non-negotiable)
 
 A delayed or missing indicator must make a score **less certain, never more bullish or

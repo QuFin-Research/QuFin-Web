@@ -39,6 +39,8 @@ SCORED: dict[str, ScoreSpec] = {
     "RRSFS": ScoreSpec("yoy"),
     "W875RX1": ScoreSpec("yoy"),
     "PERMIT": ScoreSpec("yoy"),
+    "HSN1F": ScoreSpec("yoy"),
+    "PCEC96": ScoreSpec("yoy"),
     "NOCDFSA066MSFRBPHI": ScoreSpec("level"),
     "WEI": ScoreSpec("level"),  # already a growth rate: scored as published
     # Inflation
@@ -48,6 +50,7 @@ SCORED: dict[str, ScoreSpec] = {
     "CUSR0000SAS": ScoreSpec("yoy"),
     "T10YIE": ScoreSpec("level"),
     "GASREGW": ScoreSpec("yoy"),  # weekly: the earliest read on consumer prices
+    "PPIFIS": ScoreSpec("yoy"),
     # Labour
     "UNRATE": ScoreSpec("level", -1),
     "PAYEMS": ScoreSpec("yoy"),
@@ -55,6 +58,9 @@ SCORED: dict[str, ScoreSpec] = {
     "AWHMAN": ScoreSpec("level"),
     "UEMPMEAN": ScoreSpec("level", -1),
     "CCSA": ScoreSpec("level", -1),
+    "TEMPHELPS": ScoreSpec("yoy"),
+    "JTSJOL": ScoreSpec("yoy"),
+    "JTSQUR": ScoreSpec("level"),
     # Policy (tight = strong)
     "FEDFUNDS": ScoreSpec("level"),
     "DGS2": ScoreSpec("level"),

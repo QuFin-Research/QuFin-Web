@@ -13,7 +13,19 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-Dimension = Literal["growth", "inflation", "labour", "policy", "sentiment", "markets"]
+# The five scored pillars, plus external and fiscal (stored and shown; scored once the
+# scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
+Dimension = Literal[
+    "growth",
+    "inflation",
+    "labour",
+    "policy",
+    "sentiment",
+    "external",
+    "fiscal",
+    "energy",
+    "markets",
+]
 Cycle = Literal["leading", "coincident", "lagging"]
 # How a change is measured. pct: percent change, for quantities and price indexes. diff:
 # change in the series' own units (percentage points, index points), for rates, spreads,
@@ -27,7 +39,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred"]
+    source: Literal["fred", "eia"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -84,22 +96,31 @@ DIFF_SERIES = frozenset(
         "NOCDFSA066MSFRBPHI",
         "T10YFF",
         "T10Y3M",
-        "T10Y2Y",
         "NFCI",
         "STLFSI4",
         "UMCSENT",
         "UEMPMEAN",
         "UNRATE",
         "ISRATIO",
-        "MPRIME",
         "T10YIE",
         "FEDFUNDS",
         "DGS2",
-        "DGS10",
+        "JTSQUR",
+        "BOPGSTB",
+        "IEABC",
+        "MTSDS133FMS",
+        "GFDEGDQ188S",
+        "WPULEUS3",
         "DFII10",
         "BAA10Y",
     }
 )
+
+
+def _eia(id: str) -> CatalogSeries:
+    """A Weekly Petroleum Status Report series, from the EIA API (not on FRED)."""
+    return CatalogSeries(id, "eia", "US", "energy", change="diff" if id in DIFF_SERIES else "pct")
+
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
@@ -113,9 +134,12 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("NOCDFSA066MSFRBPHI", "growth", "leading"),  # Philadelphia Fed new orders
     _us("PERMIT", "growth", "leading"),  # Building permits
     _us("HOUST", "growth", "leading"),  # Housing starts
+    _us("HSN1F", "growth", "leading"),  # New single-family home sales
+    _us("TEMPHELPS", "labour", "leading"),  # Temporary help services employment
+    _us("JTSJOL", "labour", "leading"),  # JOLTS job openings
+    _us("JTSQUR", "labour", "leading"),  # JOLTS quits rate
     _us("T10YFF", "policy", "leading", market=True, source=_H15),  # 10-year yield minus fed funds
     _us("T10Y3M", "policy", "leading", market=True, source=_H15),  # 10-year minus 3-month yield
-    _us("T10Y2Y", "policy", "leading", market=True, source=_H15),  # 10-year minus 2-year
     _us("NFCI", "sentiment", "leading"),  # Chicago Fed financial conditions, weekly
     _us("STLFSI4", "sentiment", "leading"),  # St. Louis Fed financial stress, weekly
     CatalogSeries(
@@ -144,9 +168,8 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("INDPRO", "growth", "coincident"),  # Industrial production
     _us("RRSFS", "growth", "coincident"),  # Real retail sales (CPI-adjusted)
     _us("W875RX1", "growth", "coincident"),  # Real personal income less transfers
-    # Nominal versions keep their timing tag; only the real versions are scored.
-    _us("RSAFS", "growth", "coincident"),  # Retail sales, nominal
-    _us("PI", "growth", "coincident"),  # Personal income, nominal
+    _us("PCEC96", "growth", "coincident"),  # Real personal consumption expenditures
+    _us("PI", "growth", "coincident"),  # Personal income, nominal (not scored)
     _us("PAYEMS", "labour", "coincident"),  # Nonfarm payrolls
     # --- Lagging: turn after the economy -------------------------------------------------
     _us("UEMPMEAN", "labour", "lagging"),  # Average weeks unemployed
@@ -156,17 +179,17 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("ULCMFG", "inflation", "lagging"),  # Unit labour costs, manufacturing, quarterly
     _us("CUSR0000SAS", "inflation", "lagging"),  # CPI, services
     _us("CPILFESL", "inflation", "lagging"),  # Core CPI
-    _us("MPRIME", "policy", "lagging"),  # Bank prime loan rate
     _us("BUSLOANS", "policy", "lagging"),  # Commercial and industrial loans
     _us("TOTALSL", "policy", "lagging"),  # Consumer credit outstanding
     # --- Not classified by cycle -----------------------------------------------------------
     _us("CPIAUCSL", "inflation"),  # CPI, all items
     _us("GASREGW", "inflation"),  # Retail gasoline price, weekly (EIA)
     _us("PCEPILFE", "inflation"),  # Core PCE price index
+    _us("PPIFIS", "inflation"),  # Producer prices, final demand
+    _us("CP", "growth"),  # Corporate profits after tax, quarterly (nominal, not scored)
     _us("T10YIE", "inflation", market=True, source=_H15),  # 10-year breakeven inflation
     _us("FEDFUNDS", "policy"),  # Effective fed funds rate
     _us("DGS2", "policy", market=True),  # 2-year Treasury yield
-    _us("DGS10", "policy", market=True),  # 10-year Treasury yield
     _us("DFII10", "policy", market=True),  # 10-year real (TIPS) yield
     _us("WALCL", "policy", market=True),  # Fed balance sheet, weekly
     _us("M2SL", "policy"),  # M2 money supply
@@ -180,6 +203,24 @@ CATALOG: tuple[CatalogSeries, ...] = (
             "redistributing it in a commercial product."
         ),
     ),  # Baa credit spread
+    # --- External and fiscal: mandatory to gauge a currency; scored with eight pillars ------
+    _us("BOPGSTB", "external"),  # Trade balance, goods and services
+    _us("IEABC", "external"),  # Current account balance, quarterly
+    _us("MTSDS133FMS", "fiscal"),  # Federal surplus or deficit, monthly
+    _us("GFDEGDQ188S", "fiscal"),  # Federal debt as % of GDP, quarterly
+    # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
+    _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
+    _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks
+    _eia("WCSSTUS1"),  # Strategic Petroleum Reserve
+    _eia("WCRFPUS2"),  # Crude oil field production
+    _eia("WPULEUS3"),  # Refinery utilisation
+    _eia("WGTSTUS1"),  # Total gasoline stocks
+    _eia("WDISTUS1"),  # Distillate fuel oil stocks
+    _eia("WCRIMUS2"),  # Crude oil imports
+    _eia("WCREXUS2"),  # Crude oil exports
+    _eia("WRPUPUS2"),  # Product supplied, all petroleum products
+    _eia("WGFUPUS2"),  # Product supplied, finished motor gasoline
+    _eia("WDIUPUS2"),  # Product supplied, distillate fuel oil
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.

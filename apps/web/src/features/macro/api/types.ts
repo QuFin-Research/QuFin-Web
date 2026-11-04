@@ -5,14 +5,21 @@ export type BusinessCycle = 'leading' | 'coincident' | 'lagging';
 
 export type MacroSeries = {
   id: string;
+  /** Human-readable name shown to users, shared across countries */
+  name: string;
+  /** One plain sentence on what the indicator measures */
+  explanation: string;
+  /** Concept key matching the same indicator across countries */
+  concept: string;
   source: string;
+  /** The source's official title (shown in the tooltip) */
   title: string;
   units: string;
   frequency: string;
   seasonalAdjustment: string;
   country: string;
   /** Scorecard pillar, or 'markets' for reference prices (not scored) */
-  dimension: ScoreDimension | 'markets';
+  dimension: ScoreDimension | 'external' | 'fiscal' | 'energy' | 'markets';
   /** When the series tends to turn relative to the business cycle */
   cycle: BusinessCycle | null;
   /** When the source last revised the series */

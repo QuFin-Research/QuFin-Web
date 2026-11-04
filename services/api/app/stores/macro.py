@@ -7,9 +7,9 @@ one. Asking "what was known on day D" is then a range filter, which keeps backte
 scorecards free of look-ahead from later revisions.
 """
 
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import (
     Date,
@@ -144,6 +144,16 @@ class MacroStore:
 
     # --- writes (ingestion) ----------------------------------------------------------------
 
+    def delete_series(self, series_id: str) -> None:
+        """Remove a series and all its vintages (e.g. dropped from the catalog as redundant)."""
+        self.session.execute(
+            delete(MacroObservationRow).where(MacroObservationRow.series_id == series_id)
+        )
+        row = self.session.get(MacroSeriesRow, series_id)
+        if row is not None:
+            self.session.delete(row)
+        self.session.commit()
+
     def replace_series(self, meta: SeriesMeta, vintages: Iterable[Vintage]) -> int:
         """Store a series and its full vintage history, replacing what was there.
 
@@ -160,6 +170,77 @@ class MacroStore:
             )
             for v in vintages
         ]
+        series = self._upsert_meta(meta)
+        periods = [r.period for r in rows]
+        series.first_period = min(periods, default=None)
+        series.last_period = max(periods, default=None)
+        series.vintage_rows = len(rows)
+        self.session.flush()
+        self.session.execute(
+            delete(MacroObservationRow).where(MacroObservationRow.series_id == meta.id)
+        )
+        self.session.add_all(rows)
+        self.session.commit()
+        return len(rows)
+
+    def record_latest(
+        self,
+        meta: SeriesMeta,
+        observations: Iterable[tuple[date, float | None]],
+        release_of: Callable[[date], date],
+        today: date,
+    ) -> int:
+        """Store a source's current values when it serves no vintages (e.g. the EIA API).
+
+        A period seen for the first time is dated by its derived release date (never later
+        than today, when it is known to be public). A period whose value has changed since the
+        last load closes its old row yesterday and opens a new one today, so revisions become
+        vintages from the moment they are seen. Returns the number of rows written.
+        """
+        series = self._upsert_meta(meta)
+        self.session.flush()
+        current = {
+            r.period: r
+            for r in self.session.scalars(
+                select(MacroObservationRow).where(
+                    MacroObservationRow.series_id == meta.id,
+                    MacroObservationRow.realtime_end == OPEN_END,
+                )
+            )
+        }
+        written = 0
+        for period, value in observations:
+            row = current.get(period)
+            if row is None:
+                start = min(release_of(period), today)
+            elif row.value == value:
+                continue
+            else:
+                row.realtime_end = today - timedelta(days=1)
+                start = today
+            self.session.add(
+                MacroObservationRow(
+                    series_id=meta.id,
+                    period=period,
+                    realtime_start=start,
+                    realtime_end=OPEN_END,
+                    value=value,
+                )
+            )
+            written += 1
+        self.session.flush()
+        first, last, count = self.session.execute(
+            select(
+                func.min(MacroObservationRow.period),
+                func.max(MacroObservationRow.period),
+                func.count(),
+            ).where(MacroObservationRow.series_id == meta.id)
+        ).one()
+        series.first_period, series.last_period, series.vintage_rows = first, last, count
+        self.session.commit()
+        return written
+
+    def _upsert_meta(self, meta: SeriesMeta) -> MacroSeriesRow:
         series = self.session.get(MacroSeriesRow, meta.id) or MacroSeriesRow(id=meta.id)
         series.source = meta.source
         series.title = meta.title
@@ -174,18 +255,8 @@ class MacroStore:
         series.delay_notice = meta.delay_notice
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
-        periods = [r.period for r in rows]
-        series.first_period = min(periods, default=None)
-        series.last_period = max(periods, default=None)
-        series.vintage_rows = len(rows)
         self.session.add(series)
-        self.session.flush()
-        self.session.execute(
-            delete(MacroObservationRow).where(MacroObservationRow.series_id == meta.id)
-        )
-        self.session.add_all(rows)
-        self.session.commit()
-        return len(rows)
+        return series
 
     # --- reads -----------------------------------------------------------------------------
 

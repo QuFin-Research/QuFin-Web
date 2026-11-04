@@ -14,7 +14,7 @@ confirm.
 | United States | BEA | BEA release schedule | To confirm |
 | United States | Census | Economic indicators calendar | To confirm |
 | United States | Federal Reserve Board | H.4.1, H.8, H.15, G.17, G.19 statistical release dates; FOMC calendar | To confirm |
-| United States | EIA | Weekly Petroleum Status Report schedule | To confirm |
+| United States | EIA | Weekly Petroleum Status Report: Wednesday after the week ending Friday; a federal holiday Monday to Wednesday moves it one day later | **Derived** from EIA's stated rule in `services/api/app/data/eia_calendar.py` (erring late); dated exceptions to be added as EIA announces them |
 | Euro area | ECB | Statistical calendar; monetary policy meeting calendar | To confirm |
 | Euro area | Eurostat | Euro indicators release calendar | To confirm |
 | United Kingdom | ONS, Bank of England | ONS release calendar; MPC dates | To confirm |
