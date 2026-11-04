@@ -2,12 +2,15 @@
 
 from collections import Counter
 
-from app.data.indicator_concepts import CONCEPTS, REDUNDANT, SERIES_CONCEPTS, concept_for
+from app.data.indicator_concepts import (
+    CONCEPTS,
+    NON_FRED_ALLOWED,
+    REDUNDANT,
+    SERIES_CONCEPTS,
+    concept_for,
+)
 from app.data.macro_catalog import CATALOG
 from tests.test_macro_api import db_session, ingested  # noqa: F401  (fixtures)
-
-# US series that may come from a source other than FRED, with the reason (rule: FRED first).
-NON_FRED_ALLOWED: dict[str, str] = {}
 
 
 def test_every_series_has_a_display_name_and_plain_explanation():

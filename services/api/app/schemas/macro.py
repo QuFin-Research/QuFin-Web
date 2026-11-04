@@ -19,9 +19,10 @@ class MacroSeries(ApiModel):
     frequency: str
     seasonal_adjustment: str
     country: str
-    dimension: ScoreDimension | Literal["external", "fiscal", "markets"] = Field(
+    dimension: ScoreDimension | Literal["external", "fiscal", "energy", "markets"] = Field(
         description='Scorecard pillar; "external" and "fiscal" are shown and scored once the '
-        'scorecard has eight pillars; "markets" are reference prices, never scored'
+        'scorecard has eight pillars; "energy" is oil supply and demand and "markets" are '
+        "reference prices, never scored"
     )
     cycle: Literal["leading", "coincident", "lagging"] | None = Field(
         description="When the series tends to turn relative to the business cycle"

@@ -4,6 +4,7 @@ uv run python -m app.cli migrate
 uv run python -m app.cli ingest-fred            # every series in the catalog
 uv run python -m app.cli ingest-fred CPIAUCSL UNRATE --start 2010-01-01
 uv run python -m app.cli ingest-cftc                 # CFTC positioning, no key needed
+uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and demand
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
@@ -17,11 +18,12 @@ import sys
 from datetime import UTC, date, datetime, timedelta
 
 from app.connectors.cftc import CftcClient
+from app.connectors.eia import EiaClient
 from app.connectors.fred import FredClient
 from app.core.config import get_settings
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
-from app.jobs import ingest_cftc
+from app.jobs import ingest_cftc, ingest_eia
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
@@ -46,7 +48,7 @@ def _ingest_fred(args: argparse.Namespace) -> int:
         )
         return 2
     upgrade_to_head(get_engine())
-    series_ids = args.series or [s.id for s in CATALOG]
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "fred"]
     with (
         FredClient(
             settings.fred_api_key.get_secret_value(), settings.fred_base_url, raw=_raw_zone()
@@ -61,6 +63,32 @@ def _ingest_fred(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<10} {status}")
     for series_id in removed:
         print(f"{series_id:<10} removed: no longer in the catalog")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_eia(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    if settings.eia_api_key is None:
+        print(
+            "QUFIN_EIA_API_KEY is not set. Get a free key at https://www.eia.gov/opendata/",
+            file=sys.stderr,
+        )
+        return 2
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "eia"]
+    with (
+        EiaClient(
+            settings.eia_api_key.get_secret_value(), settings.eia_base_url, raw=_raw_zone()
+        ) as client,
+        session_scope() as session,
+    ):
+        results = ingest_eia.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised weeks" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<22} {status}")
     print()
     print(format_report(checks))
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
@@ -124,6 +152,16 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first observation date (default {DEFAULT_OBSERVATION_START})",
     )
     fred.set_defaults(func=_ingest_fred)
+
+    eia = sub.add_parser("ingest-eia", help="ingest EIA weekly petroleum (oil) series")
+    eia.add_argument("series", nargs="*", help="EIA series ids (default: every catalog EIA series)")
+    eia.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help=f"first week to load (default {DEFAULT_OBSERVATION_START})",
+    )
+    eia.set_defaults(func=_ingest_eia)
 
     cftc = sub.add_parser("ingest-cftc", help="ingest CFTC Commitments of Traders reports")
     cftc.add_argument("symbols", nargs="*", help="QuFin symbols (default: every mapped asset)")

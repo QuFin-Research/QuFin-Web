@@ -227,6 +227,55 @@ CONCEPTS: dict[str, Concept] = {
         "Government Debt (% of GDP)",
         "Total government debt relative to the size of the economy.",
     ),
+    # --- Energy (oil supply, demand and stocks) -----------------------------------------------
+    "crude_oil_inventories": Concept(
+        "Crude Oil Inventories",
+        "Commercial crude oil in storage; builds tend to weigh on prices, draws support them.",
+    ),
+    "cushing_crude_stocks": Concept(
+        "Cushing Crude Stocks",
+        "Crude stored at Cushing, the WTI delivery hub; very low levels can squeeze prices.",
+    ),
+    "strategic_petroleum_reserve": Concept(
+        "Strategic Petroleum Reserve",
+        "Government emergency crude stocks; releases add supply to the market.",
+    ),
+    "crude_oil_production": Concept(
+        "Crude Oil Production",
+        "Barrels of crude oil produced per day.",
+    ),
+    "refinery_utilisation": Concept(
+        "Refinery Utilisation",
+        "Share of refining capacity in use: how much crude refiners are demanding.",
+    ),
+    "gasoline_inventories": Concept(
+        "Gasoline Inventories",
+        "Gasoline in storage; low stocks ahead of driving season support prices.",
+    ),
+    "diesel_inventories": Concept(
+        "Diesel & Heating Oil Inventories",
+        "Distillate fuel in storage, used by trucks, industry and heating.",
+    ),
+    "crude_oil_imports": Concept(
+        "Crude Oil Imports",
+        "Barrels of crude oil bought from abroad per day.",
+    ),
+    "crude_oil_exports": Concept(
+        "Crude Oil Exports",
+        "Barrels of crude oil sold abroad per day.",
+    ),
+    "total_fuel_demand": Concept(
+        "Total Fuel Demand",
+        "All petroleum products supplied to users per day: implied consumption.",
+    ),
+    "gasoline_demand": Concept(
+        "Gasoline Demand",
+        "Gasoline supplied to users per day: a read on driving demand.",
+    ),
+    "diesel_demand": Concept(
+        "Diesel Demand",
+        "Diesel and heating oil supplied per day: a read on freight and industry.",
+    ),
     # --- Markets (reference prices) -------------------------------------------------------------
     "fx_eurusd": Concept("EUR/USD", "US dollars per euro."),
     "fx_gbpusd": Concept("GBP/USD", "US dollars per British pound."),
@@ -292,6 +341,18 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "IEABC": "current_account",
     "MTSDS133FMS": "budget_balance",
     "GFDEGDQ188S": "government_debt_to_gdp",
+    "WCESTUS1": "crude_oil_inventories",
+    "W_EPC0_SAX_YCUOK_MBBL": "cushing_crude_stocks",
+    "WCSSTUS1": "strategic_petroleum_reserve",
+    "WCRFPUS2": "crude_oil_production",
+    "WPULEUS3": "refinery_utilisation",
+    "WGTSTUS1": "gasoline_inventories",
+    "WDISTUS1": "diesel_inventories",
+    "WCRIMUS2": "crude_oil_imports",
+    "WCREXUS2": "crude_oil_exports",
+    "WRPUPUS2": "total_fuel_demand",
+    "WGFUPUS2": "gasoline_demand",
+    "WDIUPUS2": "diesel_demand",
     "DEXUSEU": "fx_eurusd",
     "DEXUSUK": "fx_gbpusd",
     "DEXJPUS": "fx_usdjpy",
@@ -306,6 +367,27 @@ US_SERIES_CONCEPTS: dict[str, str] = {
 
 SERIES_CONCEPTS: dict[tuple[str, str], str] = {
     ("US", series_id): concept for series_id, concept in US_SERIES_CONCEPTS.items()
+}
+
+_EIA_REASON = "EIA Weekly Petroleum Status Report series are not on FRED (checked 4 Nov 2026)"
+
+# US series from a source other than FRED, with the reason (rule 17: FRED first).
+NON_FRED_ALLOWED: dict[str, str] = {
+    series_id: _EIA_REASON
+    for series_id in (
+        "WCESTUS1",
+        "W_EPC0_SAX_YCUOK_MBBL",
+        "WCSSTUS1",
+        "WCRFPUS2",
+        "WPULEUS3",
+        "WGTSTUS1",
+        "WDISTUS1",
+        "WCRIMUS2",
+        "WCREXUS2",
+        "WRPUPUS2",
+        "WGFUPUS2",
+        "WDIUPUS2",
+    )
 }
 
 # Not stored because they are exactly derivable from series that are (no duplicated data).

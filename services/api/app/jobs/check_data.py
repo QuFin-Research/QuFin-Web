@@ -124,11 +124,11 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
                 None,
                 None,
             )
-            checks.append(DataCheck("fred", entry.id, "", None, missing))
+            checks.append(DataCheck(entry.source, entry.id, "", None, missing))
             continue
         status = macro_status(summary.meta, summary.last_period, releases.get(entry.id, {}), today)
         checks.append(
-            DataCheck("fred", entry.id, summary.meta.frequency, summary.last_period, status)
+            DataCheck(entry.source, entry.id, summary.meta.frequency, summary.last_period, status)
         )
     return checks
 
