@@ -22,7 +22,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Macro data | Series, vintages, revisions, release status, weight, 1m/3m/1y change | **Live** (FRED/ALFRED) | Source, release dates and status per series; changes in % or points per the series' kind |
 | Macro data: Markets | Daily reference prices: 7 FX pairs (Fed H.10), WTI, Brent, Henry Hub (EIA) | **Live** (FRED/ALFRED), reference prices, not tradable quotes | "markets" group; not scored; asset prices elsewhere stay sample until wired |
 | Macro data: Energy | 12 weekly oil series (stocks, production, refinery use, trade, demand) | **Live** (EIA API v2, Weekly Petroleum Status Report) | "energy" group; not scored; release dates derived from EIA's weekly rule; revisions stored as vintages from the day QuFin sees them |
-| Positioning | COT net, % OI, COT index | **Live** (CFTC legacy futures) | Report and release dates; caveat on partial contracts (Brent) |
+| Positioning | COT net, % OI, COT index; asset managers' net for financial futures | **Live** (CFTC Traders in Financial Futures for 10 financial contracts, legacy report for 5 commodities; each contract from one report only) | Report, group (leveraged funds or non-commercial) and release dates; caveats on partial contracts (Brent) and the US Dollar Index (no licensed price) |
 | Notifications | — | None yet | Empty until real event sources exist (invented alerts removed) |
 
 ## Verified assumptions (1 November 2026)

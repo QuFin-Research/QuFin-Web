@@ -21,7 +21,7 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Fed H.10 daily FX (via FRED: DEXUSEU, DEXUSUK, DEXJPUS, DEXUSAL, DEXUSNZ, DEXCAUS, DEXSZUS) | Daily reference FX rates, 7 pairs | Public domain | "Board of Governors of the Federal Reserve System" | Free | Noon buying rates in New York, published weekly; reference prices, not tradable quotes |
 | EIA spot prices (via FRED: DCOILWTICO, DCOILBRENTEU, DHHNGSP) | WTI, Brent, Henry Hub daily | Public domain | "U.S. Energy Information Administration" | Free | Spot reference prices |
 | EIA API v2 (Weekly Petroleum Status Report) | 12 weekly oil series: crude, Cushing and SPR stocks, production, refinery use, product stocks, imports, exports, demand | Public domain (US government work) | "Source: U.S. Energy Information Administration" | Free (API key) | Not on FRED; EIA serves no vintages, so QuFin records revisions as it sees them |
-| CFTC Commitments of Traders (Public Reporting API) | Positioning, 11 contracts | Public domain | "Source: CFTC" | Free | — |
+| CFTC Commitments of Traders (Public Reporting API) | Positioning, 15 contracts: Traders in Financial Futures (currencies, US Dollar Index, crypto) and legacy (commodities) | Public domain | "Source: CFTC" | Free | — |
 
 ## Planned (Phase 1 connectors)
 
