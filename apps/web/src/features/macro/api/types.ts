@@ -19,7 +19,7 @@ export type MacroSeries = {
   seasonalAdjustment: string;
   country: string;
   /** Scorecard pillar, or 'markets' for reference prices (not scored) */
-  dimension: ScoreDimension | 'external' | 'fiscal' | 'markets';
+  dimension: ScoreDimension | 'external' | 'fiscal' | 'energy' | 'markets';
   /** When the series tends to turn relative to the business cycle */
   cycle: BusinessCycle | null;
   /** When the source last revised the series */

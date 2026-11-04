@@ -16,7 +16,15 @@ from typing import Literal
 # The five scored pillars, plus external and fiscal (stored and shown; scored once the
 # scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
 Dimension = Literal[
-    "growth", "inflation", "labour", "policy", "sentiment", "external", "fiscal", "markets"
+    "growth",
+    "inflation",
+    "labour",
+    "policy",
+    "sentiment",
+    "external",
+    "fiscal",
+    "energy",
+    "markets",
 ]
 Cycle = Literal["leading", "coincident", "lagging"]
 # How a change is measured. pct: percent change, for quantities and price indexes. diff:
@@ -31,7 +39,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred"]
+    source: Literal["fred", "eia"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -102,10 +110,17 @@ DIFF_SERIES = frozenset(
         "IEABC",
         "MTSDS133FMS",
         "GFDEGDQ188S",
+        "WPULEUS3",
         "DFII10",
         "BAA10Y",
     }
 )
+
+
+def _eia(id: str) -> CatalogSeries:
+    """A Weekly Petroleum Status Report series, from the EIA API (not on FRED)."""
+    return CatalogSeries(id, "eia", "US", "energy", change="diff" if id in DIFF_SERIES else "pct")
+
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
@@ -193,6 +208,19 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("IEABC", "external"),  # Current account balance, quarterly
     _us("MTSDS133FMS", "fiscal"),  # Federal surplus or deficit, monthly
     _us("GFDEGDQ188S", "fiscal"),  # Federal debt as % of GDP, quarterly
+    # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
+    _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
+    _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks
+    _eia("WCSSTUS1"),  # Strategic Petroleum Reserve
+    _eia("WCRFPUS2"),  # Crude oil field production
+    _eia("WPULEUS3"),  # Refinery utilisation
+    _eia("WGTSTUS1"),  # Total gasoline stocks
+    _eia("WDISTUS1"),  # Distillate fuel oil stocks
+    _eia("WCRIMUS2"),  # Crude oil imports
+    _eia("WCREXUS2"),  # Crude oil exports
+    _eia("WRPUPUS2"),  # Product supplied, all petroleum products
+    _eia("WGFUPUS2"),  # Product supplied, finished motor gasoline
+    _eia("WDIUPUS2"),  # Product supplied, distillate fuel oil
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.
