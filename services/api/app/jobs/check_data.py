@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from app.data.macro_catalog import BY_ID, CATALOG, CatalogSeries
 from app.data.positioning_catalog import COT_CONTRACTS
 from app.data.scorecard_catalog import SCORED
+from app.domain.duplicates import find_duplicates
 from app.domain.freshness import Freshness, Timeliness, assess, timeliness
 from app.stores.macro import MacroStore, SeriesMeta
 from app.stores.positioning import CotReport, PositioningStore
@@ -72,7 +73,11 @@ def _review_reason(meta: SeriesMeta, declared_delay: int) -> str | None:
 
 
 def macro_status(
-    meta: SeriesMeta, last_period: date | None, first_releases: Mapping[date, date], today: date
+    meta: SeriesMeta,
+    last_period: date | None,
+    first_releases: Mapping[date, date],
+    today: date,
+    duplicate_reason: str | None = None,
 ) -> SeriesStatus:
     entry = BY_ID.get(meta.id)
     delay = entry.fred_delay_days if entry else 0
@@ -84,7 +89,7 @@ def macro_status(
         release_lags=lags,
         today=today,
         fred_delay_days=delay,
-        review_reason=_review_reason(meta, delay),
+        review_reason=duplicate_reason or _review_reason(meta, delay),
     )
     released = first_releases.get(last_period) if last_period else None
     return SeriesStatus(
@@ -114,6 +119,10 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
     store = MacroStore(session)
     summaries = {s.meta.id: s for s in store.list_series()}
     releases = store.first_releases(today - LAG_WINDOW)
+    # Rule 16: the same data stored twice, under any id or source, fails the check.
+    duplicates = find_duplicates(
+        {sid: {v.period: v.value for v in store.as_of(sid)} for sid in summaries}
+    )
     checks = []
     for entry in CATALOG:
         summary = summaries.get(entry.id)
@@ -126,7 +135,13 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
             )
             checks.append(DataCheck(entry.source, entry.id, "", None, missing))
             continue
-        status = macro_status(summary.meta, summary.last_period, releases.get(entry.id, {}), today)
+        status = macro_status(
+            summary.meta,
+            summary.last_period,
+            releases.get(entry.id, {}),
+            today,
+            duplicates.get(entry.id),
+        )
         checks.append(
             DataCheck(entry.source, entry.id, summary.meta.frequency, summary.last_period, status)
         )
