@@ -70,7 +70,9 @@ series, existing or new:
 16. **No duplicated indicators or data, at any cost.** A country has at most one series per
     concept (`app/data/indicator_concepts.py`), and a series that can be derived exactly from
     stored ones is not stored (`REDUNDANT`, e.g. the 10y-2y spread from the two yields).
-    `tests/test_indicator_concepts.py` fails otherwise.
+    `tests/test_indicator_concepts.py` fails otherwise. The release check (`check-data`) also
+    compares every stored series with every other, from any source: two that carry the same
+    values, or the same values in other units, both fail as "review" until one is removed.
 17. **FRED/ALFRED first, at least for the US.** Use an agency's own API (BLS, BEA, EIA, ...)
     only for a leading indicator FRED does not carry, or a lagging one that is mandatory to
     gauge an economy, currency, country or asset; record the reason in `NON_FRED_ALLOWED`. An
