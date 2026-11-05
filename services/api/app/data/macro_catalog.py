@@ -94,6 +94,8 @@ DIFF_SERIES = frozenset(
     {
         "AWHMAN",
         "NOCDFSA066MSFRBPHI",
+        "GACDISA066MSFRBNY",
+        "BACTSAMFRBDAL",
         "T10YFF",
         "T10Y3M",
         "NFCI",
@@ -132,6 +134,11 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("ACOGNO", "growth", "leading"),  # New orders, consumer goods
     _us("NEWORDER", "growth", "leading"),  # New orders, core capital goods
     _us("NOCDFSA066MSFRBPHI", "growth", "leading"),  # Philadelphia Fed new orders
+    # Regional Fed manufacturing surveys: one series per survey (rule 16), the headline index
+    # where Philadelphia is not already read through new orders. Not scored until verified
+    # under rule 10. Richmond and Kansas City publish theirs off FRED (gap, not loaded).
+    _us("GACDISA066MSFRBNY", "growth", "leading"),  # Empire State general business conditions
+    _us("BACTSAMFRBDAL", "growth", "leading"),  # Dallas Fed Texas general business activity
     _us("PERMIT", "growth", "leading"),  # Building permits
     _us("HOUST", "growth", "leading"),  # Housing starts
     _us("HSN1F", "growth", "leading"),  # New single-family home sales
