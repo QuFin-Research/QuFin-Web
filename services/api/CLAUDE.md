@@ -47,7 +47,9 @@ series, existing or new:
     NYMEX Brent, while most Brent trades on ICE) carries a caveat that the API and page show.
 12. **Assumptions are listed and checked, not trusted.** Before adding or changing any data
     path, list every assumption (mapping, sign, unit, release timing, licence, coverage),
-    verify each against the primary source, and report any that could not be verified.
+    verify each against the primary source, and report any that could not be verified. Record every judgement in
+    `docs/assumptions-register.md` with its status (verified, convention, design choice,
+    unverified); a judgement with no row there is a defect.
 13. **Measure change in the right units, and never change a change.** Quantities and price
     indexes change in percent; rates, spreads, ratios and indexes that can be zero or negative
     change in their own units (points). Each catalog series declares its `change` kind, and a
