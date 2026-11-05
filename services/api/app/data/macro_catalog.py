@@ -41,7 +41,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia", "ecb", "treasury"]
+    source: Literal["fred", "eia", "ecb", "treasury", "oecd"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -115,6 +115,7 @@ DIFF_SERIES = frozenset(
         "MTSDS133FMS",
         "GFDEGDQ188S",
         "WPULEUS3",
+        "USALOLITOAASTSAM",
         "FM.D.U2.EUR.4F.KR.DFR.LEV",
         "TREAS_AVG_RATE_MARKETABLE",
         "DFII10",
@@ -150,6 +151,70 @@ def _treasury(id: str) -> CatalogSeries:
     )
 
 
+# OECD composite leading indicators and confidence surveys for the OECD members among QuFin's
+# economies, each checked live one series at a time on 6 Nov 2026 (latest month August or
+# September 2026). Left out: leading indicators the OECD does not publish (New Zealand,
+# Switzerland, Norway, Sweden, Denmark, Czechia, Hungary, Poland); Canadian and Norwegian
+# business confidence (last April and June 2026: behind schedule); consumer confidence for
+# Switzerland, Sweden, Denmark, Czechia, Hungary and Korea (not yet verified: the OECD API
+# rate-limited the check) and Norway (not published). US business and consumer confidence are
+# left out: the OECD builds them from ISM and Michigan data (licence limits), and Michigan
+# sentiment is already stored (rule 16). The US leading indicator comes from FRED, which
+# carries it live with vintages (rule 17).
+_OECD_ISO2 = {
+    "GBR": "GB",
+    "JPN": "JP",
+    "CAN": "CA",
+    "AUS": "AU",
+    "MEX": "MX",
+    "TUR": "TR",
+    "KOR": "KR",
+    "NZL": "NZ",
+    "CHE": "CH",
+    "SWE": "SE",
+    "DNK": "DK",
+    "CZE": "CZ",
+    "HUN": "HU",
+    "POL": "PL",
+}
+_OECD_LIVE = {
+    "LI": ("GBR", "JPN", "CAN", "AUS", "MEX", "TUR", "KOR"),
+    "BCICP": (
+        "GBR",
+        "JPN",
+        "AUS",
+        "NZL",
+        "CHE",
+        "SWE",
+        "DNK",
+        "CZE",
+        "HUN",
+        "POL",
+        "MEX",
+        "TUR",
+        "KOR",
+    ),
+    "CCICP": ("GBR", "JPN", "CAN", "AUS", "NZL", "POL", "MEX", "TUR"),
+}
+_OECD_DIMENSION: dict[str, Dimension] = {"LI": "growth", "BCICP": "growth", "CCICP": "sentiment"}
+_OECD_ID = {"LI": "CLI", "BCICP": "BCI", "CCICP": "CCI"}
+
+# Catalog id -> (OECD area, measure).
+OECD_SERIES: dict[str, tuple[str, str]] = {
+    f"OECD_{_OECD_ID[measure]}_{area}": (area, measure)
+    for measure, areas in _OECD_LIVE.items()
+    for area in areas
+}
+
+
+def _oecd(series_id: str) -> CatalogSeries:
+    """An OECD index (long-term average 100): leading, changes in points, not scored."""
+    area, measure = OECD_SERIES[series_id]
+    return CatalogSeries(
+        series_id, "oecd", _OECD_ISO2[area], _OECD_DIMENSION[measure], "leading", change="diff"
+    )
+
+
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
 
@@ -175,6 +240,7 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _us("T10Y3M", "policy", "leading", market=True, source=_H15),  # 10-year minus 3-month yield
     _us("NFCI", "sentiment", "leading"),  # Chicago Fed financial conditions, weekly
     _us("STLFSI4", "sentiment", "leading"),  # St. Louis Fed financial stress, weekly
+    _us("USALOLITOAASTSAM", "growth", "leading", source="OECD"),  # OECD US leading indicator
     CatalogSeries(
         "UMCSENT",  # Michigan consumer sentiment
         "fred",
@@ -264,6 +330,8 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _ea("HICP.M.U2.N.000000.4D0.ANR", "inflation", published_as_change=True),  # HICP, y/y
     _ea("HICP.M.U2.N.XEF000.4D0.ANR", "inflation", published_as_change=True),  # Core HICP, y/y
     _ea("BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E", "policy"),  # M3 money supply, stock, SA
+    # --- OECD leading indicators and confidence (P1-20), not scored -------------------
+    *(_oecd(series_id) for series_id in OECD_SERIES),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.

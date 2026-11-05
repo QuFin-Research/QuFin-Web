@@ -6,6 +6,7 @@ uv run python -m app.cli ingest-fred CPIAUCSL UNRATE --start 2010-01-01
 uv run python -m app.cli ingest-cftc                 # CFTC positioning, no key needed
 uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and demand
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
+uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
@@ -23,11 +24,12 @@ from app.connectors.cftc import CftcClient
 from app.connectors.ecb import EcbClient
 from app.connectors.eia import EiaClient
 from app.connectors.fred import FredClient
+from app.connectors.oecd import OecdClient
 from app.connectors.treasury import TreasuryClient
 from app.core.config import get_settings
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
-from app.jobs import ingest_cftc, ingest_ecb, ingest_eia, ingest_treasury
+from app.jobs import ingest_cftc, ingest_ecb, ingest_eia, ingest_oecd, ingest_treasury
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
@@ -126,6 +128,20 @@ def _ingest_treasury(args: argparse.Namespace) -> int:
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
+def _ingest_oecd(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "oecd"]
+    with OecdClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_oecd.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<20} {status}")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
 def _ingest_cftc(args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     symbols = [s.upper() for s in args.symbols] or [c.symbol for c in COT_CONTRACTS]
@@ -214,6 +230,16 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first period to load (default {DEFAULT_OBSERVATION_START})",
     )
     treasury.set_defaults(func=_ingest_treasury)
+
+    oecd = sub.add_parser("ingest-oecd", help="ingest OECD leading indicators and confidence")
+    oecd.add_argument("series", nargs="*", help="series ids (default: every OECD series)")
+    oecd.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help=f"first month to load (default {DEFAULT_OBSERVATION_START})",
+    )
+    oecd.set_defaults(func=_ingest_oecd)
 
     cftc = sub.add_parser("ingest-cftc", help="ingest CFTC Commitments of Traders reports")
     cftc.add_argument("symbols", nargs="*", help="QuFin symbols (default: every mapped asset)")

@@ -54,7 +54,7 @@ the official producer's term or the name most sites share; US spelling for US-pu
 | Inventories-to-Sales Ratio | Total Business: Inventories to Sales Ratio | - | - |
 | JOLTS Job Openings | Job Openings: Total Nonfarm | Job Offers (URL job-offers; page titled Job Openin | JOLTS Job Openings |
 | JOLTS Quits Rate | Quits: Total Nonfarm | Job Quits Rate | - |
-| Michigan Consumer Sentiment Index | University of Michigan: Consumer Sentiment | Michigan Consumer Sentiment | Prelim UoM Consumer Sentiment |
+| CCI – Consumer Confidence Index | University of Michigan: Consumer Sentiment | Michigan Consumer Sentiment | Prelim UoM Consumer Sentiment |
 | New Home Sales | New One Family Houses Sold: United States | New Home Sales | - |
 | NFCI – Chicago Fed National Financial Conditions Index | Chicago Fed National Financial Conditions Index | Financial Conditions Index | - |
 | NFP – Nonfarm Payrolls | All Employees, Total Nonfarm | Non Farm Payrolls | Non-Farm Employment Change |
