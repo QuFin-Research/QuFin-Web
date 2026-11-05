@@ -72,3 +72,20 @@ def test_indices_use_their_standard_name_with_the_acronym_first():
 def test_consumer_price_series_are_all_lagging_indicators():
     for series_id in ("CPIAUCSL", "CPILFESL", "CUSR0000SAS"):
         assert next(e for e in CATALOG if e.id == series_id).cycle == "lagging"
+
+
+def test_every_series_has_a_business_cycle_and_a_reason_for_ours():
+    from app.data.cycle_classification import QUFIN_CYCLE
+
+    for entry in CATALOG:
+        assert entry.cycle in ("leading", "coincident", "lagging"), f"{entry.id} has no cycle"
+    ids = {e.id for e in CATALOG}
+    assert set(QUFIN_CYCLE) <= ids, "a classification for a series not in the catalog"
+    for series_id, (cycle, reason) in QUFIN_CYCLE.items():
+        assert reason.endswith("."), series_id
+        assert next(e for e in CATALOG if e.id == series_id).cycle == cycle
+
+
+def test_the_api_reports_a_cycle_for_every_series(client, ingested):  # noqa: F811
+    for series in client.get("/v1/macro/series").json():
+        assert series["cycle"] in ("leading", "coincident", "lagging"), series["id"]
