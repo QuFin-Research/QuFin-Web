@@ -1,6 +1,6 @@
 """The scorecard correction mechanism: late or missing data lowers confidence, never the score.
 
-These tests are the enforcement of the rule in services/api/CLAUDE.md. Do not loosen them to
+These tests are the enforcement of the rule in RULEBOOK.md. Do not loosen them to
 make a change pass; if one fails, the change has reintroduced a directional bias.
 """
 
@@ -131,7 +131,13 @@ def test_daily_data_is_averaged_by_month_and_yoy_needs_a_year_earlier():
 # --- live scorecard through the API -----------------------------------------------------------
 
 
+def _show_mechanism(client):
+    settings = client.app.state.settings
+    client.app.state.settings = settings.model_copy(update={"scorecard_mechanism": "show"})
+
+
 def test_api_serves_live_scorecard_with_confidence_and_pending(client, ingested):  # noqa: F811
+    _show_mechanism(client)
     [us] = client.get("/v1/scorecards/countries", params={"asOf": "2026-10-10"}).json()
     assert us["data"] == "live"
     assert us["code"] == "US"
@@ -197,3 +203,29 @@ def test_growth_is_scored_in_real_terms_only():
     nominal = {"RSAFS", "PI", "NEWORDER", "ACOGNO"}
     assert not nominal & set(scorecard_catalog.SCORED)
     assert {"GDPC1", "RRSFS", "W875RX1"} <= set(scorecard_catalog.SCORED)
+
+
+# --- showing or hiding the mechanism is QuFin's choice (rule 20) ------------------------------
+
+
+def test_the_mechanism_is_hidden_by_default_but_confidence_and_pending_stay(client, ingested):  # noqa: F811
+    [us] = client.get("/v1/scorecards/countries", params={"asOf": "2026-10-10"}).json()
+    assert us["mechanism"] == "hidden"
+    assert us["indicators"] == []  # no weights or sub-scores
+    assert us["data"] == "live" and "confidence" in us and us["pending"]
+
+
+def test_methodology_summary_never_reveals_the_recipe_when_hidden(client):
+    body = client.get("/v1/scorecards/methodology").json()
+    assert body["mechanism"] == "hidden"
+    assert body["details"] is None
+    assert "proprietary" in " ".join(body["summary"]["statements"])
+
+
+def test_methodology_details_appear_only_when_qufin_shows_the_mechanism(client, ingested):  # noqa: F811
+    _show_mechanism(client)
+    body = client.get("/v1/scorecards/methodology").json()
+    assert body["mechanism"] == "shown"
+    assert {i["id"] for i in body["details"]["indicators"]} == set(scorecard_catalog.SCORED)
+    [us] = client.get("/v1/scorecards/countries", params={"asOf": "2026-10-10"}).json()
+    assert us["mechanism"] == "shown" and us["indicators"]

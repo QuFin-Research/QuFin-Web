@@ -3,12 +3,19 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 
-from app.core.auth import DbSession
+from app.core.auth import AppSettings, DbSession
 from app.core.clock import Today
 from app.data.repository import MarketRepository, get_market_repository
+from app.domain import methodology
 from app.domain.market import asset_detail, list_snapshots
 from app.jobs.scorecard import to_country_score, us_scorecard
-from app.schemas.market import AssetDetail, AssetSnapshot, CountryScore
+from app.schemas.market import (
+    AssetDetail,
+    AssetSnapshot,
+    CountryScore,
+    Methodology,
+    MethodologyDetails,
+)
 
 router = APIRouter(prefix="/v1", tags=["market"])
 
@@ -38,6 +45,7 @@ def get_country_scores(
     repo: Repo,
     session: DbSession,
     today: Today,
+    settings: AppSettings,
     as_of: Annotated[
         date | None,
         Query(alias="asOf", description="Score with the data as published on this date"),
@@ -50,7 +58,27 @@ def get_country_scores(
     Without macro data the sample scorecards are returned, marked `data: "sample"`; live and
     sample economies are never mixed in one ranking.
     """
+    shown = settings.scorecard_mechanism == "show"
     live = us_scorecard(session, as_of or today)
-    if live is None:
-        return repo.get_country_scores()
-    return [to_country_score(live)]
+    cards = repo.get_country_scores() if live is None else [to_country_score(live)]
+    return [_disclose(card, shown) for card in cards]
+
+
+def _disclose(card: CountryScore, shown: bool) -> CountryScore:
+    """QuFin's choice (rule 20): weights and sub-scores only when the mechanism is shown."""
+    if shown:
+        return card.model_copy(update={"mechanism": "shown"})
+    return card.model_copy(update={"mechanism": "hidden", "indicators": []})
+
+
+@router.get("/scorecards/methodology", response_model=Methodology)
+def get_methodology(settings: AppSettings) -> Methodology:
+    """What QuFin tells users about the scorecard: always a summary, the full mechanism only
+    when QuFin has set `scorecard_mechanism` to show."""
+    if settings.scorecard_mechanism != "show":
+        return Methodology(mechanism="hidden", summary=methodology.SUMMARY)
+    return Methodology(
+        mechanism="shown",
+        summary=methodology.SUMMARY,
+        details=MethodologyDetails(**methodology.mechanism()),
+    )

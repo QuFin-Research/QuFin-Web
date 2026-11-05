@@ -1,7 +1,7 @@
 # Data licence register
 
 Every source QuFin uses or plans to use, with what we may do with it (backlog task P0-14, rule 7
-in `services/api/CLAUDE.md`). "Free to download" is not "free to show to paying customers": a
+in `RULEBOOK.md`). "Free to download" is not "free to show to paying customers": a
 source moves to **In use** only when its redistribution terms allow display in a paid product,
 or a licence is signed.
 

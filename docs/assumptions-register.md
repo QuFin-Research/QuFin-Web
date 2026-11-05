@@ -1,7 +1,7 @@
 # Assumptions register
 
 Every judgement QuFin's data and scorecard rest on, with what has and has not been checked
-against the producer (rule 12 in `services/api/CLAUDE.md`). Audit of 6 Nov 2026. Add a row
+against the producer (rule 12 in `RULEBOOK.md`). Audit of 6 Nov 2026. Add a row
 whenever a judgement is added; a judgement without a row is a defect.
 
 **Status:** *Verified* = read at the producer or its aggregator this audit. *Convention* = standard
@@ -54,16 +54,16 @@ producer's notes say what a higher reading means, otherwise it is **convention**
 
 Checked by script against stored metadata: no percent change is taken of a rate or diffusion
 index; no growth series is scored in nominal terms (rule 10); every `yoy` series is a quantity or
-price index. Found and kept on record: initial and continuing claims (`ICSA`, `CCSA`) are counts
-scored as *levels*, and the WEI is not seasonally adjusted at the source but is scored as published
-(it is scaled to GDP growth).
+price index. Found: initial and continuing claims (`ICSA`, `CCSA`) were scored as levels; since 6 Nov 2026 they
+are scored on their percent change over a year, as rule 22 requires. The WEI is not seasonally
+adjusted at the source but is scored as published (it is scaled to GDP growth).
 
 ## 2. Modelling choices (not facts)
 
 | Choice | Where | Status |
 |---|---|---|
-| Hot inflation counts as *strength* in the Inflation pillar, tight policy as strength in Policy: each pillar "supports the currency" | `scorecard_catalog.py` | Design choice: true when markets price hikes, wrong in stagflation. Unvalidated |
-| Every indicator has equal importance (1.0) | `ScoreSpec.importance` | Design choice: no reviewed reason for any other weight yet |
+| Hot inflation counts as *strength* in the Inflation pillar, tight policy as strength in Policy: each pillar "supports the currency" | `scorecard_catalog.py` | Design choice: true when markets price hikes, wrong in stagflation. Unvalidated; stated in the methodology as an assumption |
+| Every indicator has equal importance (1.0) | `ScoreSpec.importance` | **Known defect** (rule 21): replacement mechanism proposed in `private/scorecard-methodology.md`, awaiting QuFin approval |
 | Scored against the series' own 10-year history, clipped at +-3, flipped where higher is weaker | `scorecard.py` | Design choice |
 | Each indicator is level plus 3-month momentum, averaged equally (`MOMENTUM_WEIGHT` 0.5) | `scorecard.py` | Design choice; bias gate only proves no look-ahead bias |
 | Timeliness weight halves every 60 days of delay | `freshness.py` | Design choice |
@@ -147,3 +147,5 @@ adjusted; ECB adjustment flags come from the series key (N or Y), which is the E
 - Which pillar each series feeds and its importance beyond the sign (see section 2).
 - Non-US series (only the euro area is loaded): audit each when added.
 - Licence status of every source (`docs/licence-register.md` tracks it; several are still *to confirm*).
+
+All five pillars count equally in the overall score (weighted only by confidence): interim, same status as the indicator weights.

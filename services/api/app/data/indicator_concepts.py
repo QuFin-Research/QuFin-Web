@@ -2,7 +2,7 @@
 
 A concept is what an indicator measures, independent of who publishes it: "unemployment_rate"
 is the US UNRATE today and the UK's ONS series later, both shown as "Unemployment Rate", so
-economies can be compared side by side. Rules (services/api/CLAUDE.md, rules 16-18):
+economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 
 - every catalog series maps to exactly one concept, and a country has at most one series per
   concept: no duplicated indicators;
