@@ -166,13 +166,13 @@ def check_all(session: Session, today: date) -> list[DataCheck]:
 
 def format_report(checks: Sequence[DataCheck]) -> str:
     lines = [
-        f"{'source':<6} {'series':<20} {'frequency':<12} {'last period':<12} {'weight':>6}  status"
+        f"{'source':<8} {'series':<20} {'frequency':<12} {'last period':<12} {'weight':>6}  status"
     ]
     for c in checks:
         f = c.status.freshness
         flag = "OK" if f.usable else f.status.upper()
         lines.append(
-            f"{c.source:<6} {c.id:<20} {c.frequency[:12]:<12} {c.last_period or '-'!s:<12} "
+            f"{c.source:<8} {c.id:<20} {c.frequency[:12]:<12} {c.last_period or '-'!s:<12} "
             f"{c.status.timeliness.weight:>6.2f}  {flag:<12} {f.reason}"
         )
     failed = [c for c in checks if not c.status.freshness.usable]

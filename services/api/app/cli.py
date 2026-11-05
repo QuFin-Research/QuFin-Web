@@ -5,6 +5,7 @@ uv run python -m app.cli ingest-fred            # every series in the catalog
 uv run python -m app.cli ingest-fred CPIAUCSL UNRATE --start 2010-01-01
 uv run python -m app.cli ingest-cftc                 # CFTC positioning, no key needed
 uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and demand
+uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
@@ -20,10 +21,11 @@ from datetime import UTC, date, datetime, timedelta
 from app.connectors.cftc import CftcClient
 from app.connectors.eia import EiaClient
 from app.connectors.fred import FredClient
+from app.connectors.treasury import TreasuryClient
 from app.core.config import get_settings
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
-from app.jobs import ingest_cftc, ingest_eia
+from app.jobs import ingest_cftc, ingest_eia, ingest_treasury
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
@@ -89,6 +91,20 @@ def _ingest_eia(args: argparse.Namespace) -> int:
     for r in results:
         status = f"{r.rows} new or revised weeks" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<22} {status}")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_treasury(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "treasury"]
+    with TreasuryClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_treasury.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<26} {status}")
     print()
     print(format_report(checks))
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
@@ -162,6 +178,16 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first week to load (default {DEFAULT_OBSERVATION_START})",
     )
     eia.set_defaults(func=_ingest_eia)
+
+    treasury = sub.add_parser("ingest-treasury", help="ingest Treasury Fiscal Data series")
+    treasury.add_argument("series", nargs="*", help="series ids (default: every Treasury series)")
+    treasury.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help=f"first period to load (default {DEFAULT_OBSERVATION_START})",
+    )
+    treasury.set_defaults(func=_ingest_treasury)
 
     cftc = sub.add_parser("ingest-cftc", help="ingest CFTC Commitments of Traders reports")
     cftc.add_argument("symbols", nargs="*", help="QuFin symbols (default: every mapped asset)")

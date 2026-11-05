@@ -39,7 +39,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia"]
+    source: Literal["fred", "eia", "treasury"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -113,6 +113,7 @@ DIFF_SERIES = frozenset(
         "MTSDS133FMS",
         "GFDEGDQ188S",
         "WPULEUS3",
+        "TREAS_AVG_RATE_MARKETABLE",
         "DFII10",
         "BAA10Y",
     }
@@ -122,6 +123,13 @@ DIFF_SERIES = frozenset(
 def _eia(id: str) -> CatalogSeries:
     """A Weekly Petroleum Status Report series, from the EIA API (not on FRED)."""
     return CatalogSeries(id, "eia", "US", "energy", change="diff" if id in DIFF_SERIES else "pct")
+
+
+def _treasury(id: str) -> CatalogSeries:
+    """A Treasury Fiscal Data series (Bureau of the Fiscal Service), not on FRED."""
+    return CatalogSeries(
+        id, "treasury", "US", "fiscal", change="diff" if id in DIFF_SERIES else "pct"
+    )
 
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
@@ -215,6 +223,9 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("IEABC", "external"),  # Current account balance, quarterly
     _us("MTSDS133FMS", "fiscal"),  # Federal surplus or deficit, monthly
     _us("GFDEGDQ188S", "fiscal"),  # Federal debt as % of GDP, quarterly
+    _treasury("TREAS_DEBT_TOTAL"),  # Debt to the Penny: total public debt, daily
+    _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
+    _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
     _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
     _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks
