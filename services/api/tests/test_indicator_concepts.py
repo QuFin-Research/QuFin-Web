@@ -17,7 +17,7 @@ def test_every_series_has_a_display_name_and_plain_explanation():
     for entry in CATALOG:
         concept = concept_for(entry.country, entry.id)
         assert concept is not None, f"{entry.id} has no display name"
-        assert concept.name and len(concept.name) <= 40, entry.id
+        assert concept.name and len(concept.name) <= 64, entry.id
         assert concept.explanation.endswith("."), entry.id
         assert len(concept.explanation) <= 120, f"{entry.id}: keep it to one plain sentence"
 
@@ -56,3 +56,19 @@ def test_api_returns_the_display_name_and_the_official_title(client, ingested): 
     assert series["concept"] == "unemployment_rate"
     assert series["title"] == "Unemployment Rate"  # official title, for the tooltip
     assert series["explanation"].endswith(".")
+
+
+def test_indices_use_their_standard_name_with_the_acronym_first():
+    expected = {
+        "consumer_prices": "CPI – Consumer Price Index",
+        "producer_prices": "PPI – Producer Price Index",
+        "real_gdp": "GDP – Real Gross Domestic Product",
+        "nonfarm_payrolls": "NFP – Nonfarm Payrolls",
+    }
+    for key, name in expected.items():
+        assert CONCEPTS[key].name == name
+
+
+def test_consumer_price_series_are_all_lagging_indicators():
+    for series_id in ("CPIAUCSL", "CPILFESL", "CUSR0000SAS"):
+        assert next(e for e in CATALOG if e.id == series_id).cycle == "lagging"

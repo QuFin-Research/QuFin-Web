@@ -213,7 +213,7 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("BUSLOANS", "policy", "lagging"),  # Commercial and industrial loans
     _us("TOTALSL", "policy", "lagging"),  # Consumer credit outstanding
     # --- Not classified by cycle -----------------------------------------------------------
-    _us("CPIAUCSL", "inflation"),  # CPI, all items
+    _us("CPIAUCSL", "inflation", "lagging"),  # CPI, all items: prices follow the cycle
     _us("GASREGW", "inflation"),  # Retail gasoline price, weekly (EIA)
     _us("PCEPILFE", "inflation"),  # Core PCE price index
     _us("PPIFIS", "inflation"),  # Producer prices, final demand

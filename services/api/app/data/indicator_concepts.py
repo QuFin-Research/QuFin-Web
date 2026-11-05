@@ -6,7 +6,8 @@ economies can be compared side by side. Rules (services/api/CLAUDE.md, rules 16-
 
 - every catalog series maps to exactly one concept, and a country has at most one series per
   concept: no duplicated indicators;
-- names are short and plain; the explanation is one sentence for a general visitor; the
+- indices carry their standard name with the acronym first ("CPI – Consumer Price Index"),
+  other indicators a short plain name; the explanation is one sentence for a general visitor; the
   official title and source code stay available to professionals (tooltip);
 - a series that can be derived from stored ones is not stored (REDUNDANT below).
 """
@@ -39,15 +40,15 @@ CONCEPTS: dict[str, Concept] = {
         "Temporary workers are hired first in upturns and let go first in downturns.",
     ),
     "job_openings": Concept(
-        "Job Openings",
+        "JOLTS – Job Openings",
         "Positions employers are trying to fill; a measure of demand for workers.",
     ),
     "quit_rate": Concept(
-        "Quit Rate",
+        "JOLTS – Quit Rate",
         "Share of workers leaving their jobs each month; high when they expect to find better.",
     ),
     "nonfarm_payrolls": Concept(
-        "Nonfarm Payrolls",
+        "NFP – Nonfarm Payrolls",
         "Number of jobs outside farming; the headline monthly jobs figure.",
     ),
     "unemployment_rate": Concept(
@@ -64,19 +65,19 @@ CONCEPTS: dict[str, Concept] = {
         "New orders placed with factories for consumer goods.",
     ),
     "core_capital_goods_orders": Concept(
-        "Business Investment Orders",
+        "Core Capital Goods Orders",
         "Orders for business equipment, excluding aircraft and defence: investment plans.",
     ),
     "manufacturing_new_orders_survey": Concept(
-        "Factory New Orders Survey",
+        "Philadelphia Fed New Orders Index",
         "Share of surveyed factories reporting more orders minus those reporting fewer.",
     ),
     "empire_state_manufacturing": Concept(
-        "Empire State Manufacturing",
+        "Empire State Manufacturing Index",
         "New York factories reporting better business minus worse; the month's first factory read.",
     ),
     "dallas_fed_manufacturing": Concept(
-        "Dallas Fed Manufacturing",
+        "Dallas Fed Manufacturing Index",
         "Texas factories reporting better business minus worse; sensitive to energy and trade.",
     ),
     "building_permits": Concept(
@@ -92,15 +93,15 @@ CONCEPTS: dict[str, Concept] = {
         "Sales of newly built homes; they react quickly to mortgage rates.",
     ),
     "real_gdp": Concept(
-        "Real GDP",
+        "GDP – Real Gross Domestic Product",
         "The economy's total output after inflation; the broadest measure of growth.",
     ),
     "weekly_economic_index": Concept(
-        "Weekly Economic Index",
+        "WEI – Weekly Economic Index",
         "Weekly activity index scaled to GDP growth; the earliest read on the economy.",
     ),
     "industrial_production": Concept(
-        "Industrial Production",
+        "IP – Industrial Production Index",
         "Output of factories, mines and utilities.",
     ),
     "real_retail_sales": Concept(
@@ -108,7 +109,7 @@ CONCEPTS: dict[str, Concept] = {
         "Shop and restaurant sales after inflation.",
     ),
     "real_consumer_spending": Concept(
-        "Real Consumer Spending",
+        "PCE – Real Personal Consumption Expenditures",
         "Household spending after inflation; the largest part of the economy.",
     ),
     "personal_income": Concept(
@@ -116,7 +117,7 @@ CONCEPTS: dict[str, Concept] = {
         "Total household income before inflation, including government payments.",
     ),
     "real_income_excl_transfers": Concept(
-        "Real Income excl. Transfers",
+        "Real Personal Income excl. Transfers",
         "Household income after inflation, without government payments: earned income.",
     ),
     "corporate_profits": Concept(
@@ -129,35 +130,35 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Inflation ----------------------------------------------------------------------------
     "consumer_prices": Concept(
-        "Consumer Prices",
+        "CPI – Consumer Price Index",
         "Change in the prices households pay for a typical basket of goods and services.",
     ),
     "core_consumer_prices": Concept(
-        "Core Consumer Prices",
+        "Core CPI – Consumer Price Index ex Food and Energy",
         "Consumer prices excluding volatile food and energy: underlying inflation.",
     ),
     "services_prices": Concept(
-        "Services Prices",
+        "Services CPI – Consumer Price Index, Services",
         "Prices of services such as rent, healthcare and travel; slow to turn, wage-driven.",
     ),
     "core_pce_prices": Concept(
-        "Core PCE Prices",
+        "Core PCE – PCE Price Index ex Food and Energy",
         "The central bank's preferred inflation measure, excluding food and energy.",
     ),
     "producer_prices": Concept(
-        "Producer Prices",
+        "PPI – Producer Price Index",
         "Prices businesses receive for their output; they feed through to consumer prices.",
     ),
     "unit_labour_costs": Concept(
-        "Unit Labour Costs",
+        "ULC – Unit Labour Costs",
         "Wage cost to produce one unit of output; rising costs push prices up.",
     ),
     "inflation_expectations_10y": Concept(
-        "Inflation Expectations (10-Year)",
+        "10-Year Breakeven Inflation Rate",
         "Average inflation bond markets expect over the next ten years.",
     ),
     "gasoline_price": Concept(
-        "Gasoline Price",
+        "Retail Gasoline Price",
         "Weekly average pump price; the earliest read on consumer prices.",
     ),
     # --- Monetary policy, rates and credit -----------------------------------------------------
@@ -186,7 +187,7 @@ CONCEPTS: dict[str, Concept] = {
         "Assets held by the central bank; growth adds liquidity, shrinking removes it.",
     ),
     "money_supply": Concept(
-        "Broad Money Supply",
+        "Broad Money Supply (M2, M3)",
         "Cash, deposits and savings (M2 in the US, M3 in the euro area); growth fuels spending.",
     ),
     "business_loans": Concept(
@@ -199,15 +200,15 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Sentiment and financial conditions ----------------------------------------------------
     "consumer_sentiment": Concept(
-        "Consumer Sentiment",
+        "Consumer Sentiment Index (University of Michigan)",
         "How confident households feel about their finances and the economy.",
     ),
     "financial_conditions": Concept(
-        "Financial Conditions",
+        "NFCI – National Financial Conditions Index",
         "How easy it is to borrow and invest; positive means tighter than average.",
     ),
     "financial_stress": Concept(
-        "Financial Stress",
+        "STLFSI – St. Louis Fed Financial Stress Index",
         "Strain in funding and credit markets; above zero means more stress than usual.",
     ),
     "corporate_credit_spread": Concept(
@@ -215,7 +216,7 @@ CONCEPTS: dict[str, Concept] = {
         "Extra yield companies pay over government bonds; it widens when investors worry.",
     ),
     "trade_weighted_currency": Concept(
-        "Trade-Weighted Currency",
+        "Broad Trade-Weighted Dollar Index",
         "The currency's value against a basket of trading partners' currencies.",
     ),
     # --- External and fiscal -------------------------------------------------------------------

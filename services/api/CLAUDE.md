@@ -79,7 +79,8 @@ series, existing or new:
     agency API may also be used as a release-time fast lane for a FRED series, stored as a
     vintage of the same series and reconciled against FRED, never as a second series.
 18. **Every series has a human-readable name, shared across countries.** Each maps to a
-    concept with a short name and a one-sentence plain explanation; the same concept key
+    concept with a name and a one-sentence plain explanation; indices use their standard name
+    with the acronym first ("CPI – Consumer Price Index", "PPI – Producer Price Index"); the same concept key
     matches the indicator in every country (US and UK unemployment are both
     `unemployment_rate`, "Unemployment Rate"). The API returns the name and the official
     title; pages show the name, with the official title, source code and publisher in a
