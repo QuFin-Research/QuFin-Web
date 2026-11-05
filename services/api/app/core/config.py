@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Set to the parent domain (e.g. "qufin.ai") when the web app and API are on subdomains.
     cookie_domain: str | None = None
     # Sign-in and sign-up attempts allowed per client IP and email in each window.
+    # QuFin decides whether users may see how the scorecard is built (rule 20). "hide" keeps the
+    # recipe private (the default); "show" discloses weights and method. Data origin, freshness,
+    # confidence and pending releases are always shown either way.
+    scorecard_mechanism: Literal["show", "hide"] = "hide"
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)
 

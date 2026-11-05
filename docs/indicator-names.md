@@ -1,7 +1,7 @@
 # Indicator names
 
 Every indicator is shown under the name users already know from the major data and calendar
-sites (rule 18 in `services/api/CLAUDE.md`). Indices carry their standard acronym first ("CPI –
+sites (rule 18 in `RULEBOOK.md`). Indices carry their standard acronym first ("CPI –
 Consumer Price Index"). This table is the survey the names were chosen from (5 Nov 2026): what
 FRED (official title), Trading Economics and the Forex Factory calendar actually call each
 indicator. `-` means the site has no page or event for it (Forex Factory lists only releases that

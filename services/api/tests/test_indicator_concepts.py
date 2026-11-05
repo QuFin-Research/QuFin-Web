@@ -1,4 +1,4 @@
-"""The indicator catalog rules (services/api/CLAUDE.md, rules 16-18). Do not loosen these."""
+"""The indicator catalog rules (RULEBOOK.md, rules 16-19). Do not loosen these."""
 
 from collections import Counter
 

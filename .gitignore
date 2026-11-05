@@ -16,3 +16,6 @@ Thumbs.db
 
 # Local raw data zone
 data/raw/
+
+# QuFin proprietary material: never committed while the repository is public (rule 20)
+private/

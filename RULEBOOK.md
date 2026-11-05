@@ -1,8 +1,21 @@
-# CLAUDE.md — QuFin API
+# QuFin Rule Book
 
-See [README.md](./README.md) for setup, endpoints and layout.
+**This rule book is the property of QuFin (the QuFin-Web repository).** It stands on its own: no rule
+depends on any tool, vendor or person, and it remains in force whoever or whatever builds or maintains
+QuFin. Everything that builds, tests or reviews QuFin follows it, and a change that breaks a rule is a
+defect, however convenient. Rules are numbered and keep their numbers; the code, tests and docs refer
+to them as "rule N" ("S1" to "S9" for the scorecard correction mechanism).
 
-## Data integrity rules (non-negotiable)
+QuFin is a data-extensive trading assistant. Its trading ideas, scores and backtests rest on the
+data, so the rules below put data integrity first, then comparability, then transparency.
+
+Contents: Part 1 data integrity (rules 1-19) | Part 2 comparison, change measures and weights (rules
+20-23) | Part 3 scorecard correction mechanism (S1-S9) | Part 4 ownership and conduct (rules 24-26) |
+Change log. Related documents: `private/scorecard-methodology.md` (proprietary, not committed while this repository is public), `docs/assumptions-register.md`,
+`docs/indicator-names.md`, `docs/data-provenance.md`, `docs/licence-register.md`,
+`docs/release-calendars.md`.
+
+## Part 1. Data integrity rules (non-negotiable)
 
 QuFin's trading ideas rest on this data, so these rules apply to every data source and every
 series, existing or new:
@@ -101,33 +114,108 @@ series, existing or new:
     local aliases in `LOCAL_ALIASES`; add the acronym there before using it, and add a country's
     series to the existing concept rather than inventing a new name. Tests enforce the format.
 
-## Scorecard correction mechanism (non-negotiable)
+## Part 2. Comparison, change measures and weights
+
+20. **QuFin controls whether the scorecard mechanism is shown or hidden.** The mechanism
+    (indicators, directions, weights, formulas, assumptions) is QuFin's proprietary recipe. It is
+    always documented in full, internally, in plain words (`private/scorecard-methodology.md`, kept out
+    of version control while the repository is public), so QuFin
+    can explain and defend every score. Whether users see it is QuFin's decision, made with one
+    switch (`QUFIN_SCORECARD_MECHANISM`: `show` or `hide`, default `hide`) that can be changed at
+    any time, and the recipe may be disclosed to a person or organisation on request. When hidden,
+    the API and dashboard leave out weights, sub-scores and method text. **Never hidden, whichever
+    way the switch is set:** that a score comes from a model and is not advice, where the data comes
+    from and whether it is live or sample (rule 8), how fresh it is, the confidence in each score,
+    and the releases still to come (S6). Every change to the mechanism or to a weight is recorded in
+    the methodology's change log with the reason, takes effect only after the bias gate (S7) and a
+    point-in-time backtest, and never silently alters a past score. A modelling assumption (for
+    example that hot inflation supports a currency) is documented as an assumption, not a fact.
+21. **Indicator weights are earned, never assumed equal.** An indicator's weight in a pillar reflects
+    how much it matters: its market impact, its predictive power, how reliable it is (revisions,
+    noise) and how timely it is. Equal weights are a defect, and so are weights nobody can explain.
+    Each weight has a recorded basis (its "weight card"), kept internally and shown to users only when the mechanism is shown; weights come from the
+    mechanism in the methodology, are estimated only from data available at the time (no
+    look-ahead), are capped so that no single indicator dominates a pillar, and are recalibrated on
+    a fixed schedule with the before and after recorded. Until the mechanism is approved and
+    calibrated, any interim weight is labelled interim wherever it is shown.
+22. **Percent change (PoC) is used only where it is admissible, and users can see both views.** Each
+    catalog series declares how it changes, from its definition and units, not by habit:
+    - *Percent change* (PoC): strictly positive quantities, counts, amounts and price or volume
+      indexes: employment, claims and benefit claims, orders, sales, production, prices, money
+      and balance-sheet totals, debt amounts, exchange rates, commodity prices.
+    - *Change in points* (percentage points, index points): rates, yields, spreads, ratios, shares
+      (for example % of GDP), and diffusion or sentiment indexes, which can be zero, negative or
+      already bounded.
+    - *Change in own units* (an amount, not a percentage): series that can cross zero, such as the
+      trade balance, current account and budget balance.
+    - *No change taken*: a series the source already publishes as a change or growth rate (rule 13:
+      never a change of a change); it is shown as published.
+    Every chart and table offers the **actual value** and the **change** (percent or points, as
+    declared) of any series, so users compare either; for a series with a declared change kind
+    the change view is always available, and for one with none the actual only. Claims and other
+    benefit-claim series are scored and charted on their percent change, with the actual counts
+    shown beside it. A new series is not added until its change kind is declared and tested.
+23. **Only compare what has a common basis.** Two series are compared, overlaid, ranked or combined
+    only when they share a unit and currency, or have first been put on a common basis: (a)
+    percent or point changes; (b) standardised scores against each series' own history; (c)
+    ratios to a common denominator (for example % of GDP); (d) indexes rebased to 100 at a common
+    date; or (e) conversion to one currency at a stated exchange rate and date, with the rate's
+    source shown (purchasing-power parity for levels where that is the point). The US GDP in
+    dollars is never put beside the UK GDP in pounds, and a count is never put beside a rate on one
+    scale. Each series records its unit and currency; the dashboard states the basis of every
+    comparison and refuses an overlay that has none. Scorecards compare countries only through
+    standardised scores, never through raw values.
+
+## Part 3. Scorecard correction mechanism (non-negotiable)
 
 A delayed or missing indicator must make a score **less certain, never more bullish or
 bearish**. Score and confidence are separate outputs (`app/domain/scorecard.py`):
 
-1. **Score each indicator point in time** against its own history as published then: a
+S1. **Score each indicator point in time** against its own history as published then: a
    z-score over ten years, clipped to -3..+3, flipped where higher means weaker, on two
    parts averaged equally: where it stands and its 3-month momentum (`MOMENTUM_WEIGHT`).
-2. **Rescaled weighted average per pillar:** `score = Σ wᵢ·sᵢ / Σ wᵢ` over usable
+S2. **Rescaled weighted average per pillar:** `score = Σ wᵢ·sᵢ / Σ wᵢ` over usable
    indicators, with `wᵢ` = base importance × timeliness weight. Overdue, discontinued, missing
    or unscorable indicators drop out (weight 0). Never count missing data as zero (a plain
    sum pulls scores toward neutral: strong economies underrated, weak ones overrated), and
    never carry an old value forward at full weight.
-3. **Confidence is reported separately:** `Σ wᵢ / Σ base importance`. It never changes the
+S3. **Confidence is reported separately:** `Σ wᵢ / Σ base importance`. It never changes the
    score.
-4. **Caution goes into position size, not into the view.** Size trade ideas by confidence.
-5. **Fix delays at the source where the licence allows it**, rather than living with them.
+S4. **Caution goes into position size, not into the view.** Size trade ideas by confidence.
+S5. **Fix delays at the source where the licence allows it**, rather than living with them.
    An estimate for a missing release may be added only if it is labelled as an estimate,
    at reduced weight, and replaced when the real figure lands.
-6. **Show what is pending:** every live scorecard lists the releases still to come, with the
+S6. **Show what is pending:** every live scorecard lists the releases still to come, with the
    source and FRED dates, so users know the score may move and why.
-7. **Prove there is no bias:** `uv run python -m app.cli scorecard-bias` compares the
+S7. **Prove there is no bias:** `uv run python -m app.cli scorecard-bias` compares the
    scorecard users would have seen each month with complete information. The mean difference
    must stay within ±0.25 for every pillar and overall; if it fails, the scorecard must not
    be used until the cause is fixed. `tests/test_scorecard.py` enforces the rules above; do
    not loosen it to make a change pass.
-8. **A currency pair is only as certain as its less certain side:** use
+S8. **A currency pair is only as certain as its less certain side:** use
    `pair_confidence(base, quote)` (the minimum), so a stale side cannot make a pair look
    decisive.
-9. **Never mix live and sample scorecards** in one ranking; sample data is always labelled.
+S9. **Never mix live and sample scorecards** in one ranking; sample data is always labelled.
+
+## Part 4. Ownership and conduct
+
+24. **The rule book and QuFin's code belong to QuFin.** The rule book is kept in this repository, in
+    plain text, and is the only place rules are defined. Instruction files for any development tool
+    may exist only as a pointer to it and must add no rule of their own. No rule, test, data file or
+    process may depend on a particular tool or vendor, so QuFin can change any of them at any time.
+25. **No tool or assistant attribution anywhere.** Code, comments, commit messages, pull request
+    descriptions, documents and releases carry no mention of, credit to or footer from any
+    development tool or assistant. Names of data sources and licensed vendors are recorded where the
+    data comes from (rule 4); that is provenance, not attribution.
+26. **Changing the rule book needs the owner's approval and a log entry.** A rule changes only by a
+    reviewed pull request that the QuFin owner merges. The change log below records the date, the
+    rule and the reason. Rules are never loosened to make a change pass.
+
+## Change log
+
+| Date | Rule | Change |
+|---|---|---|
+| 6 Nov 2026 | 1-19, S1-S9 | Moved into this rule book from the API folder; wording unchanged |
+| 6 Nov 2026 | 20-26 | Added: show/hide control of the scorecard mechanism, earned weights, percent-change admissibility, common basis for comparison, ownership, no attribution, rule changes |
+| 6 Nov 2026 | 12 | Judgements are recorded in `docs/assumptions-register.md` |
+| 6 Nov 2026 | 18, 19 | Names come from the data and calendar sites, not memory; one global name and acronym per indicator |

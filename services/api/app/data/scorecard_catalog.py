@@ -7,8 +7,9 @@ Each of those supports the currency, so the overall score reads as macro support
 Every indicator is scored against its own history (see app.domain.scorecard). `polarity` is
 -1 where a higher reading means a weaker pillar, e.g. unemployment for labour or wider credit
 spreads for sentiment. `transform` is "level" for rates, indexes and surveys, "yoy" (percent
-change over a year) for quantities and prices. `importance` is the base weight before the
-timeliness weight; all start equal until a reviewed reason says otherwise.
+change over a year) for quantities, counts (jobless claims) and prices (rule 22 in
+RULEBOOK.md). `importance` is the base weight before the timeliness weight. All are equal for
+now: a known defect (rule 21), to be replaced by the mechanism in private/scorecard-methodology.md.
 
 Series in the macro catalog but not here are stored and shown, but not scored (their meaning
 for a pillar is ambiguous or duplicated, e.g. the prime rate tracks fed funds one for one).
@@ -54,10 +55,10 @@ SCORED: dict[str, ScoreSpec] = {
     # Labour
     "UNRATE": ScoreSpec("level", -1),
     "PAYEMS": ScoreSpec("yoy"),
-    "ICSA": ScoreSpec("level", -1),
+    "ICSA": ScoreSpec("yoy", -1),  # claims are counts: scored on percent change (rule 22)
     "AWHMAN": ScoreSpec("level"),
     "UEMPMEAN": ScoreSpec("level", -1),
-    "CCSA": ScoreSpec("level", -1),
+    "CCSA": ScoreSpec("yoy", -1),  # claims are counts: scored on percent change (rule 22)
     "TEMPHELPS": ScoreSpec("yoy"),
     "JTSJOL": ScoreSpec("yoy"),
     "JTSQUR": ScoreSpec("level"),
