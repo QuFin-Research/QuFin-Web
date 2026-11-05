@@ -22,6 +22,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Macro data | Series, vintages, revisions, release status, weight, 1m/3m/1y change | **Live** (FRED/ALFRED) | Source, release dates and status per series; changes in % or points per the series' kind |
 | Macro data: Markets | Daily reference prices: 7 FX pairs (Fed H.10), WTI, Brent, Henry Hub (EIA) | **Live** (FRED/ALFRED), reference prices, not tradable quotes | "markets" group; not scored; asset prices elsewhere stay sample until wired |
 | Macro data: Energy | 12 weekly oil series (stocks, production, refinery use, trade, demand) | **Live** (EIA API v2, Weekly Petroleum Status Report) | "energy" group; not scored; release dates derived from EIA's weekly rule; revisions stored as vintages from the day QuFin sees them |
+| Macro data: euro area | Deposit facility rate, HICP headline and core (annual rates), M3 | **Live** (ECB Data Portal; HICP produced by Eurostat) | Country EA, same concept names as the US; not scored (no mixed-country scorecard yet); release dates derived, erring late |
 | Positioning | COT net, % OI, COT index; asset managers' net for financial futures | **Live** (CFTC Traders in Financial Futures for 10 financial contracts, legacy report for 5 commodities; each contract from one report only) | Report, group (leveraged funds or non-commercial) and release dates; caveats on partial contracts (Brent) and the US Dollar Index (no licensed price) |
 | Notifications | — | None yet | Empty until real event sources exist (invented alerts removed) |
 
@@ -39,6 +40,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | BLS and BEA leading/lagging indicators missing on FRED | FRED API (4 Nov 2026) | None missing: temp help, JOLTS openings and quits, PPI final demand, real PCE, trade balance, current account, budget balance and debt/GDP are all on FRED with vintages; no direct BLS or BEA connector needed |
 | EIA weekly petroleum status on FRED | FRED API | Not on FRED (crude, Cushing, SPR, production, refinery use, product stocks and demand): EIA API v2 is the source for oil, verified with the key |
 | Duplicated data in the catalog | Series definitions | Removed four exactly derivable series: DGS10 (= DFII10 + T10YIE), T10Y2Y, MPRIME (= fed funds + 3), RSAFS (= RRSFS × CPI) |
+| Euro area series (P1-18, P1-19) | ECB Data Portal API (6 Nov 2026) | All four live: deposit rate to 5 Nov, HICP to Oct (flash), M3 to Sep. HICP is published as an annual rate: declared `published_as_change`, never re-changed. ECB reference FX rates skipped: EUR/USD would duplicate Fed H.10 (rule 16). Shared concept names made country-neutral ("Broad Money Supply": M2 in the US, M3 in the euro area) |
 | University of Michigan licence | Michigan usage agreement | Commercial use needs a licence; kept for now by the owner's decision |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's

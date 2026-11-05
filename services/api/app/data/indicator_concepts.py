@@ -121,7 +121,7 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Inflation ----------------------------------------------------------------------------
     "consumer_prices": Concept(
-        "Consumer Prices (CPI)",
+        "Consumer Prices",
         "Change in the prices households pay for a typical basket of goods and services.",
     ),
     "core_consumer_prices": Concept(
@@ -178,8 +178,8 @@ CONCEPTS: dict[str, Concept] = {
         "Assets held by the central bank; growth adds liquidity, shrinking removes it.",
     ),
     "money_supply": Concept(
-        "Money Supply (M2)",
-        "Cash, deposits and savings in the economy; growth fuels spending and prices.",
+        "Broad Money Supply",
+        "Cash, deposits and savings (M2 in the US, M3 in the euro area); growth fuels spending.",
     ),
     "business_loans": Concept(
         "Business Loans",
@@ -365,9 +365,17 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "DHHNGSP": "natural_gas",
 }
 
+# Euro area: the same concept keys as the US, so names match across countries (rule 18).
+EA_SERIES_CONCEPTS: dict[str, str] = {
+    "FM.D.U2.EUR.4F.KR.DFR.LEV": "policy_rate",
+    "HICP.M.U2.N.000000.4D0.ANR": "consumer_prices",
+    "HICP.M.U2.N.XEF000.4D0.ANR": "core_consumer_prices",
+    "BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E": "money_supply",
+}
+
 SERIES_CONCEPTS: dict[tuple[str, str], str] = {
     ("US", series_id): concept for series_id, concept in US_SERIES_CONCEPTS.items()
-}
+} | {("EA", series_id): concept for series_id, concept in EA_SERIES_CONCEPTS.items()}
 
 _EIA_REASON = "EIA Weekly Petroleum Status Report series are not on FRED (checked 4 Nov 2026)"
 

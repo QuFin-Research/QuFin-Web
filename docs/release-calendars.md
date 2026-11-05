@@ -15,8 +15,8 @@ confirm.
 | United States | Census | Economic indicators calendar | To confirm |
 | United States | Federal Reserve Board | H.4.1, H.8, H.15, G.17, G.19 statistical release dates; FOMC calendar | To confirm |
 | United States | EIA | Weekly Petroleum Status Report: Wednesday after the week ending Friday; a federal holiday Monday to Wednesday moves it one day later | **Derived** from EIA's stated rule in `services/api/app/data/eia_calendar.py` (erring late); dated exceptions to be added as EIA announces them |
-| Euro area | ECB | Statistical calendar; monetary policy meeting calendar | To confirm |
-| Euro area | Eurostat | Euro indicators release calendar | To confirm |
+| Euro area | ECB | Deposit rate dated each day (announced before it takes effect); M3 on the ECB monetary developments release, about the 28th of the next month, dated the last business day of that month | **Derived** in `services/api/app/data/ecb_calendar.py` (erring late); statistical calendar dates to replace the rule |
+| Euro area | Eurostat | HICP flash around the end of the month, final around the 17th-19th of the next: history dated the 20th (next weekday), the newest flash from the day seen | **Derived** in `services/api/app/data/ecb_calendar.py` (erring late) |
 | United Kingdom | ONS, Bank of England | ONS release calendar; MPC dates | To confirm |
 | Japan | Statistics Bureau, Bank of Japan | e-Stat release schedule; BoJ meeting schedule | To confirm |
 | Canada | Statistics Canada, Bank of Canada | The Daily release schedule; BoC rate announcement dates | To confirm |

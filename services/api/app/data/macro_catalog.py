@@ -39,7 +39,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia"]
+    source: Literal["fred", "eia", "ecb"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -111,6 +111,7 @@ DIFF_SERIES = frozenset(
         "MTSDS133FMS",
         "GFDEGDQ188S",
         "WPULEUS3",
+        "FM.D.U2.EUR.4F.KR.DFR.LEV",
         "DFII10",
         "BAA10Y",
     }
@@ -120,6 +121,21 @@ DIFF_SERIES = frozenset(
 def _eia(id: str) -> CatalogSeries:
     """A Weekly Petroleum Status Report series, from the EIA API (not on FRED)."""
     return CatalogSeries(id, "eia", "US", "energy", change="diff" if id in DIFF_SERIES else "pct")
+
+
+def _ea(id: str, dimension: Dimension, *, published_as_change: bool = False) -> CatalogSeries:
+    """A euro area series from the ECB Data Portal; id = dataflow + "." + series key.
+
+    Not scored: the scorecard does not mix countries until each has its own verified set.
+    """
+    return CatalogSeries(
+        id,
+        "ecb",
+        "EA",
+        dimension,
+        change="diff" if published_as_change or id in DIFF_SERIES else "pct",
+        published_as_change=published_as_change,
+    )
 
 
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
@@ -221,6 +237,13 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _eia("WRPUPUS2"),  # Product supplied, all petroleum products
     _eia("WGFUPUS2"),  # Product supplied, finished motor gasoline
     _eia("WDIUPUS2"),  # Product supplied, distillate fuel oil
+    # --- Euro area: ECB Data Portal (P1-19), not scored ---------------------------------
+    # ECB euro reference FX rates are not loaded: EUR/USD is already stored from Fed H.10
+    # (DEXUSEU), and a second fixing of the same rate would be duplicated data (rule 16).
+    _ea("FM.D.U2.EUR.4F.KR.DFR.LEV", "policy"),  # Deposit facility rate, daily
+    _ea("HICP.M.U2.N.000000.4D0.ANR", "inflation", published_as_change=True),  # HICP, y/y
+    _ea("HICP.M.U2.N.XEF000.4D0.ANR", "inflation", published_as_change=True),  # Core HICP, y/y
+    _ea("BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E", "policy"),  # M3 money supply, stock, SA
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.
