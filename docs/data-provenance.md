@@ -1,7 +1,7 @@
 # Data provenance
 
 Where every number in QuFin comes from. Keep this table current: a new page, card or endpoint
-gets a row before it ships (rule 8 in `services/api/CLAUDE.md`).
+gets a row before it ships (rule 8 in `RULEBOOK.md`).
 
 Every badge and note follows the `data` origin the API returns (or the offline mock's "sample"), so labels change by themselves when a source goes live; a missing origin counts as sample.
 

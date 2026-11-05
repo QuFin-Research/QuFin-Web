@@ -2,11 +2,12 @@
 
 A concept is what an indicator measures, independent of who publishes it: "unemployment_rate"
 is the US UNRATE today and the UK's ONS series later, both shown as "Unemployment Rate", so
-economies can be compared side by side. Rules (services/api/CLAUDE.md, rules 16-18):
+economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 
 - every catalog series maps to exactly one concept, and a country has at most one series per
   concept: no duplicated indicators;
-- names are short and plain; the explanation is one sentence for a general visitor; the
+- indices carry their standard name with the acronym first ("CPI – Consumer Price Index"),
+  other indicators a short plain name; the explanation is one sentence for a general visitor; the
   official title and source code stay available to professionals (tooltip);
 - a series that can be derived from stored ones is not stored (REDUNDANT below).
 """
@@ -15,17 +16,55 @@ from dataclasses import dataclass
 
 from app.data.macro_catalog import BY_ID, OECD_SERIES
 
+# Globally recognised indicator acronyms and the full names they stand for. An indicator is known
+# by this name everywhere in QuFin (database, API, charts, comparisons, backtests, docs), whatever
+# a country's statistics office calls its own version: the euro area's HICP and the UK's CPI are
+# both "CPI". Add an acronym here before using it in a name; tests enforce the format.
+ACRONYMS: dict[str, str] = {
+    "CPI": "Consumer Price Index",
+    "Core CPI": "Consumer Price Index ex Food and Energy",
+    "Services CPI": "Consumer Price Index, Services",
+    "PPI": "Producer Price Index",
+    "GDP": "Real Gross Domestic Product",
+    "NFP": "Nonfarm Payrolls",
+    "PCE": "Real Personal Consumption Expenditures",
+    "Core PCE": "PCE Price Index ex Food and Energy",
+    "WEI": "Weekly Economic Index",
+    "NFCI": "Chicago Fed National Financial Conditions Index",
+    "STLFSI": "St. Louis Fed Financial Stress Index",
+    "SPR": "Strategic Petroleum Reserve",
+    "ULC": "Unit Labor Costs",
+    "C&I Loans": "Commercial and Industrial Loans",
+    "CLI": "Composite Leading Indicator",
+    "BCI": "Business Confidence Index",
+    "CCI": "Consumer Confidence Index",
+}
+
+# Local names for an indicator that has a global name. They belong in the official title and
+# tooltip only, never in a name, key or label QuFin shows.
+LOCAL_ALIASES: dict[str, str] = {
+    "HICP": "CPI",  # euro area harmonised index of consumer prices
+    "CPIH": "CPI",  # UK CPI including owner occupiers' housing costs
+    "Core HICP": "Core CPI",
+}
+
 
 @dataclass(frozen=True)
 class Concept:
     name: str
     explanation: str
 
+    @property
+    def acronym(self) -> str | None:
+        """The global acronym ("CPI") when the name leads with one, else None."""
+        head, sep, _ = self.name.partition(" – ")
+        return head if sep else None
+
 
 CONCEPTS: dict[str, Concept] = {
     # --- Labour -------------------------------------------------------------------------------
     "factory_workweek": Concept(
-        "Factory Workweek",
+        "Average Weekly Hours, Manufacturing",
         "Average weekly hours of factory workers; employers trim hours before they cut jobs.",
     ),
     "initial_jobless_claims": Concept(
@@ -37,19 +76,19 @@ CONCEPTS: dict[str, Concept] = {
         "People still receiving unemployment benefits; shows how hard it is to find work.",
     ),
     "temporary_staffing_jobs": Concept(
-        "Temporary Staffing Jobs",
+        "Temporary Help Services Employment",
         "Temporary workers are hired first in upturns and let go first in downturns.",
     ),
     "job_openings": Concept(
-        "Job Openings",
+        "JOLTS Job Openings",
         "Positions employers are trying to fill; a measure of demand for workers.",
     ),
     "quit_rate": Concept(
-        "Quit Rate",
+        "JOLTS Quits Rate",
         "Share of workers leaving their jobs each month; high when they expect to find better.",
     ),
     "nonfarm_payrolls": Concept(
-        "Nonfarm Payrolls",
+        "NFP – Nonfarm Payrolls",
         "Number of jobs outside farming; the headline monthly jobs figure.",
     ),
     "unemployment_rate": Concept(
@@ -57,7 +96,7 @@ CONCEPTS: dict[str, Concept] = {
         "Share of people who want a job and are looking but do not have one.",
     ),
     "unemployment_duration": Concept(
-        "Unemployment Duration",
+        "Average Duration of Unemployment",
         "Average weeks the unemployed have been out of work; it turns after the economy does.",
     ),
     # --- Growth -------------------------------------------------------------------------------
@@ -66,19 +105,19 @@ CONCEPTS: dict[str, Concept] = {
         "New orders placed with factories for consumer goods.",
     ),
     "core_capital_goods_orders": Concept(
-        "Business Investment Orders",
+        "Core Capital Goods Orders",
         "Orders for business equipment, excluding aircraft and defence: investment plans.",
     ),
     "manufacturing_new_orders_survey": Concept(
-        "Factory New Orders Survey",
+        "Philadelphia Fed New Orders Index",
         "Share of surveyed factories reporting more orders minus those reporting fewer.",
     ),
     "empire_state_manufacturing": Concept(
-        "Empire State Manufacturing",
+        "Empire State Manufacturing Index",
         "New York factories reporting better business minus worse; the month's first factory read.",
     ),
     "dallas_fed_manufacturing": Concept(
-        "Dallas Fed Manufacturing",
+        "Dallas Fed Manufacturing Index",
         "Texas factories reporting better business minus worse; sensitive to energy and trade.",
     ),
     "building_permits": Concept(
@@ -94,11 +133,11 @@ CONCEPTS: dict[str, Concept] = {
         "Sales of newly built homes; they react quickly to mortgage rates.",
     ),
     "real_gdp": Concept(
-        "Real GDP",
+        "GDP – Real Gross Domestic Product",
         "The economy's total output after inflation; the broadest measure of growth.",
     ),
     "weekly_economic_index": Concept(
-        "Weekly Economic Index",
+        "WEI – Weekly Economic Index",
         "Weekly activity index scaled to GDP growth; the earliest read on the economy.",
     ),
     "industrial_production": Concept(
@@ -110,7 +149,7 @@ CONCEPTS: dict[str, Concept] = {
         "Shop and restaurant sales after inflation.",
     ),
     "real_consumer_spending": Concept(
-        "Real Consumer Spending",
+        "PCE – Real Personal Consumption Expenditures",
         "Household spending after inflation; the largest part of the economy.",
     ),
     "personal_income": Concept(
@@ -118,7 +157,7 @@ CONCEPTS: dict[str, Concept] = {
         "Total household income before inflation, including government payments.",
     ),
     "real_income_excl_transfers": Concept(
-        "Real Income excl. Transfers",
+        "Real Personal Income excl. Transfers",
         "Household income after inflation, without government payments: earned income.",
     ),
     "corporate_profits": Concept(
@@ -131,35 +170,35 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Inflation ----------------------------------------------------------------------------
     "consumer_prices": Concept(
-        "Consumer Prices",
+        "CPI – Consumer Price Index",
         "Change in the prices households pay for a typical basket of goods and services.",
     ),
     "core_consumer_prices": Concept(
-        "Core Consumer Prices",
+        "Core CPI – Consumer Price Index ex Food and Energy",
         "Consumer prices excluding volatile food and energy: underlying inflation.",
     ),
     "services_prices": Concept(
-        "Services Prices",
+        "Services CPI – Consumer Price Index, Services",
         "Prices of services such as rent, healthcare and travel; slow to turn, wage-driven.",
     ),
     "core_pce_prices": Concept(
-        "Core PCE Prices",
+        "Core PCE – PCE Price Index ex Food and Energy",
         "The central bank's preferred inflation measure, excluding food and energy.",
     ),
     "producer_prices": Concept(
-        "Producer Prices",
+        "PPI – Producer Price Index",
         "Prices businesses receive for their output; they feed through to consumer prices.",
     ),
     "unit_labour_costs": Concept(
-        "Unit Labour Costs",
+        "ULC – Unit Labor Costs",
         "Wage cost to produce one unit of output; rising costs push prices up.",
     ),
     "inflation_expectations_10y": Concept(
-        "Inflation Expectations (10-Year)",
+        "10-Year Breakeven Inflation Rate",
         "Average inflation bond markets expect over the next ten years.",
     ),
     "gasoline_price": Concept(
-        "Gasoline Price",
+        "Retail Gasoline Price",
         "Weekly average pump price; the earliest read on consumer prices.",
     ),
     # --- Monetary policy, rates and credit -----------------------------------------------------
@@ -168,19 +207,19 @@ CONCEPTS: dict[str, Concept] = {
         "The central bank's overnight rate, which sets the cost of money.",
     ),
     "yield_2y": Concept(
-        "2-Year Bond Yield",
+        "2-Year Government Bond Yield",
         "Government 2-year borrowing cost; tracks where markets expect policy rates to go.",
     ),
     "real_yield_10y": Concept(
-        "Real 10-Year Yield",
+        "10-Year Real Yield (TIPS)",
         "10-year yield after expected inflation; a key driver of gold and the currency.",
     ),
     "yield_curve_10y_3m": Concept(
-        "Yield Curve (10y minus 3m)",
+        "Yield Curve (10-Year minus 3-Month)",
         "Long minus short rates; when it turns negative, a recession has often followed.",
     ),
     "long_rate_vs_policy_rate": Concept(
-        "Long Rate vs Policy Rate",
+        "10-Year Yield minus Policy Rate",
         "10-year yield minus the policy rate; low or negative means policy is tight.",
     ),
     "central_bank_balance_sheet": Concept(
@@ -188,11 +227,11 @@ CONCEPTS: dict[str, Concept] = {
         "Assets held by the central bank; growth adds liquidity, shrinking removes it.",
     ),
     "money_supply": Concept(
-        "Broad Money Supply",
+        "Broad Money Supply (M2, M3)",
         "Cash, deposits and savings (M2 in the US, M3 in the euro area); growth fuels spending.",
     ),
     "business_loans": Concept(
-        "Business Loans",
+        "C&I Loans – Commercial and Industrial Loans",
         "Bank loans to companies outstanding; they keep growing late into an upturn.",
     ),
     "consumer_credit": Concept(
@@ -201,31 +240,31 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Sentiment and financial conditions ----------------------------------------------------
     "leading_index": Concept(
-        "Composite Leading Indicator",
+        "CLI – Composite Leading Indicator",
         "OECD index built to turn 6-9 months before the economy; above 100 means above trend.",
     ),
     "business_confidence": Concept(
-        "Business Confidence",
+        "BCI – Business Confidence Index",
         "How firms rate output, orders and stocks in surveys; above 100 means above average.",
     ),
     "consumer_sentiment": Concept(
-        "Consumer Sentiment",
+        "CCI – Consumer Confidence Index",
         "How confident households feel about their finances and the economy.",
     ),
     "financial_conditions": Concept(
-        "Financial Conditions",
+        "NFCI – Chicago Fed National Financial Conditions Index",
         "How easy it is to borrow and invest; positive means tighter than average.",
     ),
     "financial_stress": Concept(
-        "Financial Stress",
+        "STLFSI – St. Louis Fed Financial Stress Index",
         "Strain in funding and credit markets; above zero means more stress than usual.",
     ),
     "corporate_credit_spread": Concept(
-        "Corporate Credit Spread",
+        "Baa Corporate Bond Spread",
         "Extra yield companies pay over government bonds; it widens when investors worry.",
     ),
     "trade_weighted_currency": Concept(
-        "Trade-Weighted Currency",
+        "Broad US Dollar Index (Trade-Weighted)",
         "The currency's value against a basket of trading partners' currencies.",
     ),
     # --- External and fiscal -------------------------------------------------------------------
@@ -250,11 +289,11 @@ CONCEPTS: dict[str, Concept] = {
         "Total government debt in currency, updated daily: the borrowing as it happens.",
     ),
     "government_debt_average_rate": Concept(
-        "Average Rate on Government Debt",
+        "Average Interest Rate on Government Debt",
         "Average interest rate the government pays on its tradable debt: its cost of borrowing.",
     ),
     "government_interest_expense": Concept(
-        "Government Interest Expense",
+        "Interest Expense on Public Debt",
         "Interest the government pays on its debt each month; a rising burden strains budgets.",
     ),
     # --- Energy (oil supply, demand and stocks) -----------------------------------------------
@@ -263,11 +302,11 @@ CONCEPTS: dict[str, Concept] = {
         "Commercial crude oil in storage; builds tend to weigh on prices, draws support them.",
     ),
     "cushing_crude_stocks": Concept(
-        "Cushing Crude Stocks",
+        "Cushing Crude Oil Stocks",
         "Crude stored at Cushing, the WTI delivery hub; very low levels can squeeze prices.",
     ),
     "strategic_petroleum_reserve": Concept(
-        "Strategic Petroleum Reserve",
+        "SPR – Strategic Petroleum Reserve",
         "Government emergency crude stocks; releases add supply to the market.",
     ),
     "crude_oil_production": Concept(
@@ -275,7 +314,7 @@ CONCEPTS: dict[str, Concept] = {
         "Barrels of crude oil produced per day.",
     ),
     "refinery_utilisation": Concept(
-        "Refinery Utilisation",
+        "Refinery Utilization",
         "Share of refining capacity in use: how much crude refiners are demanding.",
     ),
     "gasoline_inventories": Concept(
@@ -283,7 +322,7 @@ CONCEPTS: dict[str, Concept] = {
         "Gasoline in storage; low stocks ahead of driving season support prices.",
     ),
     "diesel_inventories": Concept(
-        "Diesel & Heating Oil Inventories",
+        "Distillate Fuel Inventories (Diesel and Heating Oil)",
         "Distillate fuel in storage, used by trucks, industry and heating.",
     ),
     "crude_oil_imports": Concept(
@@ -295,15 +334,15 @@ CONCEPTS: dict[str, Concept] = {
         "Barrels of crude oil sold abroad per day.",
     ),
     "total_fuel_demand": Concept(
-        "Total Fuel Demand",
+        "Total Fuel Demand (Product Supplied)",
         "All petroleum products supplied to users per day: implied consumption.",
     ),
     "gasoline_demand": Concept(
-        "Gasoline Demand",
+        "Gasoline Demand (Product Supplied)",
         "Gasoline supplied to users per day: a read on driving demand.",
     ),
     "diesel_demand": Concept(
-        "Diesel Demand",
+        "Diesel and Heating Oil Demand (Product Supplied)",
         "Diesel and heating oil supplied per day: a read on freight and industry.",
     ),
     # --- Markets (reference prices) -------------------------------------------------------------

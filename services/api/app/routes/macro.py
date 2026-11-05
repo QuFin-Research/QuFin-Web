@@ -41,11 +41,16 @@ def _series(meta: SeriesMeta) -> MacroSeries:
     if key is None:  # every catalog series has a concept (tests/test_indicator_concepts.py)
         raise HTTPException(status_code=404, detail="Series not in the catalog")
     concept = CONCEPTS[key]
+    fields = {f: getattr(meta, f) for f in _META_FIELDS}
+    entry = BY_ID.get(meta.id)
+    if entry is not None:  # the catalog is the source of truth, so a re-tag needs no re-load
+        fields["cycle"] = entry.cycle
     return MacroSeries(
-        **{f: getattr(meta, f) for f in _META_FIELDS},
+        **fields,
         name=concept.name,
         explanation=concept.explanation,
         concept=key,
+        acronym=concept.acronym,
     )
 
 

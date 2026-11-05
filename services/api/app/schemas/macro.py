@@ -13,6 +13,9 @@ class MacroSeries(ApiModel):
     name: str = Field(description="Human-readable name shown to users, shared across countries")
     explanation: str = Field(description="One plain sentence on what the indicator measures")
     concept: str = Field(description="Concept key matching the same indicator across countries")
+    acronym: str | None = Field(
+        description="The indicator's global acronym, e.g. CPI, whatever the country calls its own"
+    )
     source: str
     title: str = Field(description="The source's official title (for the tooltip)")
     units: str

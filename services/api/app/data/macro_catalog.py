@@ -9,9 +9,11 @@ Chicago Fed's financial conditions index). The S&P 500 component is left to a pr
 FRED keeps only ten years of it and no vintages.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal
+
+from app.data.cycle_classification import QUFIN_CYCLE
 
 # The five scored pillars, plus external and fiscal (stored and shown; scored once the
 # scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
@@ -216,7 +218,7 @@ def _oecd(series_id: str) -> CatalogSeries:
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
 
-CATALOG: tuple[CatalogSeries, ...] = (
+_DECLARED: tuple[CatalogSeries, ...] = (
     # --- Leading: turn before the economy ------------------------------------------------
     _us("AWHMAN", "labour", "leading"),  # Average weekly hours, manufacturing
     _us("ICSA", "labour", "leading"),  # Initial jobless claims, weekly
@@ -279,7 +281,7 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("BUSLOANS", "policy", "lagging"),  # Commercial and industrial loans
     _us("TOTALSL", "policy", "lagging"),  # Consumer credit outstanding
     # --- Not classified by cycle -----------------------------------------------------------
-    _us("CPIAUCSL", "inflation"),  # CPI, all items
+    _us("CPIAUCSL", "inflation", "lagging"),  # CPI, all items: prices follow the cycle
     _us("GASREGW", "inflation"),  # Retail gasoline price, weekly (EIA)
     _us("PCEPILFE", "inflation"),  # Core PCE price index
     _us("PPIFIS", "inflation"),  # Producer prices, final demand
@@ -349,5 +351,21 @@ CATALOG: tuple[CatalogSeries, ...] = (
     # Broad dollar index; reweighted in 2019 and 2021, so point in time only from 2019.
     _us("DTWEXBGS", "sentiment"),
 )
+
+
+def _with_cycle(series: CatalogSeries) -> CatalogSeries:
+    """Every series has a cycle: the Conference Board's where it is an index component, else
+    QuFin's classification (cycle_classification.py). A series with neither fails to load."""
+    if series.cycle is not None:
+        return series
+    if series.id not in QUFIN_CYCLE:
+        raise ValueError(
+            f"{series.id} has no business-cycle classification: add it to "
+            "app/data/cycle_classification.py with the reason"
+        )
+    return replace(series, cycle=QUFIN_CYCLE[series.id][0])
+
+
+CATALOG: tuple[CatalogSeries, ...] = tuple(_with_cycle(s) for s in _DECLARED)
 
 BY_ID = {s.id: s for s in CATALOG}
