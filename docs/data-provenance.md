@@ -39,6 +39,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | BLS and BEA leading/lagging indicators missing on FRED | FRED API (4 Nov 2026) | None missing: temp help, JOLTS openings and quits, PPI final demand, real PCE, trade balance, current account, budget balance and debt/GDP are all on FRED with vintages; no direct BLS or BEA connector needed |
 | EIA weekly petroleum status on FRED | FRED API | Not on FRED (crude, Cushing, SPR, production, refinery use, product stocks and demand): EIA API v2 is the source for oil, verified with the key |
 | Duplicated data in the catalog | Series definitions | Removed four exactly derivable series: DGS10 (= DFII10 + T10YIE), T10Y2Y, MPRIME (= fed funds + 3), RSAFS (= RRSFS × CPI) |
+| Treasury fiscal series not on FRED (P1-14) | FRED API and Fiscal Data API (5 Nov 2026) | FRED has debt only quarterly and no Treasury average rates or monthly interest expense: daily Debt to the Penny, average rate on marketable debt and monthly interest expense loaded from Fiscal Data. Interest expense has no total row: its lines are summed, and FY2024 sums to $1,133.0 billion, matching Treasury's published total. No duplicate of GFDEGDQ188S (a ratio to GDP) |
 | University of Michigan licence | Michigan usage agreement | Commercial use needs a licence; kept for now by the owner's decision |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's
