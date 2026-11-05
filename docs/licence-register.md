@@ -21,6 +21,7 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Fed H.10 daily FX (via FRED: DEXUSEU, DEXUSUK, DEXJPUS, DEXUSAL, DEXUSNZ, DEXCAUS, DEXSZUS) | Daily reference FX rates, 7 pairs | Public domain | "Board of Governors of the Federal Reserve System" | Free | Noon buying rates in New York, published weekly; reference prices, not tradable quotes |
 | EIA spot prices (via FRED: DCOILWTICO, DCOILBRENTEU, DHHNGSP) | WTI, Brent, Henry Hub daily | Public domain | "U.S. Energy Information Administration" | Free | Spot reference prices |
 | EIA API v2 (Weekly Petroleum Status Report) | 12 weekly oil series: crude, Cushing and SPR stocks, production, refinery use, product stocks, imports, exports, demand | Public domain (US government work) | "Source: U.S. Energy Information Administration" | Free (API key) | Not on FRED; EIA serves no vintages, so QuFin records revisions as it sees them |
+| ECB Data Portal (SDMX API) | Euro area: deposit facility rate, HICP headline and core (Eurostat), M3 | Reuse with attribution (ECB statistics reuse policy); *to confirm* commercial terms for Eurostat-produced HICP | "Source: ECB Data Portal" (and Eurostat for HICP) | Free, keyless | No vintages, so QuFin records revisions as it sees them; ECB reference FX rates not loaded (EUR/USD already from Fed H.10) |
 | Treasury Fiscal Data API (Bureau of the Fiscal Service) | Debt to the Penny (daily), average interest rates, interest expense on the public debt (monthly) | Public domain (US government work) | "Source: U.S. Treasury, Fiscal Data" | Free, keyless | Not on FRED at these frequencies; no vintages, so QuFin records revisions as it sees them |
 | CFTC Commitments of Traders (Public Reporting API) | Positioning, 15 contracts: Traders in Financial Futures (currencies, US Dollar Index, crypto) and legacy (commodities) | Public domain | "Source: CFTC" | Free | — |
 
@@ -29,7 +30,7 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Source | Data | Redistribution | Cost |
 |---|---|---|---|
 | BLS, BEA, Census | US primary releases | Public domain | Free (BLS, BEA keys) |
-| ECB Data Portal, Eurostat | Euro-area macro, reference FX rates | Reuse with attribution | Free |
+| Eurostat | Euro-area macro beyond the ECB's copies | Reuse with attribution | Free |
 | OECD Data Explorer | Leading indicators, BCI, CCI | Reuse with attribution, *to confirm* commercial terms | Free |
 | IMF, World Bank, BIS | Cross-country macro, policy rates, REER | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |
 | Central banks and statistics offices (BoE, ONS, BoC, StatCan, RBA, ABS, RBNZ, Stats NZ, BoJ, SNB, …) | National macro | Most allow reuse with attribution; *to confirm* each | Free |
