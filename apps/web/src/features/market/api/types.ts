@@ -109,6 +109,8 @@ export type CountryScore = {
   overallConfidence?: number | null;
   asOf?: string | null;
   indicators?: ScorecardIndicator[];
+  /** QuFin's choice: 'hidden' keeps the scoring recipe private (no indicator weights or sub-scores) */
+  mechanism?: 'shown' | 'hidden';
   /** Releases still to come that may move the scores */
   pending?: PendingRelease[];
 };

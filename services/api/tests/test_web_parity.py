@@ -39,7 +39,15 @@ def dump(model):
 
 
 # Fields only live (API-computed) scorecards fill; the offline mock has sample scores only.
-LIVE_ONLY = {"data", "confidence", "overall_confidence", "as_of", "indicators", "pending"}
+LIVE_ONLY = {
+    "data",
+    "confidence",
+    "overall_confidence",
+    "as_of",
+    "indicators",
+    "pending",
+    "mechanism",  # set per request from QuFin's disclosure setting, not data
+}
 
 
 def test_country_scores_match_web():

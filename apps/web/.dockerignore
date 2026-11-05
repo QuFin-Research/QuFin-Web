@@ -70,7 +70,6 @@ Thumbs.db
 
 # AI tool configs
 .cursor/
-.claude
 AGENTS.md
 
 # Cleanup guide

@@ -3,7 +3,7 @@
 The report covers the week ending Friday and is normally released the following Wednesday at
 10:30 ET; when a federal holiday falls on the Monday to Wednesday of the release week, the release
 moves back a day. The EIA API serves today's values only, with no release history, so historical
-release dates are derived from this rule (rule 9 in services/api/CLAUDE.md): it errs late, never
+release dates are derived from this rule (rule 9 in RULEBOOK.md): it errs late, never
 early. Holiday dates come from the same federal calendar the CFTC dates use.
 """
 

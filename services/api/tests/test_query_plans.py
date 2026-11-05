@@ -1,4 +1,4 @@
-"""Every hot query must be served by an index (rule in services/api/CLAUDE.md).
+"""Every hot query must be served by an index (rule in RULEBOOK.md).
 
 The data tables grow with every country and series; a query that scans a whole table gets
 slower with each one added. Each read the pages and jobs rely on is captured here and run
