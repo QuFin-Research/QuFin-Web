@@ -89,6 +89,16 @@ series, existing or new:
     `docs/indicator-names.md`. Every series also has a business-cycle tag
     (`app/data/cycle_classification.py`, with a reason); the catalog refuses a series without one.
 
+19. **One global name for every indicator, in every country and every layer.** An indicator is
+    known by its globally recognised name and acronym (CPI, PPI, GDP, NFP, PMI, ...), never by a
+    country's local name for it: the euro area's HICP and the UK's CPIH are both "CPI". Series
+    from every country map to the same concept, and that name is used everywhere QuFin names
+    things: database, API (`name`, `concept`, `acronym`), charts, comparisons, scorecards,
+    backtests, alerts and docs. The local name appears only in the official title and tooltip.
+    Acronyms and their full names are listed in `ACRONYMS` (`app/data/indicator_concepts.py`),
+    local aliases in `LOCAL_ALIASES`; add the acronym there before using it, and add a country's
+    series to the existing concept rather than inventing a new name. Tests enforce the format.
+
 ## Scorecard correction mechanism (non-negotiable)
 
 A delayed or missing indicator must make a score **less certain, never more bullish or

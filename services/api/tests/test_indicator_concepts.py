@@ -3,7 +3,9 @@
 from collections import Counter
 
 from app.data.indicator_concepts import (
+    ACRONYMS,
     CONCEPTS,
+    LOCAL_ALIASES,
     NON_FRED_ALLOWED,
     REDUNDANT,
     SERIES_CONCEPTS,
@@ -89,3 +91,34 @@ def test_every_series_has_a_business_cycle_and_a_reason_for_ours():
 def test_the_api_reports_a_cycle_for_every_series(client, ingested):  # noqa: F811
     for series in client.get("/v1/macro/series").json():
         assert series["cycle"] in ("leading", "coincident", "lagging"), series["id"]
+
+
+def test_acronym_names_use_the_global_acronym_and_its_full_name():
+    for key, concept in CONCEPTS.items():
+        if concept.acronym is None:
+            continue
+        full = concept.name.split(" – ", 1)[1]
+        assert ACRONYMS.get(concept.acronym) == full, f"{key}: '{concept.name}' is not in ACRONYMS"
+    assert {c.acronym for c in CONCEPTS.values() if c.acronym} <= set(ACRONYMS)
+
+
+def test_local_names_never_replace_the_global_indicator_name():
+    import re
+
+    for key, concept in CONCEPTS.items():
+        for alias, global_name in LOCAL_ALIASES.items():
+            assert not re.search(rf"{re.escape(alias)}", concept.name), (
+                f"{key}: use {global_name}, not the local name {alias}"
+            )
+
+
+def test_every_country_maps_its_own_version_to_the_one_global_concept():
+    # The euro area's HICP and the US CPI are the same indicator to QuFin: one concept key.
+    keys = {(e.country, SERIES_CONCEPTS[(e.country, e.id)]) for e in CATALOG}
+    assert ("EA", "consumer_prices") in keys and ("US", "consumer_prices") in keys
+    assert CONCEPTS["consumer_prices"].acronym == "CPI"
+
+
+def test_api_returns_the_global_acronym(client, ingested):  # noqa: F811
+    [series] = client.get("/v1/macro/series").json()
+    assert "acronym" in series

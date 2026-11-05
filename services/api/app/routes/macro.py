@@ -50,6 +50,7 @@ def _series(meta: SeriesMeta) -> MacroSeries:
         name=concept.name,
         explanation=concept.explanation,
         concept=key,
+        acronym=concept.acronym,
     )
 
 

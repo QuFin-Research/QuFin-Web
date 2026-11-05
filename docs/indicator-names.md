@@ -16,7 +16,7 @@ the official producer's term or the name most sites share; US spelling for US-pu
 | 2-Year Government Bond Yield | Market Yield on U.S. Treasury Securities at 2-Year Constant Maturity,  | US 2 Year Treasury Bond Note Yield | - |
 | Average Duration of Unemployment | Average Weeks Unemployed | - | - |
 | Average Interest Rate on Government Debt | Average Interest Rate on Total Marketable Treasury Securities | - | - |
-| Average Weekly Hours – Manufacturing | Average Weekly Hours of Production and Nonsupervisory Employees, Manuf | Average Weekly Hours (manufacturing 40.6 shown on  | - |
+| Average Weekly Hours, Manufacturing | Average Weekly Hours of Production and Nonsupervisory Employees, Manuf | Average Weekly Hours (manufacturing 40.6 shown on  | - |
 | Baa Corporate Bond Spread | Moody's Seasoned Baa Corporate Bond Yield Relative to Yield on 10-Year | - | - |
 | Broad Money Supply (M2, M3) | M2 | Money Supply M2 | - |
 | Broad US Dollar Index (Trade-Weighted) | Nominal Broad U.S. Dollar Index | United States Dollar | - |

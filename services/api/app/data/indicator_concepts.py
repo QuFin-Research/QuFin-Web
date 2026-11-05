@@ -14,17 +14,52 @@ economies can be compared side by side. Rules (services/api/CLAUDE.md, rules 16-
 
 from dataclasses import dataclass
 
+# Globally recognised indicator acronyms and the full names they stand for. An indicator is known
+# by this name everywhere in QuFin (database, API, charts, comparisons, backtests, docs), whatever
+# a country's statistics office calls its own version: the euro area's HICP and the UK's CPI are
+# both "CPI". Add an acronym here before using it in a name; tests enforce the format.
+ACRONYMS: dict[str, str] = {
+    "CPI": "Consumer Price Index",
+    "Core CPI": "Consumer Price Index ex Food and Energy",
+    "Services CPI": "Consumer Price Index, Services",
+    "PPI": "Producer Price Index",
+    "GDP": "Real Gross Domestic Product",
+    "NFP": "Nonfarm Payrolls",
+    "PCE": "Real Personal Consumption Expenditures",
+    "Core PCE": "PCE Price Index ex Food and Energy",
+    "WEI": "Weekly Economic Index",
+    "NFCI": "Chicago Fed National Financial Conditions Index",
+    "STLFSI": "St. Louis Fed Financial Stress Index",
+    "SPR": "Strategic Petroleum Reserve",
+    "ULC": "Unit Labor Costs",
+    "C&I Loans": "Commercial and Industrial Loans",
+}
+
+# Local names for an indicator that has a global name. They belong in the official title and
+# tooltip only, never in a name, key or label QuFin shows.
+LOCAL_ALIASES: dict[str, str] = {
+    "HICP": "CPI",  # euro area harmonised index of consumer prices
+    "CPIH": "CPI",  # UK CPI including owner occupiers' housing costs
+    "Core HICP": "Core CPI",
+}
+
 
 @dataclass(frozen=True)
 class Concept:
     name: str
     explanation: str
 
+    @property
+    def acronym(self) -> str | None:
+        """The global acronym ("CPI") when the name leads with one, else None."""
+        head, sep, _ = self.name.partition(" – ")
+        return head if sep else None
+
 
 CONCEPTS: dict[str, Concept] = {
     # --- Labour -------------------------------------------------------------------------------
     "factory_workweek": Concept(
-        "Average Weekly Hours – Manufacturing",
+        "Average Weekly Hours, Manufacturing",
         "Average weekly hours of factory workers; employers trim hours before they cut jobs.",
     ),
     "initial_jobless_claims": Concept(

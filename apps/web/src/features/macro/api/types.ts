@@ -11,6 +11,8 @@ export type MacroSeries = {
   explanation: string;
   /** Concept key matching the same indicator across countries */
   concept: string;
+  /** Global acronym of the indicator (CPI, PPI, GDP...), whatever the country calls its own */
+  acronym: string | null;
   source: string;
   /** The source's official title (shown in the tooltip) */
   title: string;
