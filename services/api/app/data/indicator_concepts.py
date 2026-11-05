@@ -71,6 +71,14 @@ CONCEPTS: dict[str, Concept] = {
         "Factory New Orders Survey",
         "Share of surveyed factories reporting more orders minus those reporting fewer.",
     ),
+    "empire_state_manufacturing": Concept(
+        "Empire State Manufacturing",
+        "New York factories reporting better business minus worse; the month's first factory read.",
+    ),
+    "dallas_fed_manufacturing": Concept(
+        "Dallas Fed Manufacturing",
+        "Texas factories reporting better business minus worse; sensitive to energy and trade.",
+    ),
     "building_permits": Concept(
         "Building Permits",
         "Permits issued for new homes: construction plans before work starts.",
@@ -227,6 +235,18 @@ CONCEPTS: dict[str, Concept] = {
         "Government Debt (% of GDP)",
         "Total government debt relative to the size of the economy.",
     ),
+    "government_debt_outstanding": Concept(
+        "Government Debt Outstanding",
+        "Total government debt in currency, updated daily: the borrowing as it happens.",
+    ),
+    "government_debt_average_rate": Concept(
+        "Average Rate on Government Debt",
+        "Average interest rate the government pays on its tradable debt: its cost of borrowing.",
+    ),
+    "government_interest_expense": Concept(
+        "Government Interest Expense",
+        "Interest the government pays on its debt each month; a rising burden strains budgets.",
+    ),
     # --- Energy (oil supply, demand and stocks) -----------------------------------------------
     "crude_oil_inventories": Concept(
         "Crude Oil Inventories",
@@ -303,6 +323,8 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "ACOGNO": "consumer_goods_orders",
     "NEWORDER": "core_capital_goods_orders",
     "NOCDFSA066MSFRBPHI": "manufacturing_new_orders_survey",
+    "GACDISA066MSFRBNY": "empire_state_manufacturing",
+    "BACTSAMFRBDAL": "dallas_fed_manufacturing",
     "PERMIT": "building_permits",
     "HOUST": "housing_starts",
     "HSN1F": "new_home_sales",
@@ -341,6 +363,9 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "IEABC": "current_account",
     "MTSDS133FMS": "budget_balance",
     "GFDEGDQ188S": "government_debt_to_gdp",
+    "TREAS_DEBT_TOTAL": "government_debt_outstanding",
+    "TREAS_AVG_RATE_MARKETABLE": "government_debt_average_rate",
+    "TREAS_INTEREST_EXPENSE": "government_interest_expense",
     "WCESTUS1": "crude_oil_inventories",
     "W_EPC0_SAX_YCUOK_MBBL": "cushing_crude_stocks",
     "WCSSTUS1": "strategic_petroleum_reserve",
@@ -396,6 +421,14 @@ NON_FRED_ALLOWED: dict[str, str] = {
         "WGFUPUS2",
         "WDIUPUS2",
     )
+} | {
+    # Mandatory lagging fiscal gauges of a currency (rule 17); FRED carries debt only quarterly.
+    "TREAS_DEBT_TOTAL": "Daily Debt to the Penny is not on FRED, which has quarterly debt only "
+    "(checked 5 Nov 2026)",
+    "TREAS_AVG_RATE_MARKETABLE": "Treasury average interest rates are not on FRED "
+    "(checked 5 Nov 2026)",
+    "TREAS_INTEREST_EXPENSE": "Monthly interest expense on the public debt is not on FRED, "
+    "which has quarterly interest payments only (checked 5 Nov 2026)",
 }
 
 # Not stored because they are exactly derivable from series that are (no duplicated data).

@@ -39,7 +39,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia", "ecb"]
+    source: Literal["fred", "eia", "ecb", "treasury"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -94,6 +94,8 @@ DIFF_SERIES = frozenset(
     {
         "AWHMAN",
         "NOCDFSA066MSFRBPHI",
+        "GACDISA066MSFRBNY",
+        "BACTSAMFRBDAL",
         "T10YFF",
         "T10Y3M",
         "NFCI",
@@ -112,6 +114,7 @@ DIFF_SERIES = frozenset(
         "GFDEGDQ188S",
         "WPULEUS3",
         "FM.D.U2.EUR.4F.KR.DFR.LEV",
+        "TREAS_AVG_RATE_MARKETABLE",
         "DFII10",
         "BAA10Y",
     }
@@ -138,6 +141,13 @@ def _ea(id: str, dimension: Dimension, *, published_as_change: bool = False) -> 
     )
 
 
+def _treasury(id: str) -> CatalogSeries:
+    """A Treasury Fiscal Data series (Bureau of the Fiscal Service), not on FRED."""
+    return CatalogSeries(
+        id, "treasury", "US", "fiscal", change="diff" if id in DIFF_SERIES else "pct"
+    )
+
+
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
 
@@ -148,6 +158,11 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("ACOGNO", "growth", "leading"),  # New orders, consumer goods
     _us("NEWORDER", "growth", "leading"),  # New orders, core capital goods
     _us("NOCDFSA066MSFRBPHI", "growth", "leading"),  # Philadelphia Fed new orders
+    # Regional Fed manufacturing surveys: one series per survey (rule 16), the headline index
+    # where Philadelphia is not already read through new orders. Not scored until verified
+    # under rule 10. Richmond and Kansas City publish theirs off FRED (gap, not loaded).
+    _us("GACDISA066MSFRBNY", "growth", "leading"),  # Empire State general business conditions
+    _us("BACTSAMFRBDAL", "growth", "leading"),  # Dallas Fed Texas general business activity
     _us("PERMIT", "growth", "leading"),  # Building permits
     _us("HOUST", "growth", "leading"),  # Housing starts
     _us("HSN1F", "growth", "leading"),  # New single-family home sales
@@ -224,6 +239,9 @@ CATALOG: tuple[CatalogSeries, ...] = (
     _us("IEABC", "external"),  # Current account balance, quarterly
     _us("MTSDS133FMS", "fiscal"),  # Federal surplus or deficit, monthly
     _us("GFDEGDQ188S", "fiscal"),  # Federal debt as % of GDP, quarterly
+    _treasury("TREAS_DEBT_TOTAL"),  # Debt to the Penny: total public debt, daily
+    _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
+    _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
     _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
     _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks
