@@ -71,6 +71,14 @@ CONCEPTS: dict[str, Concept] = {
         "Factory New Orders Survey",
         "Share of surveyed factories reporting more orders minus those reporting fewer.",
     ),
+    "empire_state_manufacturing": Concept(
+        "Empire State Manufacturing",
+        "New York factories reporting better business minus worse; the month's first factory read.",
+    ),
+    "dallas_fed_manufacturing": Concept(
+        "Dallas Fed Manufacturing",
+        "Texas factories reporting better business minus worse; sensitive to energy and trade.",
+    ),
     "building_permits": Concept(
         "Building Permits",
         "Permits issued for new homes: construction plans before work starts.",
@@ -303,6 +311,8 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "ACOGNO": "consumer_goods_orders",
     "NEWORDER": "core_capital_goods_orders",
     "NOCDFSA066MSFRBPHI": "manufacturing_new_orders_survey",
+    "GACDISA066MSFRBNY": "empire_state_manufacturing",
+    "BACTSAMFRBDAL": "dallas_fed_manufacturing",
     "PERMIT": "building_permits",
     "HOUST": "housing_starts",
     "HSN1F": "new_home_sales",
