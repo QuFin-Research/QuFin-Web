@@ -13,6 +13,8 @@ economies can be compared side by side. Rules (services/api/CLAUDE.md, rules 16-
 
 from dataclasses import dataclass
 
+from app.data.macro_catalog import BY_ID, OECD_SERIES
+
 
 @dataclass(frozen=True)
 class Concept:
@@ -198,6 +200,14 @@ CONCEPTS: dict[str, Concept] = {
         "Household debt such as cards and car loans outstanding.",
     ),
     # --- Sentiment and financial conditions ----------------------------------------------------
+    "leading_index": Concept(
+        "Composite Leading Indicator",
+        "OECD index built to turn 6-9 months before the economy; above 100 means above trend.",
+    ),
+    "business_confidence": Concept(
+        "Business Confidence",
+        "How firms rate output, orders and stocks in surveys; above 100 means above average.",
+    ),
     "consumer_sentiment": Concept(
         "Consumer Sentiment",
         "How confident households feel about their finances and the economy.",
@@ -355,6 +365,7 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "BUSLOANS": "business_loans",
     "TOTALSL": "consumer_credit",
     "UMCSENT": "consumer_sentiment",
+    "USALOLITOAASTSAM": "leading_index",
     "NFCI": "financial_conditions",
     "STLFSI4": "financial_stress",
     "BAA10Y": "corporate_credit_spread",
@@ -396,6 +407,13 @@ EA_SERIES_CONCEPTS: dict[str, str] = {
     "HICP.M.U2.N.000000.4D0.ANR": "consumer_prices",
     "HICP.M.U2.N.XEF000.4D0.ANR": "core_consumer_prices",
     "BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E": "money_supply",
+}
+
+# OECD series in every covered country, with the same concept keys as the US (rule 18).
+_OECD_CONCEPT = {
+    "LI": "leading_index",
+    "BCICP": "business_confidence",
+    "CCICP": "consumer_sentiment",
 }
 
 SERIES_CONCEPTS: dict[tuple[str, str], str] = {
@@ -443,3 +461,9 @@ REDUNDANT: dict[str, str] = {
 def concept_for(country: str, series_id: str) -> Concept | None:
     key = SERIES_CONCEPTS.get((country, series_id))
     return CONCEPTS[key] if key else None
+
+
+SERIES_CONCEPTS |= {
+    (BY_ID[series_id].country, series_id): _OECD_CONCEPT[measure]
+    for series_id, (_area, measure) in OECD_SERIES.items()
+}
