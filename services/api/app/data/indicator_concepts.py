@@ -24,7 +24,7 @@ class Concept:
 CONCEPTS: dict[str, Concept] = {
     # --- Labour -------------------------------------------------------------------------------
     "factory_workweek": Concept(
-        "Factory Workweek",
+        "Average Weekly Hours – Manufacturing",
         "Average weekly hours of factory workers; employers trim hours before they cut jobs.",
     ),
     "initial_jobless_claims": Concept(
@@ -36,15 +36,15 @@ CONCEPTS: dict[str, Concept] = {
         "People still receiving unemployment benefits; shows how hard it is to find work.",
     ),
     "temporary_staffing_jobs": Concept(
-        "Temporary Staffing Jobs",
+        "Temporary Help Services Employment",
         "Temporary workers are hired first in upturns and let go first in downturns.",
     ),
     "job_openings": Concept(
-        "JOLTS – Job Openings",
+        "JOLTS Job Openings",
         "Positions employers are trying to fill; a measure of demand for workers.",
     ),
     "quit_rate": Concept(
-        "JOLTS – Quit Rate",
+        "JOLTS Quits Rate",
         "Share of workers leaving their jobs each month; high when they expect to find better.",
     ),
     "nonfarm_payrolls": Concept(
@@ -56,7 +56,7 @@ CONCEPTS: dict[str, Concept] = {
         "Share of people who want a job and are looking but do not have one.",
     ),
     "unemployment_duration": Concept(
-        "Unemployment Duration",
+        "Average Duration of Unemployment",
         "Average weeks the unemployed have been out of work; it turns after the economy does.",
     ),
     # --- Growth -------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ CONCEPTS: dict[str, Concept] = {
         "Weekly activity index scaled to GDP growth; the earliest read on the economy.",
     ),
     "industrial_production": Concept(
-        "IP – Industrial Production Index",
+        "Industrial Production",
         "Output of factories, mines and utilities.",
     ),
     "real_retail_sales": Concept(
@@ -150,7 +150,7 @@ CONCEPTS: dict[str, Concept] = {
         "Prices businesses receive for their output; they feed through to consumer prices.",
     ),
     "unit_labour_costs": Concept(
-        "ULC – Unit Labour Costs",
+        "ULC – Unit Labor Costs",
         "Wage cost to produce one unit of output; rising costs push prices up.",
     ),
     "inflation_expectations_10y": Concept(
@@ -167,19 +167,19 @@ CONCEPTS: dict[str, Concept] = {
         "The central bank's overnight rate, which sets the cost of money.",
     ),
     "yield_2y": Concept(
-        "2-Year Bond Yield",
+        "2-Year Government Bond Yield",
         "Government 2-year borrowing cost; tracks where markets expect policy rates to go.",
     ),
     "real_yield_10y": Concept(
-        "Real 10-Year Yield",
+        "10-Year Real Yield (TIPS)",
         "10-year yield after expected inflation; a key driver of gold and the currency.",
     ),
     "yield_curve_10y_3m": Concept(
-        "Yield Curve (10y minus 3m)",
+        "Yield Curve (10-Year minus 3-Month)",
         "Long minus short rates; when it turns negative, a recession has often followed.",
     ),
     "long_rate_vs_policy_rate": Concept(
-        "Long Rate vs Policy Rate",
+        "10-Year Yield minus Policy Rate",
         "10-year yield minus the policy rate; low or negative means policy is tight.",
     ),
     "central_bank_balance_sheet": Concept(
@@ -191,7 +191,7 @@ CONCEPTS: dict[str, Concept] = {
         "Cash, deposits and savings (M2 in the US, M3 in the euro area); growth fuels spending.",
     ),
     "business_loans": Concept(
-        "Business Loans",
+        "C&I Loans – Commercial and Industrial Loans",
         "Bank loans to companies outstanding; they keep growing late into an upturn.",
     ),
     "consumer_credit": Concept(
@@ -200,11 +200,11 @@ CONCEPTS: dict[str, Concept] = {
     ),
     # --- Sentiment and financial conditions ----------------------------------------------------
     "consumer_sentiment": Concept(
-        "Consumer Sentiment Index (University of Michigan)",
+        "Michigan Consumer Sentiment Index",
         "How confident households feel about their finances and the economy.",
     ),
     "financial_conditions": Concept(
-        "NFCI – National Financial Conditions Index",
+        "NFCI – Chicago Fed National Financial Conditions Index",
         "How easy it is to borrow and invest; positive means tighter than average.",
     ),
     "financial_stress": Concept(
@@ -212,11 +212,11 @@ CONCEPTS: dict[str, Concept] = {
         "Strain in funding and credit markets; above zero means more stress than usual.",
     ),
     "corporate_credit_spread": Concept(
-        "Corporate Credit Spread",
+        "Baa Corporate Bond Spread",
         "Extra yield companies pay over government bonds; it widens when investors worry.",
     ),
     "trade_weighted_currency": Concept(
-        "Broad Trade-Weighted Dollar Index",
+        "Broad US Dollar Index (Trade-Weighted)",
         "The currency's value against a basket of trading partners' currencies.",
     ),
     # --- External and fiscal -------------------------------------------------------------------
@@ -241,11 +241,11 @@ CONCEPTS: dict[str, Concept] = {
         "Total government debt in currency, updated daily: the borrowing as it happens.",
     ),
     "government_debt_average_rate": Concept(
-        "Average Rate on Government Debt",
+        "Average Interest Rate on Government Debt",
         "Average interest rate the government pays on its tradable debt: its cost of borrowing.",
     ),
     "government_interest_expense": Concept(
-        "Government Interest Expense",
+        "Interest Expense on Public Debt",
         "Interest the government pays on its debt each month; a rising burden strains budgets.",
     ),
     # --- Energy (oil supply, demand and stocks) -----------------------------------------------
@@ -254,11 +254,11 @@ CONCEPTS: dict[str, Concept] = {
         "Commercial crude oil in storage; builds tend to weigh on prices, draws support them.",
     ),
     "cushing_crude_stocks": Concept(
-        "Cushing Crude Stocks",
+        "Cushing Crude Oil Stocks",
         "Crude stored at Cushing, the WTI delivery hub; very low levels can squeeze prices.",
     ),
     "strategic_petroleum_reserve": Concept(
-        "Strategic Petroleum Reserve",
+        "SPR – Strategic Petroleum Reserve",
         "Government emergency crude stocks; releases add supply to the market.",
     ),
     "crude_oil_production": Concept(
@@ -266,7 +266,7 @@ CONCEPTS: dict[str, Concept] = {
         "Barrels of crude oil produced per day.",
     ),
     "refinery_utilisation": Concept(
-        "Refinery Utilisation",
+        "Refinery Utilization",
         "Share of refining capacity in use: how much crude refiners are demanding.",
     ),
     "gasoline_inventories": Concept(
@@ -274,7 +274,7 @@ CONCEPTS: dict[str, Concept] = {
         "Gasoline in storage; low stocks ahead of driving season support prices.",
     ),
     "diesel_inventories": Concept(
-        "Diesel & Heating Oil Inventories",
+        "Distillate Fuel Inventories (Diesel and Heating Oil)",
         "Distillate fuel in storage, used by trucks, industry and heating.",
     ),
     "crude_oil_imports": Concept(
@@ -286,15 +286,15 @@ CONCEPTS: dict[str, Concept] = {
         "Barrels of crude oil sold abroad per day.",
     ),
     "total_fuel_demand": Concept(
-        "Total Fuel Demand",
+        "Total Fuel Demand (Product Supplied)",
         "All petroleum products supplied to users per day: implied consumption.",
     ),
     "gasoline_demand": Concept(
-        "Gasoline Demand",
+        "Gasoline Demand (Product Supplied)",
         "Gasoline supplied to users per day: a read on driving demand.",
     ),
     "diesel_demand": Concept(
-        "Diesel Demand",
+        "Diesel and Heating Oil Demand (Product Supplied)",
         "Diesel and heating oil supplied per day: a read on freight and industry.",
     ),
     # --- Markets (reference prices) -------------------------------------------------------------

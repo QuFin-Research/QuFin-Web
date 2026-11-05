@@ -84,7 +84,10 @@ series, existing or new:
     matches the indicator in every country (US and UK unemployment are both
     `unemployment_rate`, "Unemployment Rate"). The API returns the name and the official
     title; pages show the name, with the official title, source code and publisher in a
-    tooltip. A series without a name fails the tests.
+    tooltip. A series without a name fails the tests. Never choose a name from memory: read what FRED, Trading
+    Economics and the Forex Factory calendar call the indicator and record the survey in
+    `docs/indicator-names.md`. Every series also has a business-cycle tag
+    (`app/data/cycle_classification.py`, with a reason); the catalog refuses a series without one.
 
 ## Scorecard correction mechanism (non-negotiable)
 
