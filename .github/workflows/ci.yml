@@ -34,7 +34,7 @@ jobs:
       - run: uv run pytest -q
 
   web:
-    name: Web (types, lint)
+    name: Web (types, lint, tests)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -49,6 +49,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - run: npm test
 
   secrets:
     name: Secret scan (gitleaks)
