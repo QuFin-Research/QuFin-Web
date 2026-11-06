@@ -36,6 +36,7 @@ the official producer's term or the name most sites share; US spelling for US-pu
 | Crude Oil Inventories | U.S. Ending Stocks excluding SPR of Crude Oil (Thousand Barrels) | Crude Oil Stocks Change | Crude Oil Inventories |
 | Crude Oil Production | U.S. Field Production of Crude Oil (Thousand Barrels per Day) | Crude Oil Production | - |
 | Current Account Balance | Balance on current account | Current Account | - |
+| Foreign Exchange Reserves | Reserves Excluding Gold for Japan (TRESEGJPM052N, IMF IFS) | Japan Foreign Exchange Reserves | not checked (7 Nov 2026) |
 | Cushing Crude Oil Stocks | Cushing, OK Ending Stocks excluding SPR of Crude Oil (Thousand Barrels | Cushing Crude Oil Stocks | - |
 | Dallas Fed Manufacturing Index | Current General Business Activity; Diffusion Index for Texas | Dallas Fed Manufacturing Index | - |
 | Diesel and Heating Oil Demand (Product Supplied) | U.S. Product Supplied of Distillate Fuel Oil (Thousand Barrels per Day | - | - |

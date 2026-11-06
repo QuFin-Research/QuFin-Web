@@ -36,21 +36,22 @@ this file; keys are named by the setting that holds them.
 
 | Source | What QuFin takes | Protocol and address | Authentication | Command | Series |
 |---|---|---|---|---|---|
-| **FRED / ALFRED** (St. Louis Fed) | US macro and market series with full revision history | REST `https://api.stlouisfed.org/fred`: `/series`, `/series/observations` (real-time periods 1776-07-04 to 9999-12-31 for every vintage), `/series/vintagedates`, `/series/release`, `/release/sources` | Key in the query: `QUFIN_FRED_API_KEY` | `ingest-fred` | 63 |
+| **FRED / ALFRED** (St. Louis Fed) | US macro and market series with full revision history | REST `https://api.stlouisfed.org/fred`: `/series`, `/series/observations` (real-time periods 1776-07-04 to 9999-12-31 for every vintage), `/series/vintagedates`, `/series/release`, `/release/sources` | Key in the query: `QUFIN_FRED_API_KEY` | `ingest-fred` | 75 |
 | **EIA** (US Energy Information Administration) | 12 weekly petroleum series (stocks, production, trade, demand) not on FRED | REST `https://api.eia.gov/v2/seriesid/PET.<id>.W`, paged by `length` and `offset`, newest first | Key in the query: `QUFIN_EIA_API_KEY` | `ingest-eia` | 12 |
 | **CFTC** Commitments of Traders | Weekly positioning: Traders in Financial Futures for 10 financial contracts, legacy report for 5 commodities | Socrata open data `https://publicreporting.cftc.gov/resource/gpe5-46if.json` (financial) and `.../6dca-aqww.json` (legacy), SoQL `$where`, `$order`, `$limit`, `$offset` | None | `ingest-cftc` | 15 contracts |
 | **ECB** Data Portal | Euro area policy rate, HICP, core HICP, M3 | SDMX 2.1 REST `https://data-api.ecb.europa.eu/service/data/<flow>/<key>?format=jsondata` | None | `ingest-ecb` | 4 |
 | **OECD** Data Explorer | Composite leading indicator, business and consumer confidence for 14 economies | SDMX 2.1 REST `https://sdmx.oecd.org/public/rest/data/<flow>/<key>?format=jsondata` (section 3) | None | `ingest-oecd` | 34 |
+| **IMF** (International Liquidity) | Official reserves excluding gold, in US dollars, for the 9 economies FRED does not carry (FRED's copies are used for 12 more) | SDMX 2.1 REST `https://api.imf.org/external/sdmx/2.1/data/IMF.STA,IL,13.0.1/<area>.RXF11_REVS.USD.M?format=jsondata`; JSON only with `Accept: application/vnd.sdmx.data+json`, and the body starts with a byte-order mark; one series per request with a pause; no release dates (derived, `app/data/imf_calendar.py`) | None | `ingest-imf` | 9 |
 | **US Treasury** Fiscal Data | Debt to the Penny, average interest rates, interest expense | REST `https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/...`, filters `record_date:gte:<date>`, paged | None | `ingest-treasury` | 3 |
 
-Total: 116 macro series and 15 positioning contracts (131 sources), each checked by `check-data`.
+Total: 137 macro series and 15 positioning contracts (152 sources), each checked by `check-data`.
 
-Not connected yet: IMF, BIS, World Bank and central-bank batch 1 (backlog P1-21 to P1-24).
+Not connected yet: BIS, World Bank and central-bank batch 1 (backlog P1-22 to P1-24).
 Keys for BLS and BEA exist in the local `.env` but have no connector: FRED carries those series
 (rule 17). The licence status of every source is in `docs/licence-register.md`.
 
 The ECB, OECD and every later SDMX source share one parser, `app/connectors/sdmx.py`: it reads
-SDMX-JSON, turns periods (day, month, quarter, year) into dates, and returns each series with its
+SDMX-JSON, turns periods (day, month `2026-10` or the IMF's `2026-M10`, quarter, year) into dates, and returns each series with its
 attributes (units, scale) exactly as the publisher states them.
 
 ## 3. Worked example: the OECD

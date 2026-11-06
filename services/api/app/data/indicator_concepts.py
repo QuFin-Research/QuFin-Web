@@ -15,6 +15,7 @@ economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 from dataclasses import dataclass
 
 from app.data.macro_catalog import BY_ID, OECD_SERIES
+from app.data.reserves_ids import RESERVES
 
 # Globally recognised indicator acronyms and the full names they stand for. An indicator is known
 # by this name everywhere in QuFin (database, API, charts, comparisons, backtests, docs), whatever
@@ -272,6 +273,10 @@ CONCEPTS: dict[str, Concept] = {
         "Trade Balance",
         "Exports minus imports of goods and services; a deficit means buying more abroad.",
     ),
+    "fx_reserves": Concept(
+        "Foreign Exchange Reserves",
+        "Official reserves except gold, in US dollars: a central bank's buffer for its currency.",
+    ),
     "current_account": Concept(
         "Current Account Balance",
         "Trade plus income flows with the rest of the world; deficits need foreign funding.",
@@ -506,3 +511,5 @@ SERIES_CONCEPTS |= {
     (BY_ID[series_id].country, series_id): _OECD_CONCEPT[measure]
     for series_id, (_area, measure) in OECD_SERIES.items()
 }
+
+SERIES_CONCEPTS |= {(country, series_id): "fx_reserves" for series_id, country in RESERVES.items()}

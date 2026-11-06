@@ -156,6 +156,19 @@ derived to a known kind, matching their declarations.
 | An index shares a scale only with the same stated base; a plain "Index" (diffusion, standardised) never does | Design choice | Rebase or standardise first (rule 23 b, d) |
 | A count shares a scale only when the units say what is counted ("Persons", "Units"); "Number" or "Thousands" never does | Design choice | Claims, home sales and job openings are not one quantity |
 
+## 4b. Official reserves (P1-21)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Reserves excluding gold (IMF RXF11_REVS) rather than total reserves, so gold price swings do not read as reserve changes | Design choice | Standard IFS "total reserves minus gold" |
+| FRED's copies (TRESEG..M052N) are used where live: 12 economies, with ALFRED vintages; the IMF API only for the 9 FRED lacks | Verified | FRED API, 7 Nov 2026 (rule 17); no economy loaded twice |
+| IMF values are in units of the currency; the SCALE attribute ("Millions") is a display hint and nothing is rescaled | Verified | UK July to September 2026: the IMF API value equals FRED's (millions) times one million exactly |
+| FRED's unqualified "Dollars" is US dollars | Verified | FRED names every other currency ("Domestic Currency", "Canadian Dollars"); the IMF's UNIT for these series is USD |
+| Left out: China (last June 2026) and Hong Kong (last February 2024) as behind schedule; the US (not a gauge of the dollar); the euro area (members report separately) | Verified | FRED and IMF API, 7 Nov 2026 |
+| Reserves are coincident | Convention | They move with current balance-of-payments flows and central bank intervention |
+| IMF release dates: the last weekday of the second month after each month | Design choice | No published dates; latest month on 7 Nov 2026 was September for most economies, August for the rest (rule 9: err late) |
+| Name "Foreign Exchange Reserves" | Verified | Trading Economics page title; FRED's "Reserves Excluding Gold" in the official title |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.
