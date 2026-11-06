@@ -155,9 +155,9 @@ def _treasury(id: str) -> CatalogSeries:
 # economies, each checked live one series at a time on 6 Nov 2026 (latest month August or
 # September 2026). Left out: leading indicators the OECD does not publish (New Zealand,
 # Switzerland, Norway, Sweden, Denmark, Czechia, Hungary, Poland); Canadian and Norwegian
-# business confidence (last April and June 2026: behind schedule); consumer confidence for
-# Switzerland, Sweden, Denmark, Czechia, Hungary and Korea (not yet verified: the OECD API
-# rate-limited the check) and Norway (not published). US business and consumer confidence are
+# business confidence (last April and June 2026: behind schedule); Norwegian consumer
+# confidence (not published). Consumer confidence for Switzerland, Sweden, Denmark, Czechia,
+# Hungary and Korea was verified live on 7 Nov 2026. US business and consumer confidence are
 # left out: the OECD builds them from ISM and Michigan data (licence limits), and Michigan
 # sentiment is already stored (rule 16). The US leading indicator comes from FRED, which
 # carries it live with vintages (rule 17).
@@ -194,7 +194,22 @@ _OECD_LIVE = {
         "TUR",
         "KOR",
     ),
-    "CCICP": ("GBR", "JPN", "CAN", "AUS", "NZL", "POL", "MEX", "TUR"),
+    "CCICP": (
+        "GBR",
+        "JPN",
+        "CAN",
+        "AUS",
+        "NZL",
+        "POL",
+        "MEX",
+        "TUR",
+        "CHE",
+        "SWE",
+        "DNK",
+        "CZE",
+        "HUN",
+        "KOR",
+    ),
 }
 _OECD_DIMENSION: dict[str, Dimension] = {"LI": "growth", "BCICP": "growth", "CCICP": "sentiment"}
 _OECD_ID = {"LI": "CLI", "BCICP": "BCI", "CCICP": "CCI"}
