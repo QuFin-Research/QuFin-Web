@@ -2,6 +2,15 @@
 
 Web platform for **QuFin**, an AI trading-intelligence companion for FX, metals, energy and crypto.
 
+## Ownership
+
+The rules (`RULEBOOK.md`), the documentation, the processes they describe and QuFin's own code are
+the property of QuFin. Third-party components keep their own licences: `apps/web` was started from
+an open-source dashboard template under the MIT licence (`apps/web/LICENSE`), whose copyright and
+licence notice must stay with it, and data from each source is used under that source's terms
+(`docs/licence-register.md`). This repository has no licence file of its own yet; before it is shared
+or opened, have a lawyer settle the licence for QuFin's own code.
+
 ## Repository layout
 
 | Path | What it is |
@@ -12,7 +21,7 @@ Web platform for **QuFin**, an AI trading-intelligence companion for FX, metals,
 | `data` | Data platform notes; connectors move here with orchestration |
 | `ml` | Models and validation (Phase 3-4) |
 | `infra/terraform` | AWS foundation skeleton, not applied yet |
-| `docs` | ADRs, licence register, coverage universe, validation standard, release calendars, data provenance |
+| `docs` | ADRs, licence register, coverage universe, validation standard, release calendars, data provenance, data connections, ingestion and retrieval |
 
 CI (`.github/workflows`) runs lint, types and tests for both apps, a gitleaks secret scan and
 CodeQL on every pull request; Dependabot keeps dependencies current. Optional local hooks:

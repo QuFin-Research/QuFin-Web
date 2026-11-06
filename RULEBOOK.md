@@ -211,10 +211,12 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     reviewed pull request that the QuFin owner merges. The change log below records the date, the
     rule and the reason. Rules are never loosened to make a change pass.
 
-27. **Every data connection is documented.** `docs/data-connections.md` records, for every source,
-    what QuFin takes, the address and protocol, how it authenticates (by the name of the setting,
-    never the secret), its rate limits, its release calendar, the command that loads it and where
-    its licence is recorded. A connector is not merged until its row is there.
+27. **Every data connection and process is documented.** `docs/data-connections.md` records, for
+    every source, what QuFin takes, the address and protocol, how it authenticates (by the name of
+    the setting, never the secret), its rate limits, its release calendar, the command that loads
+    it and where its licence is recorded. `docs/data-pipeline.md` records how data is ingested and
+    retrieved. A connector is not merged until its row is there, and a change to either process
+    updates the document in the same pull request.
 
 ## Change log
 
@@ -225,3 +227,4 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
 | 6 Nov 2026 | 12 | Judgements are recorded in `docs/assumptions-register.md` |
 | 6 Nov 2026 | 18, 19 | Names come from the data and calendar sites, not memory; one global name and acronym per indicator |
 | 6 Nov 2026 | 27 | Added: every data connection is documented in `docs/data-connections.md` |
+| 6 Nov 2026 | 27 | Widened: ingestion and retrieval are documented in `docs/data-pipeline.md` |
