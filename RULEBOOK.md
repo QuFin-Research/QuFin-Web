@@ -10,7 +10,7 @@ QuFin is a data-extensive trading assistant. Its trading ideas, scores and backt
 data, so the rules below put data integrity first, then comparability, then transparency.
 
 Contents: Part 1 data integrity (rules 1-19) | Part 2 comparison, change measures and weights (rules
-20-23) | Part 3 scorecard correction mechanism (S1-S9) | Part 4 ownership and conduct (rules 24-26) |
+20-23) | Part 3 scorecard correction mechanism (S1-S9) | Part 4 ownership, documentation and conduct (rules 24-27) |
 Change log. Related documents: `private/scorecard-methodology.md` (proprietary, not committed while this repository is public), `docs/assumptions-register.md`,
 `docs/indicator-names.md`, `docs/data-provenance.md`, `docs/licence-register.md`,
 `docs/release-calendars.md`.
@@ -197,7 +197,7 @@ S8. **A currency pair is only as certain as its less certain side:** use
    decisive.
 S9. **Never mix live and sample scorecards** in one ranking; sample data is always labelled.
 
-## Part 4. Ownership and conduct
+## Part 4. Ownership, documentation and conduct
 
 24. **The rule book and QuFin's code belong to QuFin.** The rule book is kept in this repository, in
     plain text, and is the only place rules are defined. Instruction files for any development tool
@@ -211,6 +211,11 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     reviewed pull request that the QuFin owner merges. The change log below records the date, the
     rule and the reason. Rules are never loosened to make a change pass.
 
+27. **Every data connection is documented.** `docs/data-connections.md` records, for every source,
+    what QuFin takes, the address and protocol, how it authenticates (by the name of the setting,
+    never the secret), its rate limits, its release calendar, the command that loads it and where
+    its licence is recorded. A connector is not merged until its row is there.
+
 ## Change log
 
 | Date | Rule | Change |
@@ -219,3 +224,4 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
 | 6 Nov 2026 | 20-26 | Added: show/hide control of the scorecard mechanism, earned weights, percent-change admissibility, common basis for comparison, ownership, no attribution, rule changes |
 | 6 Nov 2026 | 12 | Judgements are recorded in `docs/assumptions-register.md` |
 | 6 Nov 2026 | 18, 19 | Names come from the data and calendar sites, not memory; one global name and acronym per indicator |
+| 6 Nov 2026 | 27 | Added: every data connection is documented in `docs/data-connections.md` |
