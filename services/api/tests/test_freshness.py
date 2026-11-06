@@ -13,13 +13,18 @@ from tests.test_positioning import TUESDAY
 from tests.test_positioning import db_session as _positioning_db  # noqa: F401
 from tests.test_positioning import ingested as positioning_ingested  # noqa: F401
 
+# Series carry their real units: the release check compares them with the declaration (rule 23).
+UMCSENT_UNITS = "Index 1966:Q1=100"
 
-def meta(series_id="UNRATE", title="Unemployment Rate", frequency="Monthly", notice=None):
+
+def meta(
+    series_id="UNRATE", title="Unemployment Rate", frequency="Monthly", notice=None, units="Percent"
+):
     return SeriesMeta(
         id=series_id,
         source="fred",
         title=title,
-        units="Percent",
+        units=units,
         frequency=frequency,
         seasonal_adjustment="SA",
         country="US",
@@ -93,7 +98,7 @@ def test_delay_notice_without_a_declared_delay_needs_review():
 
 def test_declared_delay_that_fred_no_longer_reports_needs_review():
     status = macro_status(
-        meta("UMCSENT", "University of Michigan: Consumer Sentiment"),
+        meta("UMCSENT", "University of Michigan: Consumer Sentiment", units=UMCSENT_UNITS),
         date(2026, 9, 1),
         monthly_releases(25),
         date(2026, 10, 1),
@@ -104,7 +109,12 @@ def test_declared_delay_that_fred_no_longer_reports_needs_review():
 def test_licensing_delay_moves_the_due_date_and_lowers_the_weight():
     notice = "At the request of the source, the data is delayed by 1 month."
     status = macro_status(
-        meta("UMCSENT", "University of Michigan: Consumer Sentiment", notice=notice),
+        meta(
+            "UMCSENT",
+            "University of Michigan: Consumer Sentiment",
+            notice=notice,
+            units=UMCSENT_UNITS,
+        ),
         date(2026, 9, 1),
         monthly_releases(25),
         date(2026, 11, 1),

@@ -3,6 +3,16 @@ import type { DataFreshness, DataTimeliness } from '@/lib/data-quality';
 
 export type BusinessCycle = 'leading' | 'coincident' | 'lagging';
 
+export type UnitKind =
+  | 'amount_currency'
+  | 'count'
+  | 'index'
+  | 'rate_percent'
+  | 'ratio'
+  | 'price_per_unit'
+  | 'other'
+  | 'unknown';
+
 export type MacroSeries = {
   id: string;
   /** Human-readable name shown to users, shared across countries */
@@ -27,6 +37,10 @@ export type MacroSeries = {
   /** When the source last revised the series */
   lastUpdated: string | null;
   /** Who produces the data, e.g. the BLS */
+  /** Unit kind (rule 23): only series with the same kind, currency and unit share a scale */
+  unitKind: UnitKind | null;
+  /** ISO currency of amounts and prices; null when dimensionless */
+  currency: string | null;
   sourceName: string | null;
   /** The release the series is published in */
   releaseName: string | null;
