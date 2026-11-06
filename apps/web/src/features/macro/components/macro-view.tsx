@@ -28,6 +28,7 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { changeUnit, yearOnYear, type ChartView } from '../lib/change-view';
 import { FRESHNESS_LABEL } from '@/lib/data-quality';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
@@ -63,11 +64,11 @@ const chartConfig = {
 const fmt = (v: number | null | undefined) =>
   v === null || v === undefined ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 3 });
 
-/** Five years back from the series' last period keeps the chart readable. */
-function chartStart(series: MacroSeriesSummary) {
+/** Years back from the series' last period: five are shown, one more feeds the change view. */
+function yearsBack(series: MacroSeriesSummary, years: number) {
   if (!series.lastPeriod) return undefined;
   const d = new Date(`${series.lastPeriod}T00:00:00Z`);
-  d.setUTCFullYear(d.getUTCFullYear() - 5);
+  d.setUTCFullYear(d.getUTCFullYear() - years);
   return d.toISOString().slice(0, 10);
 }
 
@@ -212,10 +213,12 @@ export function MacroView() {
   const [cycle, setCycle] = useState<CycleFilter>('all');
   const [asOf, setAsOf] = useState('');
   const [period, setPeriod] = useState<string | null>(null);
+  const [view, setView] = useState<ChartView>('actual');
 
   const visible = cycle === 'all' ? list : list?.filter((s) => s.cycle === cycle);
   const selected = visible?.find((s) => s.id === selectedId) ?? visible?.[0] ?? list?.[0];
-  const start = selected ? chartStart(selected) : undefined;
+  const start = selected ? yearsBack(selected, 6) : undefined;
+  const shownFrom = selected ? yearsBack(selected, 5) : undefined;
 
   const latest = useQuery({
     ...macroQueries.series(selected?.id ?? '', { start }),
@@ -246,14 +249,23 @@ export function MacroView() {
   if (!list) return <Skeleton className='h-96 w-full rounded-xl' />;
   if (list.length === 0 || !selected) return <SetupHint />;
 
+  // Rule 22: percent change only where admissible; a series already published as a change has
+  // no change view. Both views are available wherever the change is admissible.
+  const canChange = !selected.publishedAsChange;
+  const showChange = canChange && view === 'change';
+  const asView = (points: { period: string; value: number | null }[]) =>
+    showChange ? yearOnYear(points, selected.changeKind) : points;
   const pastByPeriod = new Map(
-    (asOf ? past.data?.observations : [])?.map((o) => [o.period, o.value]) ?? []
+    asView(asOf ? (past.data?.observations ?? []) : []).map((o) => [o.period, o.value])
   );
-  const chartData = (latest.data?.observations ?? []).map((o) => ({
-    period: o.period,
-    latest: o.value,
-    asOf: pastByPeriod.get(o.period) ?? null
-  }));
+  const chartData = asView(latest.data?.observations ?? [])
+    .filter((o) => !shownFrom || o.period >= shownFrom)
+    .map((o) => ({
+      period: o.period,
+      latest: o.value,
+      asOf: pastByPeriod.get(o.period) ?? null
+    }));
+  const unit = changeUnit(selected.changeKind);
   const recent = (latest.data?.observations ?? []).slice(-12).toReversed();
 
   return (
@@ -374,6 +386,20 @@ export function MacroView() {
           <CardContent className='flex flex-col gap-4'>
             <div className='flex flex-wrap items-end gap-3'>
               <div className='flex flex-col gap-1.5'>
+                <Label>Show</Label>
+                <Tabs
+                  value={showChange ? 'change' : 'actual'}
+                  onValueChange={(v) => setView(v as ChartView)}
+                >
+                  <TabsList>
+                    <TabsTrigger value='actual'>Actual</TabsTrigger>
+                    <TabsTrigger value='change' disabled={!canChange}>
+                      Change over a year
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div className='flex flex-col gap-1.5'>
                 <Label htmlFor='macro-asof'>As published on</Label>
                 <Input
                   id='macro-asof'
@@ -388,6 +414,15 @@ export function MacroView() {
                   Clear
                 </Button>
               )}
+              <p className='text-muted-foreground w-full text-xs'>
+                {showChange
+                  ? selected.changeKind === 'pct'
+                    ? 'Percent change against the same date a year earlier.'
+                    : `Change in points (${selected.units}) against the same date a year earlier.`
+                  : `Actual values, ${selected.units}.`}
+                {!canChange &&
+                  ' This series is already published as a growth rate: no change view.'}
+              </p>
               <p className='text-muted-foreground max-w-md text-xs'>
                 Pick a date to overlay the data as it was published that day. Gaps and differences
                 are later releases and revisions a backtest must not see.
@@ -411,7 +446,9 @@ export function MacroView() {
                     axisLine={false}
                     width={56}
                     domain={['auto', 'auto']}
-                    tickFormatter={(v: number) => fmt(v)}
+                    tickFormatter={(v: number) =>
+                      showChange ? `${fmt(v)}${unit === '%' ? '%' : ''}` : fmt(v)
+                    }
                   />
                   <ChartTooltip content={<ChartTooltipContent indicator='line' />} />
                   {asOf && <ChartLegend content={<ChartLegendContent />} />}
