@@ -109,6 +109,12 @@ SERIES_UNITS: dict[str, tuple[str, str | None]] = {
     "OECD_CCI_POL": ("index", None),  # Index, long-term average = 100
     "OECD_CCI_MEX": ("index", None),  # Index, long-term average = 100
     "OECD_CCI_TUR": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_CHE": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_SWE": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_DNK": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_CZE": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_HUN": ("index", None),  # Index, long-term average = 100
+    "OECD_CCI_KOR": ("index", None),  # Index, long-term average = 100
     "DEXUSEU": ("price_per_unit", "USD"),  # U.S. Dollars to One Euro
     "DEXUSUK": ("price_per_unit", "USD"),  # U.S. Dollars to One U.K. Pound Sterling
     "DEXJPUS": ("price_per_unit", "JPY"),  # Japanese Yen to One U.S. Dollar

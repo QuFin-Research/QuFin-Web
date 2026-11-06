@@ -88,6 +88,7 @@ be read from conference-board.org: the site blocks automated access and your own
 | BACTSAMFRBDAL | Dallas Fed Manufacturing Index | leading | QuFin convention (not a Conference Board component) |
 | PERMIT | Building Permits | leading | Conference Board component (list unverified) |
 | HOUST | Housing Starts | leading | QuFin convention (not a Conference Board component) |
+| OECD_CCI_CHE, _SWE, _DNK, _CZE, _HUN, _KOR | CCI – Consumer Confidence (OECD, amplitude adjusted) | leading | OECD convention: published with its composite leading indicators; household expectations precede spending. Verified live and gap-free at the OECD, one series per request, 7 Nov 2026 (latest Aug 2026 for CH, Sep 2026 for the rest) |
 | HSN1F | New Home Sales | leading | QuFin convention (not a Conference Board component) |
 | TEMPHELPS | Temporary Help Services Employment | leading | QuFin convention (not a Conference Board component) |
 | JTSJOL | JOLTS Job Openings | leading | QuFin convention (not a Conference Board component) |
