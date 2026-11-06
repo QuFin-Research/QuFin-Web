@@ -152,6 +152,11 @@ def test_api_serves_live_scorecard_with_confidence_and_pending(client, ingested)
 # --- the required bias backtest -----------------------------------------------------------------
 
 
+# The real units of the series these tests store: the release check compares them with the
+# declared unit kind (rule 23).
+REAL_UNITS = {"AWHMAN": "Hours", "PAYEMS": "Thousands of Persons"}
+
+
 def _store_series(store, series_id, title, values, release_lag, skip=frozenset()):
     vintages = [
         Vintage(period, period + timedelta(days=release_lag), OPEN_END, value)
@@ -162,7 +167,7 @@ def _store_series(store, series_id, title, values, release_lag, skip=frozenset()
         id=series_id,
         source="fred",
         title=title,
-        units="Index",
+        units=REAL_UNITS.get(series_id, "Index"),
         frequency="Monthly",
         seasonal_adjustment="SA",
         country="US",

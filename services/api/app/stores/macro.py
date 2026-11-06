@@ -27,6 +27,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.domain.units import classify
 from app.stores.db import Base, as_utc
 
 # ALFRED's marker for "still the current value".
@@ -51,6 +52,9 @@ class MacroSeriesRow(Base):
     release_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # FRED's note when it publishes later than the source, e.g. "delayed by 1 month".
     delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Derived from `units` at every ingest (app/domain/units.py, rule 23).
+    unit_kind: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     # Coverage, stored at ingest so listing series never aggregates the observations.
@@ -99,6 +103,9 @@ class SeriesMeta:
     source_name: str | None = None
     release_name: str | None = None
     delay_notice: str | None = None
+    # Derived from `units` when stored; not set by ingest jobs (rule 23).
+    unit_kind: str | None = None
+    currency: str | None = None
 
 
 @dataclass(frozen=True)
@@ -134,6 +141,8 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         source_name=row.source_name,
         release_name=row.release_name,
         delay_notice=row.delay_notice,
+        unit_kind=row.unit_kind,
+        currency=row.currency,
         last_updated=as_utc(row.last_updated) if row.last_updated else None,
     )
 
@@ -253,6 +262,8 @@ class MacroStore:
         series.source_name = meta.source_name
         series.release_name = meta.release_name
         series.delay_notice = meta.delay_notice
+        unit = classify(meta.units, meta.country)
+        series.unit_kind, series.currency = unit.kind, unit.currency
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
         self.session.add(series)

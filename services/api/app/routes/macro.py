@@ -67,6 +67,8 @@ _META_FIELDS = (
     "last_updated",
     "source_name",
     "release_name",
+    "unit_kind",
+    "currency",
 )
 
 

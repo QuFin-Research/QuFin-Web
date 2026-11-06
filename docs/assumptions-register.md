@@ -133,6 +133,28 @@ So the demand series labelled *Product Supplied* are implied demand, not measure
 Also set by hand and not independently checked: the Treasury series are labelled not seasonally
 adjusted; ECB adjustment flags come from the series key (N or Y), which is the ECB's own code.
 
+## 4a. Unit kind and currency (rule 23)
+
+Every series records a unit kind and an ISO currency. **Derived:** read by `classify`
+(`app/domain/units.py`) from the units the source itself states (FRED `units`, ECB UNIT and
+UNIT_MULT, OECD measure, EIA and Treasury field definitions), at every ingest and in migration
+0009's backfill. **Declared:** the reviewed table `app/data/series_units.py`, one row per catalog
+series, first derived and then checked. The release check marks a series "review" when the two
+disagree; a test fails on a missing or `unknown` declaration. On 7 Nov 2026 all 110 catalog series
+derived to a known kind, matching their declarations.
+
+| Judgement | Status | Basis |
+|---|---|---|
+| An unqualified "Dollars" is USD only for a US series; for any other country it is unknown | Design choice | The units text does not name the currency; never guessed |
+| FRED "Rate" (JOLTS quits) is a percent rate | Verified | FRED notes: the quits rate is quits as a percent of employment |
+| "Percentage change" (ECB HICP annual rate) is a percent rate | Verified | ECB UNIT; the series is published as a change (rule 13) |
+| "Percent of GDP" is a ratio, not a rate | Design choice | A share of a denominator; compares only with other % of GDP |
+| An FX rate "A to One B" is a price per unit in currency A | Verified | FRED H.10 units; e.g. CAD per USD for DEXCAUS |
+| Barrels, barrels per day, hours and weeks are `other` (physical or time units) | Design choice | The seven unit kinds have no physical-quantity kind |
+| Same scale needs the same kind, currency and scale-free unit: real (chained or CPI-adjusted) dollars never beside nominal, $/barrel never beside $/gallon | Design choice | `comparable()`; rescaling millions to billions is allowed |
+| An index shares a scale only with the same stated base; a plain "Index" (diffusion, standardised) never does | Design choice | Rebase or standardise first (rule 23 b, d) |
+| A count shares a scale only when the units say what is counted ("Persons", "Units"); "Number" or "Thousands" never does | Design choice | Claims, home sales and job openings are not one quantity |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.

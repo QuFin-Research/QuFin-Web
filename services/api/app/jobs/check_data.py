@@ -10,8 +10,10 @@ from sqlalchemy.orm import Session
 from app.data.macro_catalog import BY_ID, CATALOG, CatalogSeries
 from app.data.positioning_catalog import COT_CONTRACTS
 from app.data.scorecard_catalog import SCORED
+from app.data.series_units import SERIES_UNITS
 from app.domain.duplicates import find_duplicates
 from app.domain.freshness import Freshness, Timeliness, assess, timeliness
+from app.domain.units import classify
 from app.stores.macro import MacroStore, SeriesMeta
 from app.stores.positioning import PositioningStore, Positions
 
@@ -59,8 +61,24 @@ def double_change_reason(meta: SeriesMeta, entry: CatalogSeries | None) -> str |
     return None
 
 
+def unit_review_reason(meta: SeriesMeta) -> str | None:
+    """Rule 23: the unit the source states must match the reviewed declaration."""
+    declared = SERIES_UNITS.get(meta.id)
+    if declared is None:
+        return "No declared unit kind and currency (app/data/series_units.py)"
+    unit = classify(meta.units, meta.country)
+    if (unit.kind, unit.currency) != declared:
+        return (
+            f"The source's units ({meta.units}) read as {unit.kind}/{unit.currency}, "
+            f"not the declared {declared[0]}/{declared[1]}"
+        )
+    return None
+
+
 def _review_reason(meta: SeriesMeta, declared_delay: int) -> str | None:
     if reason := double_change_reason(meta, BY_ID.get(meta.id)):
+        return reason
+    if reason := unit_review_reason(meta):
         return reason
     if meta.delay_notice and declared_delay == 0:
         return (

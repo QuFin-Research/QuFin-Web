@@ -31,6 +31,11 @@ class MacroSeries(ApiModel):
         description="When the series tends to turn relative to the business cycle"
     )
     last_updated: datetime | None = Field(description="When the source last revised the series")
+    unit_kind: str | None = Field(
+        description="amount_currency, count, index, rate_percent, ratio, price_per_unit or other "
+        "(rule 23: only series with the same kind, currency and unit share one scale)"
+    )
+    currency: str | None = Field(description="ISO currency of amounts and prices; null if none")
     source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
     release_name: str | None = Field(description="The release the series is published in")
 
