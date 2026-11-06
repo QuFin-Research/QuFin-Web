@@ -36,6 +36,8 @@ def parse_period(period: str) -> date:
         return date.fromisoformat(period)
     if len(period) == 7 and period[4] == "-" and period[5] != "Q":  # 2026-10
         return date(int(period[:4]), int(period[5:]), 1)
+    if len(period) == 8 and period[4:6] == "-M":  # 2026-M09 (IMF)
+        return date(int(period[:4]), int(period[6:]), 1)
     if "-Q" in period:  # 2026-Q3
         return date(int(period[:4]), 3 * int(period[-1]) - 2, 1)
     if len(period) == 4:  # 2026

@@ -47,17 +47,18 @@ class UnitInfo:
     basis: str
 
 
-def _currency(text: str, country: str) -> str | None:
+def _currency(text: str, country: str, source: str = "") -> str | None:
     for name, code in _CURRENCIES:
         if name in text:
             return code
-    # An unqualified "dollars" is the series' own country's currency only for the US.
-    if "dollar" in text and country == "US":
+    # An unqualified "dollars" is US dollars for a US series, or from FRED, whose unit
+    # vocabulary names every other currency ("Domestic Currency", "Canadian Dollars").
+    if "dollar" in text and (country == "US" or source == "fred"):
         return "USD"
     return None
 
 
-def classify(units: str, country: str) -> UnitInfo:
+def classify(units: str, country: str, source: str = "") -> UnitInfo:
     text = units.strip().lower()
     basis = _SCALE.sub("", text).replace("u.s. dollars", "dollars")
     if m := _FX.match(text):  # "Canadian Dollars to One U.S. Dollar": CAD per USD
@@ -74,10 +75,10 @@ def classify(units: str, country: str) -> UnitInfo:
     if text == "ratio":
         return UnitInfo("ratio", None, basis)
     if " per " in text and "dollar" in text:  # "Dollars per Barrel"
-        currency = _currency(text, country)
+        currency = _currency(text, country, source)
         return UnitInfo("price_per_unit" if currency else "unknown", currency, basis)
     if "dollar" in text or "euro" in text:
-        currency = _currency(text, country)
+        currency = _currency(text, country, source)
         return UnitInfo("amount_currency" if currency else "unknown", currency, basis)
     if basis in {"persons", "units", "number", ""} or text in {"thousands", "level in thousands"}:
         return UnitInfo("count", None, basis or "number")

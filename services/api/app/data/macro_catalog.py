@@ -14,6 +14,7 @@ from datetime import date
 from typing import Literal
 
 from app.data.cycle_classification import QUFIN_CYCLE
+from app.data.reserves_ids import FRED_RESERVES, RESERVES
 
 # The five scored pillars, plus external and fiscal (stored and shown; scored once the
 # scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
@@ -41,7 +42,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia", "ecb", "treasury", "oecd"]
+    source: Literal["fred", "eia", "ecb", "treasury", "oecd", "imf"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -230,6 +231,13 @@ def _oecd(series_id: str) -> CatalogSeries:
     )
 
 
+def _reserves(series_id: str) -> CatalogSeries:
+    """Reserves excluding gold: an amount in US dollars (percent change), not scored."""
+    if series_id in FRED_RESERVES:
+        return CatalogSeries(series_id, "fred", RESERVES[series_id], "external")
+    return CatalogSeries(series_id, "imf", RESERVES[series_id], "external")
+
+
 _H15 = "Board of Governors of the Federal Reserve System (H.15); spread calculated by FRED"
 
 
@@ -345,6 +353,8 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _ea("HICP.M.U2.N.000000.4D0.ANR", "inflation", published_as_change=True),  # HICP, y/y
     _ea("HICP.M.U2.N.XEF000.4D0.ANR", "inflation", published_as_change=True),  # Core HICP, y/y
     _ea("BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E", "policy"),  # M3 money supply, stock, SA
+    # --- Official reserves excluding gold (P1-21), not scored -----------------------------
+    *(_reserves(series_id) for series_id in RESERVES),
     # --- OECD leading indicators and confidence (P1-20), not scored -------------------
     *(_oecd(series_id) for series_id in OECD_SERIES),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------

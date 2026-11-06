@@ -262,7 +262,7 @@ class MacroStore:
         series.source_name = meta.source_name
         series.release_name = meta.release_name
         series.delay_notice = meta.delay_notice
-        unit = classify(meta.units, meta.country)
+        unit = classify(meta.units, meta.country, meta.source)
         series.unit_kind, series.currency = unit.kind, unit.currency
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
