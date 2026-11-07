@@ -126,4 +126,25 @@ SERIES_UNITS: dict[str, tuple[str, str | None]] = {
     "DCOILBRENTEU": ("price_per_unit", "USD"),  # Dollars per Barrel
     "DHHNGSP": ("price_per_unit", "USD"),  # Dollars per Million BTU
     "DTWEXBGS": ("index", None),  # Index Jan 2006=100
+    "TRESEGGBM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGJPM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGCAM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGAUM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGPLM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGINM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGMXM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGBRM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGTRM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGZAM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGKRM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "TRESEGSAM052N": ("amount_currency", "USD"),  # Millions of Dollars (FRED)
+    "IMF_RES_NZL": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_CHE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_NOR": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_SWE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_DNK": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_CZE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_HUN": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_SGP": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "IMF_RES_ARE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
 }
