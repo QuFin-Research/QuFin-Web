@@ -1,7 +1,7 @@
 """The connector framework, the raw zone and the reference-price catalog."""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
@@ -93,3 +93,35 @@ def test_every_reference_price_is_a_catalog_series_kept_out_of_the_scorecard():
         assert entry.change == "pct", symbol
         assert series_id not in SCORED, symbol
     assert not set(PRICE_SERIES) & set(NO_FREE_SOURCE)
+
+
+def test_retry_after_accepts_seconds_http_dates_and_garbage():
+    from email.utils import format_datetime
+
+    from app.connectors.base import MAX_RETRY_WAIT, retry_delay
+
+    assert retry_delay(None, 2) == 4.0
+    assert retry_delay("7", 0) == 7.0
+    assert retry_delay("not a number or a date", 3) == 8.0
+    soon = format_datetime(datetime.now(UTC).replace(microsecond=0) + timedelta(seconds=30))
+    assert 0 < retry_delay(soon, 0) <= 30
+    past = format_datetime(datetime(2000, 1, 1, tzinfo=UTC))
+    assert retry_delay(past, 0) == 0.0
+    assert retry_delay("99999", 0) == MAX_RETRY_WAIT
+
+
+def test_a_retry_after_http_date_does_not_crash_the_retry():
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        if len(calls) == 1:
+            return httpx.Response(429, headers={"retry-after": "Wed, 21 Oct 2015 07:28:00 GMT"})
+        return httpx.Response(200, json={"ok": True})
+
+    waits = []
+    client = HttpSource(
+        "https://x.test", transport=httpx.MockTransport(handler), sleep=waits.append
+    )
+    assert client.get_json("/", {}) == {"ok": True}
+    assert waits == [0.0]

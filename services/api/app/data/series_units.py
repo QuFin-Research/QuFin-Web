@@ -147,4 +147,5 @@ SERIES_UNITS: dict[str, tuple[str, str | None]] = {
     "IMF_RES_HUN": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
     "IMF_RES_SGP": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
     "IMF_RES_ARE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "CIS1010000000000I": ("index", None),  # Index, Dec 2005=100 (BLS ECI)
 }

@@ -59,8 +59,14 @@ class TreasuryClient(HttpSource):
                 },
                 f"{path.rsplit('/', 1)[-1]}-{start.isoformat()}-{page}",
             )
-            rows.extend(body.get("data") or [])
-            if page >= int((body.get("meta") or {}).get("total-pages") or 1):
+            data = body.get("data") or []
+            rows.extend(data)
+            try:
+                total_pages = int(str((body.get("meta") or {}).get("total-pages")))
+            except (TypeError, ValueError):
+                total_pages = 1
+            # Without page metadata, a full page means there may be more.
+            if page >= total_pages and len(data) < PAGE_SIZE:
                 return rows
             page += 1
 

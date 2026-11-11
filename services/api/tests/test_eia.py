@@ -170,3 +170,19 @@ def test_release_check_names_eia_as_the_source(db_session):  # noqa: F811
     sources = {c.id: c.source for c in check_macro(db_session, date(2026, 10, 30))}
     assert sources["WCESTUS1"] == "eia"
     assert sources["UNRATE"] == "fred"
+
+
+def test_client_keeps_paging_when_the_total_is_missing(monkeypatch):
+    """A response without `total` must not silently end the history after the first page."""
+    rows = _rows(WEEKS)
+
+    def handler(request: httpx.Request):
+        offset = int(request.url.params["offset"])
+        return httpx.Response(200, json={"response": {"data": rows[offset : offset + 2]}})
+
+    from app.connectors import eia
+
+    monkeypatch.setattr(eia, "PAGE_LIMIT", 2)
+    client = EiaClient(KEY, transport=httpx.MockTransport(handler), sleep=lambda _s: None)
+    series = client.weekly_petroleum("WCESTUS1")
+    assert len(series.observations) == len(WEEKS)

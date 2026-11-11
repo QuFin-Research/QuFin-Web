@@ -224,6 +224,12 @@ class MacroStore:
                 start = min(release_of(period), today)
             elif row.value == value:
                 continue
+            elif row.realtime_start >= today:
+                # First seen today and revised again today: one row per period and day, so the
+                # value is corrected in place (a second row would repeat the primary key).
+                row.value = value
+                written += 1
+                continue
             else:
                 row.realtime_end = today - timedelta(days=1)
                 start = today

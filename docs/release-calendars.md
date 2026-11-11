@@ -11,7 +11,7 @@ confirm.
 | United States | CFTC | Commitments of Traders release schedule (cftc.gov, COT release schedule and historical special announcements) | **Verified**: encoded in `services/api/app/data/cot_calendar.py` |
 | United States | St. Louis Fed (FRED/ALFRED) | Release dates per series via the `/fred/release/dates` and `/fred/series/release` API | **Verified**: release and source per series stored |
 | United States | Treasury (Fiscal Data) | Release calendar API (upcoming and latest only): Debt to the Penny each business day for the previous one; average interest rates and interest expense on the 4th business day of the next month | **Derived** for past dates from that pattern in `services/api/app/data/treasury_calendar.py` (checked 5 Nov 2026) |
-| United States | BLS | BLS release schedule | To confirm |
+| United States | BLS | Employment Cost Index: end of the month after each quarter (January, April, July, October) | **Derived**: each quarter dated 125 days after its first day, which is later than every release in the schedule (`RELEASE_LAG_DAYS` in `services/api/app/jobs/ingest_bls.py`); the BLS schedule at bls.gov/schedule was not read for each past year, so exact dates are unverified |
 | United States | BEA | BEA release schedule | To confirm |
 | United States | Census | Economic indicators calendar | To confirm |
 | United States | Federal Reserve Board | H.4.1, H.8, H.15, G.17, G.19 statistical release dates; FOMC calendar | To confirm |

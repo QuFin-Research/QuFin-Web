@@ -175,3 +175,36 @@ def test_market_series_history_before_the_archive_is_dated_by_release_lag():
     # Released after the archive date by the lag rule, so it keeps the archive date.
     assert dated[date(2005, 6, 27)] == date(2005, 6, 28)
     assert dated[archive + timedelta(days=1)] == archive + timedelta(days=2)
+
+
+def test_first_vintage_rows_after_the_archive_start_are_not_readable_early():
+    """ALFRED can load years of later data into its first vintage (DEXCAUS)."""
+    from datetime import timedelta
+
+    from app.jobs.ingest_fred import date_pre_archive_periods
+    from app.stores.macro import OPEN_END, Vintage
+
+    archive = date(2005, 6, 28)
+    bulk = [Vintage(archive + timedelta(days=i), archive, OPEN_END, 1.0) for i in range(-3, 40)]
+    later = [
+        Vintage(
+            date(2006, 1, 2) + timedelta(days=i),
+            date(2006, 1, 3) + timedelta(days=i),
+            OPEN_END,
+            1.1,
+        )
+        for i in range(30)
+    ]
+    for v in date_pre_archive_periods(bulk + later):
+        assert v.realtime_start >= v.period, v
+
+
+def test_no_vintage_is_stamped_before_its_period():
+    from app.jobs.ingest_fred import not_before_period
+    from app.stores.macro import OPEN_END, Vintage
+
+    early = Vintage(date(2012, 12, 27), date(2012, 12, 26), OPEN_END, 90.0)
+    gone = Vintage(date(2012, 12, 28), date(2012, 12, 20), date(2012, 12, 25), 91.0)
+    fine = Vintage(date(2012, 12, 26), date(2012, 12, 27), OPEN_END, 89.0)
+    out = not_before_period([early, gone, fine])
+    assert [v.realtime_start for v in out] == [date(2012, 12, 27), date(2012, 12, 27)]

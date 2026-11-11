@@ -22,6 +22,8 @@ class Settings(BaseSettings):
 
     # FRED/ALFRED (St. Louis Fed). Free key: https://fred.stlouisfed.org/docs/api/api_key.html
     fred_api_key: SecretStr | None = None
+    # BLS (Bureau of Labor Statistics). Free key: https://data.bls.gov/registrationEngine/
+    bls_api_key: SecretStr | None = None
     eia_api_key: SecretStr | None = None
     eia_base_url: str = "https://api.eia.gov/v2"
     fred_base_url: str = "https://api.stlouisfed.org/fred"
@@ -43,7 +45,7 @@ class Settings(BaseSettings):
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)
 
-    @field_validator("fred_api_key", "eia_api_key", mode="before")
+    @field_validator("fred_api_key", "bls_api_key", "eia_api_key", mode="before")
     @classmethod
     def blank_key_is_unset(cls, value: object) -> object:
         return None if isinstance(value, str) and not value.strip() else value

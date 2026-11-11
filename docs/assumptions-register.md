@@ -169,6 +169,17 @@ derived to a known kind, matching their declarations.
 | IMF release dates: the last weekday of the second month after each month | Design choice | No published dates; latest month on 7 Nov 2026 was September for most economies, August for the rest (rule 9: err late) |
 | Name "Foreign Exchange Reserves" | Verified | Trading Economics page title; FRED's "Reserves Excluding Gold" in the official title |
 
+## 4c. Employment Cost Index (BLS)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| BLS series id `CIS1010000000000I` is the Employment Cost Index, total compensation, civilian workers, seasonally adjusted, index Dec 2005=100 | Verified | BLS API v2, 12 Nov 2026: returns 2026 Q3 = 178.574; the first ids tried (`CIU0000000000`, `JTS0000000000`) return "Series does not exist" |
+| The ECI is not on FRED under this definition, so BLS is the source (rule 17) | Unverified | Recorded in `NON_FRED_ALLOWED` on 7 Nov 2026; FRED was not searched again on 12 Nov 2026 |
+| JOLTS job openings come from FRED (`JTSJOL`) only | Verified | The BLS series `JTS000000000000000JOL` carried the same values as `JTSJOL`; `check-data` flagged the duplicate (rule 16) and the BLS copy was removed |
+| ECI release dates: 125 days after the first day of the quarter | Design choice | The API serves no release dates; BLS releases ECI near the end of the month after the quarter (about 90 to 120 days after the quarter's first day); 125 days errs late (rule 9) |
+| ECI is a lagging indicator | Convention | Wages and benefits follow price inflation with a lag |
+| Name "ECI – Employment Cost Index" | Unverified | Not checked against FRED, Trading Economics or the Forex Factory calendar as rule 18 asks |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.

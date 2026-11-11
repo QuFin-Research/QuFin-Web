@@ -81,4 +81,6 @@ QUFIN_CYCLE: dict[str, tuple[Cycle, str]] = {
     "WRPUPUS2": ("coincident", _PRODUCT),
     "WGFUPUS2": ("coincident", _PRODUCT),
     "WDIUPUS2": ("coincident", _PRODUCT),
+    # --- BLS (P1-12) ----------------------------------------------------------------------------
+    "CIS1010000000000I": ("lagging", "Wages and benefits follow price inflation with a lag."),
 }

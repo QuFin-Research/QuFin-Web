@@ -66,10 +66,14 @@ class EiaClient(HttpSource):
             )
             response = body.get("response") or {}
             page = response.get("data") or []
-            total = int(response.get("total") or 0)
+            rows.extend(page)
+            # `total` may be absent or a string; a full page then means there may be more.
+            try:
+                total = int(str(response.get("total")))
+            except (TypeError, ValueError):
+                total = len(rows) + 1 if len(page) >= PAGE_LIMIT else len(rows)
             if not page:
                 break
-            rows.extend(page)
         if not rows:
             raise EiaError(f"EIA has no data for {series_id}")
         observations = sorted(

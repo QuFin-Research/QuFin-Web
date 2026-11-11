@@ -14,6 +14,8 @@ import json
 import ssl
 import time
 from collections.abc import Callable
+from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 import httpx
@@ -22,6 +24,25 @@ import truststore
 from app.stores.raw_zone import RawZone
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
+MAX_RETRY_WAIT = 120.0
+
+
+def retry_delay(retry_after: str | None, attempt: int) -> float:
+    """Seconds to wait before a retry: `Retry-After` (seconds or an HTTP date), else backoff."""
+    backoff = float(2**attempt)
+    if retry_after is None:
+        return backoff
+    try:
+        wait = float(retry_after)
+    except ValueError:
+        try:
+            when = parsedate_to_datetime(retry_after)
+        except (TypeError, ValueError):
+            return backoff
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+        wait = (when - datetime.now(UTC)).total_seconds()
+    return min(max(wait, 0.0), MAX_RETRY_WAIT)
 
 
 class SourceError(Exception):
@@ -79,7 +100,7 @@ class HttpSource:
                 self._sleep(2**attempt)
                 continue
             if res.status_code in RETRY_STATUSES and attempt < self._max_retries:
-                self._sleep(float(res.headers.get("retry-after", 2**attempt)))
+                self._sleep(retry_delay(res.headers.get("retry-after"), attempt))
                 continue
             if res.status_code != 200:
                 raise self.error(
