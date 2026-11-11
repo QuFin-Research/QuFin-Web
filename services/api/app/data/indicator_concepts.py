@@ -22,6 +22,7 @@ from app.data.reserves_ids import RESERVES
 # a country's statistics office calls its own version: the euro area's HICP and the UK's CPI are
 # both "CPI". Add an acronym here before using it in a name; tests enforce the format.
 ACRONYMS: dict[str, str] = {
+    "ECI": "Employment Cost Index",
     "CPI": "Consumer Price Index",
     "Core CPI": "Consumer Price Index ex Food and Energy",
     "Services CPI": "Consumer Price Index, Services",
@@ -87,6 +88,10 @@ CONCEPTS: dict[str, Concept] = {
     "quit_rate": Concept(
         "JOLTS Quits Rate",
         "Share of workers leaving their jobs each month; high when they expect to find better.",
+    ),
+    "employment_cost_index": Concept(
+        "ECI – Employment Cost Index",
+        "Employer cost of wages and benefits per hour worked; a key wage-inflation gauge.",
     ),
     "nonfarm_payrolls": Concept(
         "NFP – Nonfarm Payrolls",
@@ -443,6 +448,7 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "DCOILWTICO": "crude_oil_wti",
     "DCOILBRENTEU": "crude_oil_brent",
     "DHHNGSP": "natural_gas",
+    "CIS1010000000000I": "employment_cost_index",
 }
 
 # Euro area: the same concept keys as the US, so names match across countries (rule 18).
@@ -491,6 +497,7 @@ NON_FRED_ALLOWED: dict[str, str] = {
     "(checked 5 Nov 2026)",
     "TREAS_INTEREST_EXPENSE": "Monthly interest expense on the public debt is not on FRED, "
     "which has quarterly interest payments only (checked 5 Nov 2026)",
+    "CIS1010000000000I": "Employment Cost Index is not on FRED (checked 7 Nov 2026)",
 }
 
 # Not stored because they are exactly derivable from series that are (no duplicated data).

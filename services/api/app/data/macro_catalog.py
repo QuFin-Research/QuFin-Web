@@ -42,7 +42,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["fred", "eia", "ecb", "treasury", "oecd", "imf"]
+    source: Literal["bls", "eia", "ecb", "fred", "imf", "oecd", "treasury"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -150,6 +150,11 @@ def _treasury(id: str) -> CatalogSeries:
     return CatalogSeries(
         id, "treasury", "US", "fiscal", change="diff" if id in DIFF_SERIES else "pct"
     )
+
+
+def _bls(id: str) -> CatalogSeries:
+    """A BLS series (Bureau of Labor Statistics), not on FRED (rule 17)."""
+    return CatalogSeries(id, "bls", "US", "external", change="diff" if id in DIFF_SERIES else "pct")
 
 
 # OECD composite leading indicators and confidence surveys for the OECD members among QuFin's
@@ -333,6 +338,8 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _treasury("TREAS_DEBT_TOTAL"),  # Debt to the Penny: total public debt, daily
     _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
     _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
+    # --- BLS: Employment Cost Index (P1-12; JOLTS is JTSJOL on FRED), not scored ---
+    _bls("CIS1010000000000I"),  # Employment Cost Index, total compensation, civilian workers
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
     _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
     _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks

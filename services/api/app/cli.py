@@ -4,6 +4,7 @@ uv run python -m app.cli migrate
 uv run python -m app.cli ingest-fred            # every series in the catalog
 uv run python -m app.cli ingest-fred CPIAUCSL UNRATE --start 2010-01-01
 uv run python -m app.cli ingest-cftc                 # CFTC positioning, no key needed
+uv run python -m app.cli ingest-bls                  # BLS series (Employment Cost Index)
 uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and demand
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
@@ -21,6 +22,7 @@ import logging
 import sys
 from datetime import UTC, date, datetime, timedelta
 
+from app.connectors.bls import BlsClient
 from app.connectors.cftc import CftcClient
 from app.connectors.ecb import EcbClient
 from app.connectors.eia import EiaClient
@@ -31,7 +33,15 @@ from app.connectors.treasury import TreasuryClient
 from app.core.config import get_settings
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
-from app.jobs import ingest_cftc, ingest_ecb, ingest_eia, ingest_imf, ingest_oecd, ingest_treasury
+from app.jobs import (
+    ingest_bls,
+    ingest_cftc,
+    ingest_ecb,
+    ingest_eia,
+    ingest_imf,
+    ingest_oecd,
+    ingest_treasury,
+)
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
@@ -172,6 +182,30 @@ def _ingest_cftc(args: argparse.Namespace) -> int:
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
+def _ingest_bls(args: argparse.Namespace) -> int:
+    settings = get_settings()
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "bls"]
+    bls_key = getattr(settings, "bls_api_key", None)
+    api_key = bls_key.get_secret_value() if bls_key is not None else None
+    if api_key is None:
+        print(
+            "Note: no BLS registration key; anonymous access is capped at 25 queries/day "
+            "and 10 years per request. Get a free key at "
+            "https://data.bls.gov/registrationEngine/",
+            file=sys.stderr,
+        )
+    with BlsClient(api_key=api_key, raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_bls.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<18} {status}")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
 def _check_data(_args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -277,6 +311,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     cftc.add_argument("--full", action="store_true", help="re-read all history, not just new weeks")
     cftc.set_defaults(func=_ingest_cftc)
+
+    bls = sub.add_parser("ingest-bls", help="ingest BLS series (Employment Cost Index)")
+    bls.add_argument("series", nargs="*", help="series ids (default: every BLS series)")
+    bls.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help=f"first period to load (default {DEFAULT_OBSERVATION_START})",
+    )
+    bls.set_defaults(func=_ingest_bls)
 
     check = sub.add_parser(
         "check-data", help="check every data source is still published on schedule"

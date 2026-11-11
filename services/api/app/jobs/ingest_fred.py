@@ -32,6 +32,7 @@ def ingest_series(
     vintages = client.vintages(entry.id, observation_start)
     if entry.market:
         vintages = date_pre_archive_periods(vintages)
+    vintages = not_before_period(vintages)
     meta = SeriesMeta(
         id=info.id,
         source=entry.source,
@@ -79,9 +80,27 @@ def date_pre_archive_periods(vintages: Sequence[Vintage]) -> list[Vintage]:
     result = []
     for v in vintages:
         if v is first_release[v.period] and v.realtime_start == archive_start:
-            known = v.period + lag
-            if known < archive_start:
+            # Also periods after the archive start: ALFRED sometimes loads years of later data
+            # into its first vintage (DEXCAUS, DEXJPUS), which must not be readable early.
+            known = min(v.period + lag, v.realtime_end)
+            if known != v.realtime_start:
                 v = replace(v, realtime_start=known)
+        result.append(v)
+    return result
+
+
+def not_before_period(vintages: Sequence[Vintage]) -> list[Vintage]:
+    """No value is known before its own period begins (rule 6).
+
+    ALFRED occasionally stamps a value with a vintage date earlier than the period it measures.
+    Such a row is moved to the period's first day; one that would end before that is dropped.
+    """
+    result = []
+    for v in vintages:
+        if v.realtime_start < v.period:
+            if v.realtime_end < v.period:
+                continue
+            v = replace(v, realtime_start=v.period)
         result.append(v)
     return result
 

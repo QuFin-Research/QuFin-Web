@@ -46,7 +46,7 @@ or a series is late.
 5. **Store point in time.** A row is one value of one period together with `realtime_start` and
    `realtime_end`, the first and last day that value was the published one. A revision closes the
    old row and opens a new one. Sources that serve their whole revision history (FRED/ALFRED) are
-   stored as served. Sources that serve only current values (EIA, ECB, OECD, Treasury) are stored by
+   stored as served. Sources that serve only current values (EIA, ECB, OECD, Treasury, BLS) are stored by
    comparing with what QuFin already holds: a new period is dated by its release, a changed value
    becomes a new row from the day QuFin sees it. Nothing is ever overwritten.
 6. **Store the description** of each series: source and publisher, official title, units, unit kind

@@ -102,3 +102,21 @@ def test_ingest_dates_records_by_their_release(db_session):  # noqa: F811
     ]
     assert store.as_of("TREAS_AVG_RATE_MARKETABLE", date(2026, 11, 4)) == []
     assert store.get_series("TREAS_INTEREST_EXPENSE").source_name.startswith("U.S. Department")
+
+
+def test_client_keeps_paging_when_the_page_count_is_missing(monkeypatch):
+    """No `total-pages` metadata: a full page means more may follow, never a silent stop."""
+    from app.connectors import treasury
+
+    rows = [
+        {"record_date": f"2026-09-{d:02d}", "tot_pub_debt_out_amt": str(d)} for d in range(1, 8)
+    ]
+
+    def handler(request: httpx.Request):
+        size = int(request.url.params["page[size]"])
+        page = int(request.url.params["page[number]"])
+        return httpx.Response(200, json={"data": rows[(page - 1) * size : page * size]})
+
+    monkeypatch.setattr(treasury, "PAGE_SIZE", 3)
+    client = TreasuryClient(transport=httpx.MockTransport(handler), sleep=lambda _s: None)
+    assert len(client.total_public_debt(date(2026, 9, 1))) == 7
