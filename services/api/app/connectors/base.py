@@ -10,6 +10,7 @@ endpoints to call and how to parse them. The base gives every source the same be
 - errors that never echo request URLs, so API keys in query strings cannot leak into logs.
 """
 
+import json
 import ssl
 import time
 from collections.abc import Callable
@@ -40,11 +41,13 @@ class HttpSource:
         sleep: Callable[[float], None] = time.sleep,
         raw: RawZone | None = None,
         timeout: float = 30.0,
+        headers: dict[str, str] | None = None,
     ) -> None:
         self._client = httpx.Client(
             base_url=base_url.rstrip("/"),
             timeout=timeout,
             transport=transport,
+            headers=headers,
             verify=truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT),
         )
         self._max_retries = max_retries
@@ -88,4 +91,9 @@ class HttpSource:
         raise self.error(f"{self.source} kept failing")  # pragma: no cover
 
     def get_json(self, path: str, params: dict[str, Any], raw_name: str | None = None) -> Any:
-        return self.get(path, params, raw_name).json()
+        res = self.get(path, params, raw_name)
+        try:
+            # utf-8-sig: some sources (the IMF) start their JSON with a byte-order mark.
+            return json.loads(res.content.decode("utf-8-sig"))
+        except ValueError:
+            raise self.error(f"{self.source} returned a response that is not JSON") from None

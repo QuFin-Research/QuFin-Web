@@ -66,7 +66,7 @@ def unit_review_reason(meta: SeriesMeta) -> str | None:
     declared = SERIES_UNITS.get(meta.id)
     if declared is None:
         return "No declared unit kind and currency (app/data/series_units.py)"
-    unit = classify(meta.units, meta.country)
+    unit = classify(meta.units, meta.country, meta.source)
     if (unit.kind, unit.currency) != declared:
         return (
             f"The source's units ({meta.units}) read as {unit.kind}/{unit.currency}, "

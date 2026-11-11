@@ -10,6 +10,8 @@ A series without a cycle fails to load (macro_catalog.py), so a new series canno
 
 from typing import Literal
 
+from app.data.reserves_ids import RESERVES
+
 Cycle = Literal["leading", "coincident", "lagging"]
 
 _MARKET = "Market prices discount the future, so they turn before activity."
@@ -53,6 +55,13 @@ QUFIN_CYCLE: dict[str, tuple[Cycle, str]] = {
     "DHHNGSP": ("leading", _COMMODITY),
     # --- External and fiscal ------------------------------------------------------------------
     "BOPGSTB": ("lagging", "Trade balances adjust after the cycle has turned."),
+    **{
+        series_id: (
+            "coincident",
+            "Reserves move with current balance-of-payments flows and central bank intervention.",
+        )
+        for series_id in RESERVES
+    },
     "IEABC": ("lagging", "The current account adjusts after the cycle has turned."),
     "MTSDS133FMS": ("lagging", _FISCAL),
     "GFDEGDQ188S": ("lagging", _FISCAL),
