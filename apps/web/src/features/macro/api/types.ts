@@ -42,6 +42,13 @@ export type MacroSeries = {
   /** ISO currency of amounts and prices; null when dimensionless */
   currency: string | null;
   sourceName: string | null;
+  /** The publishing organisation under one spelling, for grouping */
+  publisher: string | null;
+  /** ISO3.PILLAR.INDICATOR.FREQ.ADJUSTMENT, unique across series */
+  canonicalCode: string | null;
+  /** GROWTH, INFLATION, LABOR, MONETARY, SURVEYS, CONSUMPTION, TRADE, FISCAL, ENERGY or MARKETS */
+  pillar: string | null;
+  countryIso3: string | null;
   /** The release the series is published in */
   releaseName: string | null;
 };

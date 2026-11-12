@@ -30,6 +30,13 @@ class Indicator(ApiModel):
     pillar: str
     series_count: int
     countries: list[str] = Field(description="ISO3 codes of the countries that have it")
+    same_scale: bool = Field(
+        description="False when the countries' stored values are not on one scale (rule 23)"
+    )
+    scale_note: str | None = Field(description="Why the stored scales differ, when they do")
+    compared_as: str | None = Field(
+        description="The basis countries are compared on where the stored scales differ"
+    )
 
 
 class PitObservation(ApiModel):

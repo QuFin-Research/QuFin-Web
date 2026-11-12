@@ -7,13 +7,15 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.data.indicator_concepts import COMPARED_AS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID, CATALOG, CatalogSeries
 from app.data.positioning_catalog import COT_CONTRACTS
 from app.data.scorecard_catalog import SCORED
 from app.data.series_units import SERIES_UNITS
+from app.domain.comparability import concept_scales
 from app.domain.duplicates import find_duplicates
 from app.domain.freshness import Freshness, Timeliness, assess, timeliness
-from app.domain.units import classify
+from app.domain.units import UnitInfo, classify
 from app.stores.macro import MacroStore, SeriesMeta
 from app.stores.positioning import PositioningStore, Positions
 
@@ -132,6 +134,26 @@ def cot_status(reports: Sequence[Positions], today: date) -> SeriesStatus:
     return SeriesStatus(fresh, timeliness(COT_FREQUENCY, lags, 0, fresh.usable), released, released)
 
 
+def comparability_reasons(metas: Mapping[str, SeriesMeta]) -> dict[str, str]:
+    """Series id -> why its concept cannot be compared as stored and has no declared basis."""
+    units: dict[str, list[UnitInfo]] = {}
+    members: dict[str, list[str]] = {}
+    for series_id, meta in metas.items():
+        concept = SERIES_CONCEPTS.get((meta.country, series_id))
+        if concept is not None:
+            units.setdefault(concept, []).append(classify(meta.units, meta.country, meta.source))
+            members.setdefault(concept, []).append(series_id)
+    reasons: dict[str, str] = {}
+    for concept, verdict in concept_scales(units).items():
+        if not verdict.same_scale and concept not in COMPARED_AS:
+            for series_id in members[concept]:
+                reasons[series_id] = (
+                    f"Concept {concept} mixes scales ({verdict.reason}): declare how countries "
+                    "are compared in COMPARED_AS (rule 23)"
+                )
+    return reasons
+
+
 def check_macro(session: Session, today: date) -> list[DataCheck]:
     """Every catalog series; one that was never ingested counts as overdue."""
     store = MacroStore(session)
@@ -141,6 +163,7 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
     duplicates = find_duplicates(
         {sid: {v.period: v.value for v in store.as_of(sid)} for sid in summaries}
     )
+    mixed = comparability_reasons({sid: s.meta for sid, s in summaries.items()})
     checks = []
     for entry in CATALOG:
         summary = summaries.get(entry.id)
@@ -158,7 +181,7 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
             summary.last_period,
             releases.get(entry.id, {}),
             today,
-            duplicates.get(entry.id),
+            duplicates.get(entry.id) or mixed.get(entry.id),
         )
         checks.append(
             DataCheck(entry.source, entry.id, summary.meta.frequency, summary.last_period, status)

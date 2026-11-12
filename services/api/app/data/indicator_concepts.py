@@ -551,3 +551,30 @@ SERIES_CONCEPTS |= {
     (BIS_COUNTRIES[series_id], series_id): _BIS_CONCEPT[code]
     for series_id, (code, _area) in BIS_SERIES.items()
 }
+
+
+# Concepts whose series do not share one scale as stored, and the basis countries are compared on.
+# A concept is one indicator in every country (rules 18 and 19), but the countries' offices publish
+# it differently; ranking or pooling the stored values would compare unlike numbers (rule 23).
+# `check-data` fails for a concept that mixes scales and is not declared here.
+COMPARED_AS: dict[str, str] = {
+    "consumer_prices": (
+        "Year-on-year change: the US series is an index level (1982-84=100), the euro area's is "
+        "already an annual rate of change"
+    ),
+    "core_consumer_prices": (
+        "Year-on-year change: the US series is an index level (1982-84=100), the euro area's is "
+        "already an annual rate of change"
+    ),
+    "consumer_sentiment": (
+        "Standardised against each series' own history: the Michigan survey (1966:Q1=100) and the "
+        "OECD indicators (long-term average = 100) have different bases"
+    ),
+    "leading_index": (
+        "The same OECD amplitude-adjusted composite leading indicator (long-term average = 100): "
+        "FRED's unit text for the US series omits the base"
+    ),
+    "money_supply": (
+        "Year-on-year change: the US amount is in dollars and the euro area's in euro"
+    ),
+}

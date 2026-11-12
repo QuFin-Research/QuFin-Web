@@ -44,6 +44,11 @@ release calendar.
   the per-series coverage, with the scorecard's z-scores still computed on read.
 
 ## Consequences
+- Every series stores `publisher`, the canonical organisation, beside `source_name`, the producer's own
+  wording. Any grouping or filtering by publisher uses `publisher`.
+- A concept names one indicator in every country, but the stored scales can differ (a US index level
+  and the euro area's annual rate are both "CPI"). Concepts that mix scales are declared in
+  `COMPARED_AS` with the basis they are compared on, and `check-data` fails for one that is not.
 - The by-indicator and by-country dashboard views read `/v1/macro/indicators` and
   `/v1/macro/countries`; the page change is a separate step.
 - A source that words its adjustment differently loads its data uncoded, with a warning, and

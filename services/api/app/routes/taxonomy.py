@@ -9,8 +9,10 @@ from sqlalchemy import select
 
 from app.core.auth import DbSession
 from app.core.clock import Today
-from app.data.indicator_concepts import CONCEPTS, SERIES_CONCEPTS
+from app.data.indicator_concepts import COMPARED_AS, CONCEPTS, SERIES_CONCEPTS
 from app.data.taxonomy import COUNTRY_BY_ISO2, COUNTRY_BY_ISO3, PILLARS, pillar_for
+from app.domain.comparability import concept_scales
+from app.domain.units import UnitInfo, classify
 from app.schemas.taxonomy import Country, EconomicEvent, Indicator, PillarScores, PitSeries
 from app.stores.macro import MacroStore
 from app.stores.point_in_time import CountryNotFoundError, PointInTime, SeriesNotFoundError
@@ -82,6 +84,7 @@ def list_indicators(session: DbSession) -> list[Indicator]:
     groups: dict[str, set[str]] = defaultdict(set)
     counts: dict[str, int] = defaultdict(int)
     pillars: dict[str, str] = {}
+    units: dict[str, list[UnitInfo]] = defaultdict(list)
     for s in MacroStore(session).list_series():
         key = SERIES_CONCEPTS.get((s.meta.country, s.meta.id))
         place = COUNTRY_BY_ISO2.get(s.meta.country)
@@ -89,7 +92,9 @@ def list_indicators(session: DbSession) -> list[Indicator]:
             continue
         groups[key].add(place.iso3)
         counts[key] += 1
+        units[key].append(classify(s.meta.units, s.meta.country, s.meta.source))
         pillars.setdefault(key, s.meta.pillar or pillar_for(s.meta.country, s.meta.id) or "")
+    scales = concept_scales(units)
     return sorted(
         (
             Indicator(
@@ -100,6 +105,9 @@ def list_indicators(session: DbSession) -> list[Indicator]:
                 pillar=pillars[key],
                 series_count=counts[key],
                 countries=sorted(groups[key]),
+                same_scale=scales[key].same_scale,
+                scale_note=None if scales[key].same_scale else scales[key].reason,
+                compared_as=COMPARED_AS.get(key),
             )
             for key in groups
         ),

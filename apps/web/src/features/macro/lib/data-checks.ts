@@ -4,6 +4,8 @@ import type { MacroSeriesSummary } from '../api/types';
 export const LATE_WEIGHT = 0.75;
 
 export type LateGroup = {
+  /** Concept key: the indicator's identity, shared across countries */
+  concept: string;
   /** Indicator name, shared across countries */
   name: string;
   count: number;
@@ -25,21 +27,25 @@ export type DataHealth = {
   lateCount: number;
 };
 
-/** One row per indicator instead of one entry per country, lowest weight first. */
+/** The organisation under one spelling; the source's own wording only as a fallback. */
+const publisherOf = (s: MacroSeriesSummary) => s.publisher ?? s.sourceName;
+
+/** One row per indicator (concept) instead of one entry per country, lowest weight first. */
 export function groupLate(list: MacroSeriesSummary[]): LateGroup[] {
   const groups = new Map<string, LateGroup>();
   for (const s of list) {
     const { weight, daysAfterPeriodEnd: days } = s.timeliness;
-    const g = groups.get(s.name);
+    const g = groups.get(s.concept);
     if (!g) {
-      groups.set(s.name, {
+      groups.set(s.concept, {
+        concept: s.concept,
         name: s.name,
         count: 1,
         minWeight: weight,
         maxWeight: weight,
         minDays: days,
         maxDays: days,
-        publishers: s.sourceName ? [s.sourceName] : []
+        publishers: publisherOf(s) ? [publisherOf(s) as string] : []
       });
       continue;
     }
@@ -48,7 +54,8 @@ export function groupLate(list: MacroSeriesSummary[]): LateGroup[] {
     g.maxWeight = Math.max(g.maxWeight, weight);
     g.minDays = Math.min(g.minDays, days);
     g.maxDays = Math.max(g.maxDays, days);
-    if (s.sourceName && !g.publishers.includes(s.sourceName)) g.publishers.push(s.sourceName);
+    const publisher = publisherOf(s);
+    if (publisher && !g.publishers.includes(publisher)) g.publishers.push(publisher);
   }
   return [...groups.values()].toSorted(
     (a, b) => a.minWeight - b.minWeight || a.name.localeCompare(b.name)

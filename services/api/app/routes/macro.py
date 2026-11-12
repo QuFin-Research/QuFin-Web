@@ -69,6 +69,7 @@ _META_FIELDS = (
     "cycle",
     "last_updated",
     "source_name",
+    "publisher",
     "release_name",
     "unit_kind",
     "currency",

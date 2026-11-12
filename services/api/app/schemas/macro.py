@@ -37,6 +37,10 @@ class MacroSeries(ApiModel):
     )
     currency: str | None = Field(description="ISO currency of amounts and prices; null if none")
     source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
+    publisher: str | None = Field(
+        default=None,
+        description="The publishing organisation under one spelling, for grouping and filtering",
+    )
     release_name: str | None = Field(description="The release the series is published in")
     canonical_code: str | None = Field(
         default=None,

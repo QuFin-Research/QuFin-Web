@@ -226,6 +226,17 @@ derived to a known kind, matching their declarations.
 | Consensus and surprise | Not available | Trading Economics and Forex Factory consensus is proprietary and may not be scraped (rule 28); needs a licensed feed |
 | The surprise score is standardised by the spread of that series' own past surprises, from at least 8 | Design choice | Needs consensus history; empty otherwise |
 
+## 4g. Publishers and comparable scales (ADR 0007)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| `source_name` keeps the producer's wording; `publisher` is the one canonical organisation | Design choice | The same organisation was stored under spellings that differ by a qualifier or punctuation (the IMF, the OECD, the Treasury, the Federal Reserve Board); counts, filters and licence lookups by publisher would split. Aliases are in `app/data/publishers.py` |
+| One concept across countries is by design, even where the national series differ (rules 18 and 19) | Rule | A concept is the indicator, not one national series: consumer prices are "CPI" in every country, consumer confidence is "CCI" |
+| Five concepts mix scales as stored: consumer prices and core consumer prices (US index level against the euro area's annual rate), consumer confidence (Michigan 1966:Q1=100 against the OECD's long-term average = 100), the leading index (the US series' unit text omits the OECD base) and money supply (dollars against euro) | Verified | Read from the stored units of every series; declared with the basis countries are compared on in `COMPARED_AS` (`app/data/indicator_concepts.py`) |
+| The US leading index is the same OECD amplitude-adjusted indicator as the other countries' | Verified | FRED's title for `USALOLITOAASTSAM` says "Amplitude Adjusted"; only its unit text omits the base |
+| A concept that mixes scales and is not declared fails `check-data` | Design choice | A country added later with a different scale (the World Bank and central-bank batches, P1-23 and P1-24) cannot pass unnoticed (rule 23) |
+| The by-indicator view must compare on the declared basis, never on the stored values of a concept with `sameScale: false` | Design choice | `/v1/macro/indicators` returns `sameScale`, `scaleNote` and `comparedAs` for each indicator |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.

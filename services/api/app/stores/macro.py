@@ -28,6 +28,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.data.publishers import canonical_publisher
 from app.data.taxonomy import TaxonomyError, canonical_code, pillar_for, scale_of
 from app.domain.units import classify
 from app.stores.db import Base, as_utc
@@ -53,6 +54,8 @@ class MacroSeriesRow(Base):
     cycle: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # Who produces the data (e.g. "University of Michigan") and the release it comes in.
     source_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # The organisation behind source_name, one spelling each (app/data/publishers.py).
+    publisher: Mapped[str | None] = mapped_column(String(255), nullable=True)
     release_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # FRED's note when it publishes later than the source, e.g. "delayed by 1 month".
     delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -124,6 +127,7 @@ class SeriesMeta:
     canonical_code: str | None = None
     pillar: str | None = None
     scale: float = 1.0
+    publisher: str | None = None
 
 
 @dataclass(frozen=True)
@@ -157,6 +161,7 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         dimension=row.dimension,
         cycle=row.cycle,
         source_name=row.source_name,
+        publisher=row.publisher,
         release_name=row.release_name,
         delay_notice=row.delay_notice,
         unit_kind=row.unit_kind,
@@ -287,6 +292,7 @@ class MacroStore:
         series.dimension = meta.dimension
         series.cycle = meta.cycle
         series.source_name = meta.source_name
+        series.publisher = canonical_publisher(meta.source_name)
         series.release_name = meta.release_name
         series.delay_notice = meta.delay_notice
         unit = classify(meta.units, meta.country, meta.source)
