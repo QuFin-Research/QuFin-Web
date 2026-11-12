@@ -38,6 +38,16 @@ class MacroSeries(ApiModel):
     currency: str | None = Field(description="ISO currency of amounts and prices; null if none")
     source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
     release_name: str | None = Field(description="The release the series is published in")
+    canonical_code: str | None = Field(
+        default=None,
+        description="ISO3.PILLAR.INDICATOR.FREQ.ADJUSTMENT, unique across every series",
+    )
+    pillar: str | None = Field(
+        default=None,
+        description="Macro pillar: GROWTH, INFLATION, LABOR, MONETARY, SURVEYS, CONSUMPTION, "
+        "TRADE or FISCAL; ENERGY and MARKETS are reference classes, never scored",
+    )
+    country_iso3: str | None = Field(default=None, description="ISO 3166 alpha-3 of the country")
 
 
 class SeriesChange(ApiModel):

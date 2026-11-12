@@ -24,6 +24,17 @@ turns it into dated values, the store keeps each revision as its own row, and
 `GET /v1/macro/series/UNRATE?asOf=2026-09-10` returns the series exactly as the public knew it that
 day. The same call without `asOf` returns the latest values. The dashboard draws the chart from it.
 
+## 1b. Layers (ADR 0007)
+
+| Layer | What it is here |
+|---|---|
+| Bronze | The raw zone: every source response, immutable, with a checksum (`data/raw`, `QUFIN_RAW_DIR`) |
+| Silver | The point-in-time tables: `macro_series`, `macro_observations`, `dim_country_taxonomy` |
+| Gold | Tables derived at ingest: `fact_economic_calendar` (release date, previous, first print; consensus and surprise stay empty until licensed). The scorecard's change rates and z-scores are still computed on read |
+
+Commands: `python -m app.cli sync-taxonomy` (codes, pillars, countries), `build-calendar`,
+`seed-benchmarks` (the 15 benchmark G20 and GCC indicators with their latest real values).
+
 ## 2. Ingestion
 
 **Trigger.** A command per source (`python -m app.cli ingest-fred`, `ingest-eia`, `ingest-cftc`,
@@ -53,6 +64,8 @@ or a series is late.
    and currency, frequency, seasonal adjustment, country, pillar, business-cycle tag, the release it
    belongs to and any delay notice, plus its first period, last period and row count, so no page has
    to count a table to show them (rule 15).
+   Each series is also given its canonical code, pillar and unit scale (ADR 0007), so it can be
+   found by `ISO3.PILLAR.INDICATOR.FREQ.ADJ` and read by indicator or by country.
 7. **Finish with the release check** (`check-data`): every series against its release schedule,
    the duplicate check and the unit declarations. A load that leaves any series overdue,
    discontinued or needing review exits with a failure. Bulk loads also refresh the database

@@ -11,6 +11,9 @@ uv run python -m app.cli ingest-oecd                 # OECD leading indicators, 
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
 uv run python -m app.cli ingest-bis                  # BIS policy rates, exchange rates, credit
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
+uv run python -m app.cli sync-taxonomy               # canonical codes, pillars and countries
+uv run python -m app.cli build-calendar              # releases: previous, actual, next due
+uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC indicators
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
@@ -33,9 +36,11 @@ from app.connectors.imf import ImfClient
 from app.connectors.oecd import OecdClient
 from app.connectors.treasury import TreasuryClient
 from app.core.config import get_settings
+from app.data.benchmarks import BENCHMARK_SERIES
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import (
+    build_calendar,
     ingest_bis,
     ingest_bls,
     ingest_cftc,
@@ -44,11 +49,13 @@ from app.jobs import (
     ingest_imf,
     ingest_oecd,
     ingest_treasury,
+    sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
+from app.stores.macro import MacroStore
 from app.stores.migrate import upgrade_to_head
 from app.stores.raw_zone import RawZone
 
@@ -239,6 +246,43 @@ def _scorecard_bias(args: argparse.Namespace) -> int:
     return 0 if report.passed else 1
 
 
+def _sync_taxonomy(_args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        result = sync_taxonomy.sync(session)
+    print(f"{result.countries} countries; {result.series} series coded, {result.changed} changed")
+    if result.uncoded:
+        print(f"NO CODE for {len(result.uncoded)} series: {', '.join(result.uncoded)}")
+    return 1 if result.uncoded else 0
+
+
+def _build_calendar(_args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        result = build_calendar.build(session, _today())
+    print(f"calendar: {result.released} released events, {result.scheduled} scheduled")
+    return 0
+
+
+def _seed_benchmarks(_args: argparse.Namespace) -> int:
+    """Code the benchmark indicators and show each one's latest real value."""
+    upgrade_to_head(get_engine())
+    missing = 0
+    with session_scope() as session:
+        sync_taxonomy.sync(session)
+        store = MacroStore(session)
+        for series_id in BENCHMARK_SERIES:
+            meta = store.get_series(series_id)
+            last = store.last_period(series_id)
+            if meta is None or last is None:
+                print(f"NOT LOADED  {series_id}: run its ingest command first")
+                missing += 1
+                continue
+            value = store.as_of(series_id, None, start=last)[-1].value
+            print(f"{meta.canonical_code:<48} {last}  {value}  {meta.units}")
+    return 1 if missing else 0
+
+
 def _raw_zone() -> RawZone | None:
     raw_dir = get_settings().raw_dir
     return RawZone(raw_dir) if raw_dir else None
@@ -355,6 +399,16 @@ def main(argv: list[str] | None = None) -> int:
         "check-data", help="check every data source is still published on schedule"
     )
     check.set_defaults(func=_check_data)
+
+    sub.add_parser(
+        "sync-taxonomy", help="set every series' canonical code and pillar; refresh countries"
+    ).set_defaults(func=_sync_taxonomy)
+    sub.add_parser(
+        "build-calendar", help="build the economic calendar from the point-in-time store"
+    ).set_defaults(func=_build_calendar)
+    sub.add_parser(
+        "seed-benchmarks", help="code the 15 benchmark G20/GCC indicators and show their values"
+    ).set_defaults(func=_seed_benchmarks)
 
     bias = sub.add_parser(
         "scorecard-bias",

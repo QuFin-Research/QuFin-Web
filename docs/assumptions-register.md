@@ -208,6 +208,23 @@ derived to a known kind, matching their declarations.
 | A 403 or 429 means "stop for this run" | Design choice | Rule 28; a one-off 403 on a single series therefore also stops the rest of that run, which is the safer failure |
 | Treasury page size 10,000 and CFTC page size 5,000 are accepted by the suppliers | Unverified | Both load today; neither supplier's page states a maximum |
 
+## 4f. Canonical taxonomy and calendar (ADR 0007)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Each series' pillar: its concept's override, else its old dimension (listed in `app/data/taxonomy.py`) | Design choice | Surveys, consumption, financial conditions, the dollar and the employment cost index were filed under the wrong dimension; the overrides move them. Not scored |
+| A vintage dated D is known from D+1 (UTC) when a timestamp is asked for | Design choice | Vintages carry dates, not times; a timestamp on D could precede the release (rule 9: err late) |
+| The euro area is coded `EMU` | Design choice | ISO has no code for it; the IMF and OECD treat it as an aggregate |
+| G7, G20 and GCC membership | Verified | Public memberships, stable |
+| The emerging-market flag follows the IMF World Economic Outlook split (advanced: Korea, Czech Republic, Hong Kong, Singapore; emerging: Hungary, Poland, China, India, Mexico, Brazil, Turkey, South Africa, Argentina, Indonesia, Russia, the Gulf states) | Unverified | Written from memory of the WEO groups, not re-read on imf.org |
+| Central banks and currencies per country | Unverified | Standard public facts, not re-checked source by source |
+| OECD amplitude adjustment (`AA`) and working-day adjustment (`SWDA`) keep their own codes | Design choice | They are not plain seasonal adjustment |
+| The first print is the calendar's "actual" | Design choice | A later revision is a vintage, not the release figure a consensus is compared with |
+| Daily series are left out of the calendar | Design choice | Rates and prices are not scheduled releases |
+| Calendar release dates are the stored first-publication dates; scheduled ones use the usual lag | Design choice | Rule 9: derived, erring late; the time of day is empty until recorded |
+| Consensus and surprise | Not available | Trading Economics and Forex Factory consensus is proprietary and may not be scraped (rule 28); needs a licensed feed |
+| The surprise score is standardised by the spread of that series' own past surprises, from at least 8 | Design choice | Needs consensus history; empty otherwise |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.
