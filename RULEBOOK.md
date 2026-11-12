@@ -10,7 +10,7 @@ QuFin is a data-extensive trading assistant. Its trading ideas, scores and backt
 data, so the rules below put data integrity first, then comparability, then transparency.
 
 Contents: Part 1 data integrity (rules 1-19) | Part 2 comparison, change measures and weights (rules
-20-23) | Part 3 scorecard correction mechanism (S1-S9) | Part 4 ownership, documentation and conduct (rules 24-27) |
+20-23) | Part 3 scorecard correction mechanism (S1-S9) | Part 4 ownership, documentation and conduct (rules 24-28) |
 Change log. Related documents: `private/scorecard-methodology.md` (proprietary, not committed while this repository is public), `docs/assumptions-register.md`,
 `docs/indicator-names.md`, `docs/data-provenance.md`, `docs/licence-register.md`,
 `docs/release-calendars.md`.
@@ -218,6 +218,28 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     retrieved. A connector is not merged until its row is there, and a change to either process
     updates the document in the same pull request.
 
+28. **Respect every data supplier's policy: no crawler, agent or connector may ever be banned.**
+    Before a connector is written, the supplier's terms of use, API documentation and published
+    limits (requests per period, series or rows per request, concurrent connections, bulk-download
+    rules, required identification or attribution) are read on the supplier's own site, and what was
+    found is recorded with the date read in `docs/data-connections.md` (rate limits) and
+    `docs/licence-register.md`. The connector is then built to those limits, not to what happens to
+    work:
+    - It stays inside the stated limits with margin. Where the supplier states none, it makes the
+      fewest and smallest requests that do the job: several series per request where the API allows,
+      bulk files rather than many small calls, no more history than is needed, and pauses between
+      requests.
+    - It uses the official API or bulk download only, never page scraping where an API exists, and
+      identifies itself with a descriptive `User-Agent`.
+    - It honours `Retry-After`, backs off on 429 and 5xx, and when the supplier refuses (403 or 429
+      that outlasts the retries) it stops asking for that run instead of retrying into a ban.
+    - It runs no more often than the data changes: a monthly series is not fetched hourly.
+    - A need that the supplier's limits cannot meet goes to the owner, to change the plan or the
+      source. It is never met by rotating addresses or keys, splitting traffic to hide it, or any
+      other way round a limit.
+    - A connector is not merged until its row in `docs/data-connections.md` states the limits and how
+      the code keeps within them, and tests show the identification and the stop on refusal.
+
 ## Change log
 
 | Date | Rule | Change |
@@ -228,3 +250,4 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
 | 6 Nov 2026 | 18, 19 | Names come from the data and calendar sites, not memory; one global name and acronym per indicator |
 | 6 Nov 2026 | 27 | Added: every data connection is documented in `docs/data-connections.md` |
 | 6 Nov 2026 | 27 | Widened: ingestion and retrieval are documented in `docs/data-pipeline.md` |
+| 12 Nov 2026 | 28 | Added: every connector follows its supplier's published limits and policies and must never be banned (owner instruction) |
