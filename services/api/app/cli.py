@@ -9,6 +9,7 @@ uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
+uv run python -m app.cli ingest-bis                  # BIS policy rates, exchange rates, credit
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
@@ -22,6 +23,7 @@ import logging
 import sys
 from datetime import UTC, date, datetime, timedelta
 
+from app.connectors.bis import BisClient
 from app.connectors.bls import BlsClient
 from app.connectors.cftc import CftcClient
 from app.connectors.ecb import EcbClient
@@ -34,6 +36,7 @@ from app.core.config import get_settings
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import (
+    ingest_bis,
     ingest_bls,
     ingest_cftc,
     ingest_ecb,
@@ -163,6 +166,20 @@ def _ingest_imf(args: argparse.Namespace) -> int:
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<16} {status}")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_bis(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "bis"]
+    with BisClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_bis.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<22} {status}")
     print()
     print(format_report(checks))
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
@@ -300,6 +317,18 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first month to load (default {DEFAULT_OBSERVATION_START})",
     )
     imf.set_defaults(func=_ingest_imf)
+
+    bis = sub.add_parser(
+        "ingest-bis", help="ingest BIS policy rates, effective exchange rates and credit-to-GDP"
+    )
+    bis.add_argument("series", nargs="*", help="series ids (default: every BIS series)")
+    bis.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help=f"first period to load (default {DEFAULT_OBSERVATION_START})",
+    )
+    bis.set_defaults(func=_ingest_bis)
 
     cftc = sub.add_parser("ingest-cftc", help="ingest CFTC Commitments of Traders reports")
     cftc.add_argument("symbols", nargs="*", help="QuFin symbols (default: every mapped asset)")

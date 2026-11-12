@@ -13,6 +13,7 @@ from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal
 
+from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES
 from app.data.cycle_classification import QUFIN_CYCLE
 from app.data.reserves_ids import FRED_RESERVES, RESERVES
 
@@ -42,7 +43,7 @@ DEFAULT_OBSERVATION_START = date(2000, 1, 1)
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["bls", "eia", "ecb", "fred", "imf", "oecd", "treasury"]
+    source: Literal["bis", "bls", "eia", "ecb", "fred", "imf", "oecd", "treasury"]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -236,6 +237,29 @@ def _oecd(series_id: str) -> CatalogSeries:
     )
 
 
+_BIS_LICENCE = (
+    "BIS statistics may be used if the BIS is cited as the source, the use is not misleading "
+    "or implying endorsement, and their inclusion in a commercial product adds no charge for "
+    "users (https://data.bis.org/help/legal)."
+)
+
+
+def _bis(series_id: str) -> CatalogSeries:
+    """A BIS series (policy rate, effective exchange rate, credit), not scored.
+
+    FRED's copies of some of these lag the BIS API by months, so the API is read directly.
+    """
+    measure = MEASURES[BIS_SERIES[series_id][0]]
+    return CatalogSeries(
+        series_id,
+        "bis",
+        BIS_COUNTRIES[series_id],
+        measure.dimension,
+        change=measure.change,
+        licence_note=_BIS_LICENCE,
+    )
+
+
 def _reserves(series_id: str) -> CatalogSeries:
     """Reserves excluding gold: an amount in US dollars (percent change), not scored."""
     if series_id in FRED_RESERVES:
@@ -362,6 +386,8 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _ea("BSI.M.U2.Y.V.M30.X.1.U2.2300.Z01.E", "policy"),  # M3 money supply, stock, SA
     # --- Official reserves excluding gold (P1-21), not scored -----------------------------
     *(_reserves(series_id) for series_id in RESERVES),
+    # --- BIS: policy rates, effective exchange rates, credit-to-GDP (P1-22), not scored
+    *(_bis(series_id) for series_id in BIS_SERIES),
     # --- OECD leading indicators and confidence (P1-20), not scored -------------------
     *(_oecd(series_id) for series_id in OECD_SERIES),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------

@@ -14,6 +14,7 @@ economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 
 from dataclasses import dataclass
 
+from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES
 from app.data.macro_catalog import BY_ID, OECD_SERIES
 from app.data.reserves_ids import RESERVES
 
@@ -40,6 +41,8 @@ ACRONYMS: dict[str, str] = {
     "CLI": "Composite Leading Indicator",
     "BCI": "Business Confidence Index",
     "CCI": "Consumer Confidence Index",
+    "NEER": "Nominal Effective Exchange Rate",
+    "REER": "Real Effective Exchange Rate",
 }
 
 # Local names for an indicator that has a global name. They belong in the official title and
@@ -211,6 +214,22 @@ CONCEPTS: dict[str, Concept] = {
     "policy_rate": Concept(
         "Policy Interest Rate",
         "The central bank's overnight rate, which sets the cost of money.",
+    ),
+    "nominal_effective_exchange_rate": Concept(
+        "NEER – Nominal Effective Exchange Rate",
+        "A currency's value against a trade-weighted basket of its partners; higher is stronger.",
+    ),
+    "real_effective_exchange_rate": Concept(
+        "REER – Real Effective Exchange Rate",
+        "Trade-weighted currency value adjusted for price gaps; higher means costlier exports.",
+    ),
+    "credit_to_gdp_ratio": Concept(
+        "Credit-to-GDP Ratio",
+        "Private-sector debt as a share of the economy; very high levels leave it fragile.",
+    ),
+    "credit_to_gdp_gap": Concept(
+        "Credit-to-GDP Gap",
+        "How far private credit runs above its trend; a large gap warns of financial stress.",
     ),
     "yield_2y": Concept(
         "2-Year Government Bond Yield",
@@ -520,3 +539,15 @@ SERIES_CONCEPTS |= {
 }
 
 SERIES_CONCEPTS |= {(country, series_id): "fx_reserves" for series_id, country in RESERVES.items()}
+
+_BIS_CONCEPT = {
+    "CBPOL": "policy_rate",
+    "NEER": "nominal_effective_exchange_rate",
+    "REER": "real_effective_exchange_rate",
+    "CREDIT": "credit_to_gdp_ratio",
+    "CREDGAP": "credit_to_gdp_gap",
+}
+SERIES_CONCEPTS |= {
+    (BIS_COUNTRIES[series_id], series_id): _BIS_CONCEPT[code]
+    for series_id, (code, _area) in BIS_SERIES.items()
+}

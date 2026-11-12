@@ -78,5 +78,9 @@ the official producer's term or the name most sites share; US spelling for US-pu
 | Unemployment Rate | Unemployment Rate | Unemployment Rate | Unemployment Rate |
 | WEI – Weekly Economic Index | Weekly Economic Index (Lewis-Mertens-Stock) | Weekly Economic Index | - |
 | Yield Curve (10-Year minus 3-Month) | 10-Year Treasury Constant Maturity Minus 3-Month Treasury Constant Mat | - | - |
+| Credit-to-GDP Gap | BIS Data Portal: "Credit-to-GDP gaps (actual-trend)"; FRED not searched for a gap series | not checked (12 Nov 2026) | - |
+| Credit-to-GDP Ratio | Total Credit to Private Non-Financial Sector, Adjusted for Breaks, for United Kingdom (QGBPAM770A, BIS); BIS: "Credit-to-GDP ratios (actual data)" | not checked (12 Nov 2026) | - |
+| NEER – Nominal Effective Exchange Rate | Broad Effective Exchange Rate for United Kingdom (NBGBBIS, BIS) | not checked (12 Nov 2026) | - |
+| REER – Real Effective Exchange Rate | Real Broad Effective Exchange Rate for United Kingdom (RBGBBIS, BIS) | not checked (12 Nov 2026) | - |
 
 Currency pairs and commodity spot prices keep their market symbols (EUR/USD, WTI, Brent).
