@@ -9,6 +9,7 @@ uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
+uv run python -m app.cli ingest-ons                  # UK ONS: unemployment, real GDP, core CPI
 uv run python -m app.cli ingest-bis                  # BIS policy rates, exchange rates, credit
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
 uv run python -m app.cli sync-taxonomy               # canonical codes, pillars and countries
@@ -34,6 +35,7 @@ from app.connectors.eia import EiaClient
 from app.connectors.fred import FredClient
 from app.connectors.imf import ImfClient
 from app.connectors.oecd import OecdClient
+from app.connectors.ons import OnsClient
 from app.connectors.treasury import TreasuryClient
 from app.core.config import get_settings
 from app.data.benchmarks import BENCHMARK_SERIES
@@ -48,6 +50,7 @@ from app.jobs import (
     ingest_eia,
     ingest_imf,
     ingest_oecd,
+    ingest_ons,
     ingest_treasury,
     sync_taxonomy,
 )
@@ -172,6 +175,20 @@ def _ingest_imf(args: argparse.Namespace) -> int:
         checks = check_macro(session, _today())
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<16} {status}")
+    print()
+    print(format_report(checks))
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_ons(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "ons"]
+    with OnsClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_ons.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<16} {status}")
     print()
     print(format_report(checks))
@@ -361,6 +378,16 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first month to load (default {DEFAULT_OBSERVATION_START})",
     )
     imf.set_defaults(func=_ingest_imf)
+
+    ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
+    ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")
+    ons.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help="first period to load (default: each series' own history, 1990 for new series)",
+    )
+    ons.set_defaults(func=_ingest_ons)
 
     bis = sub.add_parser(
         "ingest-bis", help="ingest BIS policy rates, effective exchange rates and credit-to-GDP"

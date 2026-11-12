@@ -8,7 +8,9 @@ the country from `COUNTRIES`, the pillar from the catalog, the indicator from th
 Two series with the same code would be duplicates (rule 16), so the code is unique in the database.
 
 Pillars are the eight macro pillars of the scorecard plus two reference classes that are stored
-and shown but never scored: ENERGY (oil supply and demand) and MARKETS (reference prices).
+and shown but never scored: ENERGY (oil supply and demand) and MARKETS (reference prices); and
+HOUSING (residential property prices), which is stored and shown until the scorecard has a
+housing pillar.
 """
 
 import re
@@ -30,6 +32,7 @@ Pillar = Literal[
     "FISCAL",
     "ENERGY",
     "MARKETS",
+    "HOUSING",
 ]
 PILLARS: tuple[str, ...] = (
     "GROWTH",
@@ -41,7 +44,7 @@ PILLARS: tuple[str, ...] = (
     "TRADE",
     "FISCAL",
 )
-REFERENCE_CLASSES: tuple[str, ...] = ("ENERGY", "MARKETS")
+REFERENCE_CLASSES: tuple[str, ...] = ("ENERGY", "MARKETS", "HOUSING")
 
 # The catalog's `dimension` (what the live scorecard uses today) onto the eight pillars.
 DIMENSION_PILLAR: dict[str, str] = {
@@ -54,6 +57,7 @@ DIMENSION_PILLAR: dict[str, str] = {
     "fiscal": "FISCAL",
     "energy": "ENERGY",
     "markets": "MARKETS",
+    "housing": "HOUSING",
 }
 
 # Where today's coarse dimension puts an indicator in the wrong pillar. Surveys were filed under

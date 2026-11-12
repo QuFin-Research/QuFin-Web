@@ -155,7 +155,7 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 
 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
-    assert len(BIS_SERIES) == 115
+    assert len(BIS_SERIES) == 153  # 115 + 12 (DE, FR, IT) + Kuwait policy rate + 25 property prices
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
@@ -169,7 +169,12 @@ def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
 
 def test_economies_left_out_stay_out():
     ids = set(BIS_SERIES)
-    assert not {i for i in ids if i.endswith("_US") or i.endswith("_RU")}
+    # The US is carried by FRED with vintages, except property prices: FRED's copy of the BIS index
+    # (not seasonally adjusted, with vintages) ran a quarter behind the BIS on 13 Nov 2026.
+    assert not {i for i in ids if i.endswith("_US") and not i.startswith("BIS_SPP_")}
+    assert not {i for i in ids if i.endswith("_RU")}
+    assert "BIS_CBPOL_DE" not in ids and "BIS_CBPOL_FR" not in ids  # the ECB rate, rule 16
+    assert "BIS_CBPOL_KW" in ids and "BIS_CBPOL_QA" not in ids
     assert "BIS_CBPOL_XM" not in ids  # the ECB deposit rate is stored already (rule 16)
     assert "BIS_CBPOL_SG" not in ids
     assert "BIS_CBPOL_AE" not in ids
@@ -541,7 +546,7 @@ def test_ingest_bis_command_is_registered():
 
 def test_every_measure_has_a_verified_flow_and_a_known_area_dimension():
     assert json.dumps(sorted(MEASURES)) == json.dumps(
-        ["CBPOL", "CREDGAP", "CREDIT", "NEER", "REER"]
+        ["CBPOL", "CREDGAP", "CREDIT", "NEER", "REER", "SPP"]
     )
     for measure in MEASURES.values():
         assert "{areas}" in measure.key

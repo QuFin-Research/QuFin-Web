@@ -16,7 +16,7 @@ FRED_RESERVES: dict[str, str] = {
 # QuFin id -> IMF area, for the economies FRED does not carry.
 IMF_RESERVES: dict[str, str] = {
     f"IMF_RES_{iso3}": iso3
-    for iso3 in ("NZL", "CHE", "NOR", "SWE", "DNK", "CZE", "HUN", "SGP", "ARE")
+    for iso3 in ("NZL", "CHE", "NOR", "SWE", "DNK", "CZE", "HUN", "SGP", "ARE", "KWT", "QAT")
 }
 IMF_ISO2 = {
     "NZL": "NZ",
@@ -28,6 +28,8 @@ IMF_ISO2 = {
     "HUN": "HU",
     "SGP": "SG",
     "ARE": "AE",
+    "KWT": "KW",
+    "QAT": "QA",
 }
 
 # Every reserves series -> country.

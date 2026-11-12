@@ -82,7 +82,7 @@ def test_indicators_filed_under_the_wrong_dimension_get_their_real_pillar():
     assert pillar("US", "UMCSENT") == "SURVEYS"
     assert pillar("US", "RRSFS") == "CONSUMPTION"
     assert pillar("US", "NFCI") == "MONETARY"
-    assert pillar("US", "CIS1010000000000I") == "LABOR"  # employment cost index, was external
+    assert pillar("US", "ECIALLCIV") == "LABOR"  # employment cost index, was external
 
 
 def test_every_catalog_country_is_in_the_taxonomy_and_codes_are_unique_in_it():

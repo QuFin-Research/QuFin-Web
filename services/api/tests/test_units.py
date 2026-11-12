@@ -39,6 +39,16 @@ def test_every_catalog_series_declares_a_known_unit_kind_and_currency():
         ("Percent of GDP", "US", "ratio", None),
         ("Thousands of Persons", "US", "count", None),
         ("Thousand Barrels per Day", "US", "other", None),  # EIA
+        ("Billions of Chained 2015 Yen", "JP", "amount_currency", "JPY"),  # FRED
+        (
+            "Millions of Domestic Currency",
+            "CA",
+            "amount_currency",
+            "CAD",
+        ),  # FRED: the country's own
+        ("Millions of Pounds, chained volume measures", "GB", "amount_currency", "GBP"),  # ONS
+        ("Dollars per Pound", "US", "price_per_unit", "USD"),  # a weight, not sterling
+        ("Millions of Domestic Currency", "ZZ", "unknown", None),  # no such country: not guessed
         ("Dollars", "CA", "unknown", None),  # which dollar is not stated: never guessed
         ("Kilotonnes of oil equivalent", "US", "unknown", None),
     ],

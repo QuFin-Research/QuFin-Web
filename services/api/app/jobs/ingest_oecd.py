@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.connectors.oecd import CLI_FLOW, OecdClient
 from app.connectors.sdmx import SdmxError
-from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, OECD_SERIES
+from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, OECD_SERIES, start_for
+from app.data.macro_ids import OECD_MACRO, UNE_FLOW, UNE_KEY
 from app.data.oecd_calendar import oecd_release
 from app.jobs.ingest_fred import IngestResult
 from app.stores.macro import MacroStore, SeriesMeta
@@ -18,6 +19,7 @@ log = logging.getLogger(__name__)
 
 PUBLISHER = "OECD (from national sources)"
 RELEASE = "OECD Composite Leading Indicators"
+UNE_RELEASE = "OECD Harmonised Unemployment Rates"
 MEASURE_TITLES = {
     "LI": "Composite leading indicator",
     "BCICP": "Business confidence indicator",
@@ -51,23 +53,28 @@ def ingest(
 ) -> list[IngestResult]:
     today = today or datetime.now(UTC).date()
     wanted = list(series_ids)
-    specs = {sid: OECD_SERIES[sid] for sid in wanted if sid in OECD_SERIES and sid in BY_ID}
+    known = {sid for sid in wanted if sid in BY_ID and (sid in OECD_SERIES or sid in OECD_MACRO)}
     results = [
         IngestResult(sid, None, "not an OECD series in the catalog")
         for sid in wanted
-        if sid not in specs
+        if sid not in known
     ]
-    if not specs:
+    if not known:
         return results
     store = MacroStore(session)
-    for i, (series_id, (area, measure)) in enumerate(specs.items()):
+    for i, series_id in enumerate(sid for sid in wanted if sid in known):
         if i:
             sleep(PAUSE_SECONDS)  # the OECD rate-limits its API
         # One fully specified key per request: the OECD returns broken partial histories for
         # multi-series queries (checked 6 Nov 2026), so they are never used.
-        key = f"{area}.M.{measure}.{UNIT}..{ADJUSTMENT}.{TRANSFORMATION}..{METHODOLOGY}"
+        if series_id in OECD_MACRO:
+            flow, key = UNE_FLOW, UNE_KEY.format(area=OECD_MACRO[series_id].area)
+        else:
+            area, measure = OECD_SERIES[series_id]
+            flow = CLI_FLOW
+            key = f"{area}.M.{measure}.{UNIT}..{ADJUSTMENT}.{TRANSFORMATION}..{METHODOLOGY}"
         try:
-            fetched = client.series(CLI_FLOW, key, start)
+            fetched = client.series(flow, key, start_for(series_id, start))
             observations = [(p, v) for p, v in fetched.observations if v is not None]
             _check_complete(series_id, observations)
         except SdmxError as exc:
@@ -76,19 +83,27 @@ def ingest(
             results.append(IngestResult(series_id, None, str(exc)))
             continue
         entry = BY_ID[series_id]
+        if series_id in OECD_MACRO:
+            area = OECD_MACRO[series_id].area
+            title = f"Unemployment rate (ILO definition, ages 15 and over), {area}"
+            units, adjustment, release = "Percent", "Seasonally Adjusted", UNE_RELEASE
+        else:
+            title = f"{MEASURE_TITLES[measure]} (amplitude adjusted), {area}"
+            units, adjustment = "Index, long-term average = 100", "Amplitude Adjusted (OECD)"
+            release = RELEASE
         meta = SeriesMeta(
             id=series_id,
             source="oecd",
-            title=f"{MEASURE_TITLES[measure]} (amplitude adjusted), {area}",
-            units="Index, long-term average = 100",
+            title=title,
+            units=units,
             frequency="Monthly",
-            seasonal_adjustment="Amplitude Adjusted (OECD)",
+            seasonal_adjustment=adjustment,
             country=entry.country,
             dimension=entry.dimension,
             last_updated=None,
             cycle=entry.cycle,
             source_name=PUBLISHER,
-            release_name=RELEASE,
+            release_name=release,
         )
         rows = store.record_latest(meta, observations, oecd_release, today)
         log.info("Ingested %s: %d new or revised months", series_id, rows)

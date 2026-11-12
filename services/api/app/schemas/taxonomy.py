@@ -100,3 +100,49 @@ class EconomicEvent(ApiModel):
     surprise_score: float | None = Field(
         description="Standardised actual minus consensus; empty without consensus and history"
     )
+
+
+class ComparisonPoint(ApiModel):
+    period: date
+    value: float
+
+
+class ComparisonRow(ApiModel):
+    iso3: str
+    country: str
+    series_id: str = Field(description="The source's own ticker")
+    canonical_code: str | None
+    publisher: str | None
+    source_name: str | None
+    period: date = Field(description="The latest period, on the comparison basis")
+    value: float = Field(description="The latest value on the comparison basis")
+    change_3m: float | None = Field(description="Points against three months earlier")
+    change_12m: float | None = Field(description="Points against twelve months earlier")
+    converted: bool = Field(
+        description="True when the stored series is not on the comparison basis and was converted"
+        " (the US price index becomes its year-on-year change)"
+    )
+    stored_as: str = Field(description="The units the series is stored in, as the source states")
+    usable: bool = Field(description="False when the series is overdue; it is shown, not ranked")
+    status_note: str = Field(description="Release status in words")
+    history: list[ComparisonPoint] = Field(description="The last 36 months on the same basis")
+
+
+class MissingCountry(ApiModel):
+    iso3: str
+    name: str
+
+
+class Comparison(ApiModel):
+    data: DataOrigin = Field(default="live", description=ORIGIN_DESCRIPTION)
+    concept: str
+    name: str
+    explanation: str
+    basis: str = Field(description="What the compared number is, e.g. Year-on-year change")
+    unit: str
+    method: str = Field(description="How each country's stored series was brought to the basis")
+    higher_is: str
+    rows: list[ComparisonRow] = Field(description="Ranked, highest value first; unusable last")
+    missing: list[MissingCountry] = Field(
+        description="Countries in the taxonomy with no series yet"
+    )

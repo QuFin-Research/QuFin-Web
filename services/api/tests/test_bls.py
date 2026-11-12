@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from app.connectors.bls import BlsClient, BlsError, _period_to_date
-from app.data.macro_catalog import BY_ID
+from app.data.macro_catalog import BY_ID, CatalogSeries, _bls
 from app.jobs import ingest_bls
 from app.stores.macro import MacroStore
 from tests.test_macro_api import db_session  # noqa: F401  (fixture)
@@ -149,9 +149,19 @@ def test_response_that_is_not_json_is_an_error():
 # --- catalog and release dates ----------------------------------------------------------------
 
 
-def test_only_series_that_exist_at_bls_are_in_the_catalog():
-    """Both original ids were rejected by BLS ("Series does not exist")."""
-    assert [s.id for s in BY_ID.values() if s.source == "bls"] == [ECI]
+@pytest.fixture(autouse=True)
+def bls_series_in_catalog(monkeypatch):
+    """The catalog carries no BLS series (FRED has them, Rule H); the connector is kept for a
+    series FRED lacks, so its tests register ECI as a BLS series for their duration."""
+    entry: CatalogSeries = _bls(ECI)
+    monkeypatch.setitem(BY_ID, ECI, entry)
+
+
+def test_the_catalog_holds_no_bls_series_that_fred_already_carries(monkeypatch):
+    """Both original ids were rejected by BLS; ECI is on FRED as ECIALLCIV (SA, vintages)."""
+    monkeypatch.delitem(BY_ID, ECI)
+    assert [s.id for s in BY_ID.values() if s.source == "bls"] == []
+    assert "ECIALLCIV" in BY_ID and BY_ID["ECIALLCIV"].source == "fred"
     assert set(ingest_bls.SERIES) == {ECI}
     assert "CIU0000000000" not in BY_ID
     assert "JTS0000000000" not in BY_ID

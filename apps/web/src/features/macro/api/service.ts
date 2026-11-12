@@ -11,10 +11,16 @@
 
 import { apiClient, isApiConfigured } from '@/lib/api-client';
 import type {
+  Comparison,
+  ComparableConcept,
   MacroRevisionHistory,
   MacroSeriesData,
   MacroSeriesFilters,
-  MacroSeriesSummary
+  MacroSeriesSummary,
+  StudioCatalog,
+  StudioCountry,
+  StudioQuery,
+  StudioResult
 } from './types';
 
 export const macroAvailable = isApiConfigured;
@@ -39,4 +45,31 @@ export async function getMacroRevisions(id: string, period: string): Promise<Mac
   return apiClient<MacroRevisionHistory>(
     `/v1/macro/series/${encodeURIComponent(id)}/revisions?period=${encodeURIComponent(period)}`
   );
+}
+
+export async function getComparison(concept: ComparableConcept): Promise<Comparison> {
+  return apiClient<Comparison>(`/v1/macro/compare/${concept}`);
+}
+
+export async function getStudioCatalog(): Promise<StudioCatalog> {
+  return apiClient<StudioCatalog>('/v1/studio/catalog');
+}
+
+export async function getStudioCountries(): Promise<StudioCountry[]> {
+  return apiClient<StudioCountry[]>('/v1/macro/countries');
+}
+
+export async function getStudio(query: StudioQuery): Promise<StudioResult> {
+  const params = new URLSearchParams();
+  if (query.frequency) params.set('frequency', query.frequency);
+  params.set('metric', query.metric);
+  params.set('years', String(query.years));
+  if (query.mode === 'countries') {
+    params.set('concept', query.concept);
+    query.countries.forEach((c) => params.append('countries', c));
+    return apiClient<StudioResult>(`/v1/studio/compare?${params}`);
+  }
+  params.set('country', query.country);
+  query.seriesIds.forEach((id) => params.append('seriesIds', id));
+  return apiClient<StudioResult>(`/v1/studio/overlay?${params}`);
 }

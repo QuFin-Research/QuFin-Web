@@ -62,6 +62,22 @@ export const navGroups: NavGroup[] = [
         items: []
       },
       {
+        title: 'Compare countries',
+        url: '/dashboard/compare',
+        icon: 'world',
+        isActive: false,
+        shortcut: ['c', 'c'],
+        items: []
+      },
+      {
+        title: 'Comparison studio',
+        url: '/dashboard/studio',
+        icon: 'adjustments',
+        isActive: false,
+        shortcut: ['s', 's'],
+        items: []
+      },
+      {
         title: 'Positioning',
         url: '/dashboard/positioning',
         icon: 'teams',
@@ -101,6 +117,20 @@ export const navGroups: NavGroup[] = [
         icon: 'notification',
         isActive: false,
         shortcut: ['n', 'n'],
+        items: []
+      }
+    ]
+  },
+  {
+    label: 'Admin',
+    items: [
+      {
+        title: 'Data health',
+        url: '/dashboard/admin/data-health',
+        icon: 'shield',
+        isActive: false,
+        shortcut: ['d', 'h'],
+        access: { role: 'admin' },
         items: []
       }
     ]

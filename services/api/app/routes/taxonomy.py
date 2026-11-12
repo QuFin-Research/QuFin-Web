@@ -10,10 +10,23 @@ from sqlalchemy import select
 from app.core.auth import DbSession
 from app.core.clock import Today
 from app.data.indicator_concepts import COMPARED_AS, CONCEPTS, SERIES_CONCEPTS
+from app.data.macro_catalog import BY_ID
 from app.data.taxonomy import COUNTRY_BY_ISO2, COUNTRY_BY_ISO3, PILLARS, pillar_for
 from app.domain.comparability import concept_scales
+from app.domain.comparison import BASES, Point, on_basis, points_ago
 from app.domain.units import UnitInfo, classify
-from app.schemas.taxonomy import Country, EconomicEvent, Indicator, PillarScores, PitSeries
+from app.jobs.check_data import LAG_WINDOW, macro_status
+from app.schemas.taxonomy import (
+    Comparison,
+    ComparisonPoint,
+    ComparisonRow,
+    Country,
+    EconomicEvent,
+    Indicator,
+    MissingCountry,
+    PillarScores,
+    PitSeries,
+)
 from app.stores.macro import MacroStore
 from app.stores.point_in_time import CountryNotFoundError, PointInTime, SeriesNotFoundError
 from app.stores.taxonomy import CountryRow, calendar_window
@@ -112,6 +125,95 @@ def list_indicators(session: DbSession) -> list[Indicator]:
             for key in groups
         ),
         key=lambda i: (i.pillar, i.name),
+    )
+
+
+HISTORY_MONTHS = 36
+# Enough stored history for a year-on-year change at the start of the 36 months shown.
+COMPARE_LOOKBACK = timedelta(days=(HISTORY_MONTHS + 14) * 31)
+
+
+@router.get("/compare/{concept}", response_model=Comparison)
+def compare_countries(
+    session: DbSession,
+    today: Today,
+    concept: Annotated[str, Path(pattern=r"^[a-z0-9_]{2,64}$")],
+) -> Comparison:
+    """One indicator across countries on a common basis: CPI as year-on-year change,
+    unemployment as a share of the labour force. Never raw index levels or head counts."""
+    basis = BASES.get(concept)
+    if basis is None:
+        raise HTTPException(
+            status_code=404, detail=f"No comparison basis for {concept}: " + ", ".join(BASES)
+        )
+    store = MacroStore(session)
+    releases = store.first_releases(today - LAG_WINDOW)
+    rows: list[ComparisonRow] = []
+    covered: set[str] = set()
+    methods: set[str] = set()
+    for s in store.list_series():
+        if SERIES_CONCEPTS.get((s.meta.country, s.meta.id)) != concept:
+            continue
+        place = COUNTRY_BY_ISO2.get(s.meta.country)
+        if place is None:
+            continue
+        entry = BY_ID.get(s.meta.id)
+        as_change = bool(entry and entry.published_as_change)
+        vintages = store.as_of(s.meta.id, None, start=today - COMPARE_LOOKBACK)
+        stored = [Point(v.period, v.value) for v in vintages if v.value is not None]
+        points = on_basis(concept, stored, published_as_change=as_change)
+        if not points:
+            continue
+        covered.add(place.iso3)
+        converted = basis.from_level and not as_change
+        methods.add(
+            "converted from the index level to its year-on-year change"
+            if converted
+            else "published on this basis by the source"
+        )
+        latest = points[-1]
+        status = macro_status(s.meta, s.last_period, releases.get(s.meta.id, {}), today)
+        before_3, before_12 = points_ago(points, 3), points_ago(points, 12)
+        rows.append(
+            ComparisonRow(
+                iso3=place.iso3,
+                country=place.name,
+                series_id=s.meta.id,
+                canonical_code=s.meta.canonical_code,
+                publisher=s.meta.publisher,
+                source_name=s.meta.source_name,
+                period=latest.period,
+                value=round(latest.value, 2),
+                change_3m=round(latest.value - before_3.value, 2) if before_3 else None,
+                change_12m=round(latest.value - before_12.value, 2) if before_12 else None,
+                converted=converted,
+                stored_as=s.meta.units,
+                usable=status.freshness.usable,
+                status_note=status.freshness.reason,
+                history=[
+                    ComparisonPoint(period=p.period, value=round(p.value, 2))
+                    for p in points[-HISTORY_MONTHS:]
+                ],
+            )
+        )
+    rows.sort(key=lambda r: (not r.usable, -r.value))
+    return Comparison(
+        concept=concept,
+        name=CONCEPTS[concept].name,
+        explanation=CONCEPTS[concept].explanation,
+        basis=basis.label,
+        unit=basis.unit,
+        method="; ".join(sorted(methods)) if methods else "no series stored",
+        higher_is=basis.higher_is,
+        rows=rows,
+        missing=sorted(
+            (
+                MissingCountry(iso3=c.iso3, name=c.name)
+                for c in COUNTRY_BY_ISO2.values()
+                if c.iso3 not in covered
+            ),
+            key=lambda m: m.name,
+        ),
     )
 
 

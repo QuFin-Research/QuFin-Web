@@ -4,9 +4,13 @@ Checked live on 12 Nov 2026 against the BIS Data Portal API (v2). Every economy 
 current observation for its measure (latest month September or October 2026, latest quarter
 2026 Q1). Left out, and why:
 
-- the United States: FRED carries the US dollar indexes and credit series with vintages
-  (rule 17), and the Fed's own policy rate is stored from FRED;
-- the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16);
+- the United States, except for property prices: FRED carries the US dollar indexes and credit
+  series with vintages (rule 17), and the Fed's own policy rate is stored from FRED, but
+  FRED's copy of the BIS property price index (not seasonally adjusted, with vintages) was a
+  quarter behind the BIS API on 13 Nov 2026 (FRED to 2026 Q1, BIS to Q2), so the BIS is read;
+- the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16), so
+  Germany, France and Italy (the BIS has no policy rate for them) get effective exchange rates and
+  credit only;
 - Russia: the BIS stopped receiving Russian official data after 28 Feb 2022 and the coverage
   list marks Russia as undecided (docs/coverage-universe.md);
 - Singapore and the United Arab Emirates for policy rates (BIS has none) and the UAE for credit
@@ -20,6 +24,8 @@ read directly. Kept apart from the catalog so the cycle classification and tests
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
+
+from app.data.gap_ids import EURO_MEMBERS, KUWAIT_POLICY, SPP_AREAS
 
 Frequency = Literal["Monthly", "Quarterly"]
 
@@ -49,8 +55,9 @@ _POLICY_AREAS = (
     "KR",
     "SA",
 )
-_EER_AREAS = (*_POLICY_AREAS, "XM", "SG", "AE")
-_CREDIT_AREAS = (*_POLICY_AREAS, "XM", "SG")
+_POLICY_WITH_KUWAIT = (*_POLICY_AREAS, KUWAIT_POLICY)
+_EER_AREAS = (*_POLICY_AREAS, "XM", "SG", "AE", *EURO_MEMBERS)
+_CREDIT_AREAS = (*_POLICY_AREAS, "XM", "SG", *EURO_MEMBERS)
 
 _MARKET = "Market prices discount the future, so they turn before activity."
 
@@ -66,7 +73,7 @@ class BisMeasure:
     # The BIS UNIT_MEASURE attribute the units were verified against, when it publishes one.
     unit_measure: str | None
     areas: tuple[str, ...]
-    dimension: Literal["policy", "external"]
+    dimension: Literal["policy", "external", "housing"]
     cycle: Literal["leading", "lagging"]
     cycle_reason: str
     change: Literal["pct", "diff"]
@@ -86,7 +93,7 @@ MEASURES: dict[str, BisMeasure] = {
             "Central bank policy rate (end of month)",
             "Percent per annum",
             None,
-            _POLICY_AREAS,
+            _POLICY_WITH_KUWAIT,
             "policy",
             "lagging",
             "Central banks move rates after the data have turned.",
@@ -149,6 +156,20 @@ MEASURES: dict[str, BisMeasure] = {
             "A credit boom above trend signals financial stress ahead of the downturn it causes.",
             "diff",
             area_dimension="BORROWERS_CTY",
+        ),
+        BisMeasure(
+            "SPP",
+            "WS_SPP",
+            "Q.{areas}.N.628",
+            "Quarterly",
+            "Residential property prices, nominal index",
+            "Index, 2010=100",
+            None,
+            SPP_AREAS,
+            "housing",
+            "leading",
+            "Housing is the most rate-sensitive part of spending, so it turns before the economy.",
+            "pct",
         ),
     )
 }

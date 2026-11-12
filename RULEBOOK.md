@@ -240,6 +240,64 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     - A connector is not merged until its row in `docs/data-connections.md` states the limits and how
       the code keeps within them, and tests show the identification and the stop on refusal.
 
+## Part 5. Frequency, adjustment, vintages and charting (Rules A-H)
+
+These rules extend, and never loosen, rules 1-28. Where one seems to overlap another, the stricter
+reading applies.
+
+A. **Earliest signal for leading indicators.** For a leading indicator (jobless claims, retail
+   activity, financial conditions) the database ingests the earliest release frequency an
+   authoritative source publishes: weekly over monthly, monthly over quarterly. A lower-frequency
+   series never replaces a higher-frequency equivalent when both exist (rule 14).
+
+B. **Seasonal adjustment is declared and preferred.** Every series carries its adjustment as `SA`
+   or `NSA`. A comparison across countries or indicators prefers `SA` series where the source
+   publishes them, and never mixes `SA` with `NSA` silently: a mix is shown with an explicit
+   notice.
+
+C. **Vintages are kept and served.** Wherever the source provides revisions (FRED/ALFRED), the
+   store keeps every vintage and chart endpoints serve them. Charts show the latest revised path
+   by default while the vintage timestamps stay available, so a point-in-time backtest has no
+   look-ahead (rule 6).
+
+D. **One frequency when countries are compared.** Two or more countries on one indicator are
+   evaluated at the same frequency: the lowest common one among the selected series. Daily and
+   weekly series are aggregated down before anything is drawn or any change is computed, and a
+   series is never up-sampled. The aggregation depends on what the series is: period end for a
+   stock or level, period average for a rate or index, period sum for a flow.
+
+E. **`PoC` beside the actual value.** Every comparison offers the actual value and `PoC`
+   (percentage of change) over the chosen display frequency: week, month, quarter, half year or
+   year earlier. A rate, spread or any series that can be zero or negative changes in its own
+   units (points, or basis points), never in percent (rules 13 and 22). A series the source
+   already publishes as a change is not changed again.
+
+F. **Charting limits.** Mode 1 plots one indicator for at most 10 countries; mode 2 plots several
+   indicators for one country, as actual values on separate axes or as `PoC`. The cap, the
+   frequency alignment and both computations are enforced in the API; the web app renders the
+   selectors and the result.
+
+G. **The frequency filter shows only what is possible.** Both the user and admin dashboards offer
+   a frequency filter (daily, weekly, monthly, quarterly, semi-annual, annual) and a metric mode.
+   The filter allows only frequencies shared by every selected series, and states in words why a
+   frequency is unavailable.
+
+H. **FRED/ALFRED first, one source per series.** An indicator on FRED with `SA` values and
+   vintages comes from FRED only. A direct connector (BLS, IMF, OECD, ECB and so on) serves only
+   indicators or countries FRED lacks, lacks in `SA`, or lacks vintages for. Duplicates are
+   flagged and removed so each indicator and country resolves to one source id (rules 16 and 17).
+   The release check compares stored series from every source for this.
+   For the United Kingdom, where FRED has no current seasonally adjusted series with vintages, the
+   Office for National Statistics (`ons.gov.uk`, keyless, Open Government Licence) is the
+   first fallback, ahead of the OECD or the IMF. Each fallback records, in
+   `docs/assumptions-register.md`, what FRED was found to lack and when.
+
+I. **Deep history: from 1990.** Every series added from now on loads the deepest history its
+   source holds from `1990-01-01` (at the least from `2000-01-01` where the source has nothing
+   earlier), so models see full economic cycles. The start is declared per series in the catalog
+   (`history_start`), so a routine run does not trim it. Series already stored are not downloaded
+   again to deepen them unless the owner asks.
+
 ## Change log
 
 | Date | Rule | Change |
@@ -251,3 +309,5 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
 | 6 Nov 2026 | 27 | Added: every data connection is documented in `docs/data-connections.md` |
 | 6 Nov 2026 | 27 | Widened: ingestion and retrieval are documented in `docs/data-pipeline.md` |
 | 12 Nov 2026 | 28 | Added: every connector follows its supplier's published limits and policies and must never be banned (owner instruction) |
+| 12 Nov 2026 | A-H | Added Part 5: earliest signal, seasonal adjustment, vintages, one frequency per comparison, `PoC`, chart limits, frequency filter, FRED first (owner instruction) |
+| 13 Nov 2026 | H, I | H: UK fallback to the ONS where FRED lacks a current SA series with vintages. Added I: new series load from 1990 (owner instruction) |
