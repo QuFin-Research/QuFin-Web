@@ -200,6 +200,14 @@ derived to a known kind, matching their declarations.
 | BIS licence: free use if cited, not misleading, no extra charge to users, no advice | Verified | https://data.bis.org/help/legal, 12 Nov 2026; recorded in the catalog `licence_note` and `docs/licence-register.md` |
 | Names "NEER" and "REER" | Unverified | Standard acronyms and FRED's titles (`docs/indicator-names.md`); Trading Economics and Forex Factory not checked as rule 18 asks |
 
+## 4e. Supplier limits (rule 28)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The gaps between requests (`min_interval`) keep every connector below its supplier's stated limit | Verified for BLS, EIA, BIS terms; **Unverified** for FRED, OECD, ECB, IMF, Treasury, CFTC | Table in `docs/data-connections.md` section 2b: FRED, Treasury and CFTC state no number, OECD and ECB pages could not be read on 12 Nov 2026 |
+| A 403 or 429 means "stop for this run" | Design choice | Rule 28; a one-off 403 on a single series therefore also stops the rest of that run, which is the safer failure |
+| Treasury page size 10,000 and CFTC page size 5,000 are accepted by the suppliers | Unverified | Both load today; neither supplier's page states a maximum |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.

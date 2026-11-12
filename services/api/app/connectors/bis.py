@@ -16,19 +16,15 @@ from app.connectors.sdmx import SdmxClient, SdmxSeries, _check_identifier, parse
 
 BASE_URL = "https://stats.bis.org/api/v2"
 DATAFLOW_VERSION = "1.0"
-# Says who is asking, so the BIS can tell a steady client from a scraper (and contact us).
-USER_AGENT = "QuFin-data-client/1.0 (+https://github.com/QuFin-Research/QuFin-Web)"
 
 
 class BisClient(SdmxClient):
     source = "bis"
+    min_interval = 1.0  # rule 28: no published limit; one request per measure
 
     def __init__(self, base_url: str = BASE_URL, **kwargs: Any) -> None:
         kwargs.setdefault("timeout", 120.0)
-        kwargs.setdefault(
-            "headers",
-            {"Accept": "application/vnd.sdmx.data+json;version=1.0.0", "User-Agent": USER_AGENT},
-        )
+        kwargs.setdefault("headers", {"Accept": "application/vnd.sdmx.data+json;version=1.0.0"})
         super().__init__(base_url, **kwargs)
 
     def _data(self, flow: str, key: str, start: date | None) -> dict:

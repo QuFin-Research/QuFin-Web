@@ -497,7 +497,9 @@ def test_client_honours_retry_after_and_gives_up_after_its_retries():
         calls.append(1)
         return httpx.Response(429, headers={"Retry-After": "7"}, text="slow down")
 
-    client = BisClient(transport=httpx.MockTransport(handler), sleep=waits.append, max_retries=3)
+    client = BisClient(
+        transport=httpx.MockTransport(handler), sleep=waits.append, max_retries=3, min_interval=0
+    )
     with pytest.raises(SdmxError, match="429"):
         client.many("WS_CBPOL", "M.GB")
     assert waits == [7.0, 7.0, 7.0] and len(calls) == 4

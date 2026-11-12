@@ -43,6 +43,7 @@ def _period_to_date(year: str, period: str) -> str | None:
 
 class BlsClient(HttpSource):
     source = "bls"
+    min_interval = 0.5  # rule 28: published: 50 requests per 10 s, 500 queries a day with a key
     error = BlsError
 
     def __init__(
@@ -144,6 +145,7 @@ class BlsClient(HttpSource):
         """
         content = json.dumps(payload).encode()
         for attempt in range(self._max_retries + 1):
+            self._before_request()
             try:
                 res = self._client.post(path, content=content)
             except httpx.HTTPError as exc:
@@ -157,9 +159,7 @@ class BlsClient(HttpSource):
                 self._sleep(retry_delay(res.headers.get("retry-after"), attempt))
                 continue
             if res.status_code != 200:
-                raise self.error(
-                    f"{self.source} returned {res.status_code}: {self.describe_error(res)}"
-                )
+                raise self._fail(res)
             if self._raw is not None and raw_name:
                 self._raw.save(self.source, raw_name, res.content)
             try:

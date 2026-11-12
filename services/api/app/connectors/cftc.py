@@ -83,6 +83,7 @@ def parse_financial_report(row: dict) -> CotFinancialReport:
 
 class CftcClient(HttpSource):
     source = "cftc"
+    min_interval = 0.5  # rule 28: Socrata publishes no numbers; the shared pool throttles with 429
     error = CftcError
 
     def __init__(

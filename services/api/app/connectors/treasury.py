@@ -32,6 +32,7 @@ def _month(record_date: str) -> date:
 
 class TreasuryClient(HttpSource):
     source = "treasury"
+    min_interval = 0.5  # rule 28: no published limit
     error = TreasuryError
 
     def __init__(self, base_url: str = BASE_URL, **kwargs: Any) -> None:

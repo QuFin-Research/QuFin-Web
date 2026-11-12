@@ -125,3 +125,72 @@ def test_a_retry_after_http_date_does_not_crash_the_retry():
     )
     assert client.get_json("/", {}) == {"ok": True}
     assert waits == [0.0]
+
+
+# --- rule 28: respect the supplier ---------------------------------------------------------
+
+
+def _source(handler, **kwargs):
+    return HttpSource("https://example.test", transport=httpx.MockTransport(handler), **kwargs)
+
+
+def test_every_request_identifies_the_client():
+    seen = []
+    source = _source(lambda r: seen.append(r) or httpx.Response(200, json={}))
+    source.get_json("/x", {})
+    assert "QuFin" in seen[0].headers["user-agent"]
+
+
+def test_requests_keep_the_minimum_gap(monkeypatch):
+    clock = [100.0]
+    monkeypatch.setattr("app.connectors.base.time.monotonic", lambda: clock[0])
+    waits = []
+    source = _source(lambda r: httpx.Response(200, json={}), min_interval=2.0, sleep=waits.append)
+    source.get_json("/x", {})
+    source.get_json("/x", {})  # no time passed: must wait the whole gap
+    clock[0] += 5.0
+    source.get_json("/x", {})  # gap already elapsed: no wait
+    assert waits == [2.0]
+
+
+def test_every_connector_declares_a_gap_from_its_supplier_limits():
+    from app.connectors import bis, bls, cftc, ecb, eia, fred, imf, oecd, treasury
+
+    clients = [
+        bis.BisClient,
+        bls.BlsClient,
+        cftc.CftcClient,
+        ecb.EcbClient,
+        eia.EiaClient,
+        fred.FredClient,
+        imf.ImfClient,
+        oecd.OecdClient,
+        treasury.TreasuryClient,
+    ]
+    assert all(c.min_interval > 0 for c in clients)
+    assert oecd.OecdClient.min_interval >= 3.0  # the OECD limits requests per hour
+
+
+@pytest.mark.parametrize("status", [403, 429])
+def test_after_a_refusal_the_client_never_asks_again(status):
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(status, text="no")
+
+    source = _source(handler, sleep=lambda _s: None, max_retries=1)
+    with pytest.raises(SourceError, match=str(status)):
+        source.get_json("/x", {})
+    made = len(calls)
+    with pytest.raises(SourceError, match="not asking again"):
+        source.get_json("/y", {})
+    assert len(calls) == made  # the second call sent nothing
+
+
+def test_a_server_error_is_not_a_refusal():
+    answers = [httpx.Response(500), httpx.Response(500), httpx.Response(200, json={"ok": 1})]
+    source = _source(lambda r: answers.pop(0), sleep=lambda _s: None, max_retries=1)
+    with pytest.raises(SourceError, match="500"):
+        source.get_json("/x", {})
+    assert source.get_json("/x", {}) == {"ok": 1}

@@ -15,6 +15,7 @@ IL_FLOW = "IMF.STA,IL,13.0.1"
 
 class ImfClient(SdmxClient):
     source = "imf"
+    min_interval = 1.0  # rule 28: no published limit found
 
     def __init__(self, base_url: str = BASE_URL, **kwargs: Any) -> None:
         kwargs.setdefault("timeout", 120.0)
