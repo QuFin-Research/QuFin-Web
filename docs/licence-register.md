@@ -33,7 +33,8 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 |---|---|---|---|
 | BLS, BEA, Census | US primary releases | Public domain | Free (BLS, BEA keys) |
 | Eurostat | Euro-area macro beyond the ECB's copies | Reuse with attribution | Free |
-| IMF, World Bank, BIS | Cross-country macro, policy rates, REER | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |
+| IMF, World Bank | Cross-country macro | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |
+| BIS Data Portal (API and statistics) | Policy rates, effective exchange rates, credit-to-GDP, 24 economies | Use of the statistics is unrestricted if: the BIS is cited as the source; the use is not misleading or implying BIS endorsement; inclusion in a commercial product adds no charge for users; no investment advice is implied (https://data.bis.org/help/legal, read 12 Nov 2026). API: use the latest version; no reverse engineering; the BIS may limit access. **Condition for rule 7:** the BIS data must not be a separately priced item in a paid plan | "Source: Bank for International Settlements" | Free, keyless | Not scored |
 | Central banks and statistics offices (BoE, ONS, BoC, StatCan, RBA, ABS, RBNZ, Stats NZ, BoJ, SNB, …) | National macro | Most allow reuse with attribution; *to confirm* each | Free |
 | FRED H.10 daily FX, ECB reference rates | Daily FX reference prices | Public domain (H.10); ECB: reuse with attribution | Free |
 | Crypto exchange public APIs (via CCXT) | Crypto prices | Exchange terms apply to redistribution: *to confirm* | Free |

@@ -39,14 +39,14 @@ or a series is late.
    overwritten, and listed with its checksum in `manifest.jsonl`, so any stored number can be traced
    to the exact bytes it came from.
 3. **Parse** into dated values plus the units, frequency and adjustment as the publisher states
-   them. SDMX sources (ECB, OECD, later IMF and BIS) share one parser.
+   them. SDMX sources (ECB, OECD, IMF, BIS) share one parser.
 4. **Validate** before storing: the series must be complete over its range, the source's units must
    match the unit kind and currency QuFin declared (rule 23), and the data must not duplicate
    another stored series (rule 16).
 5. **Store point in time.** A row is one value of one period together with `realtime_start` and
    `realtime_end`, the first and last day that value was the published one. A revision closes the
    old row and opens a new one. Sources that serve their whole revision history (FRED/ALFRED) are
-   stored as served. Sources that serve only current values (EIA, ECB, OECD, Treasury, BLS) are stored by
+   stored as served. Sources that serve only current values (EIA, ECB, OECD, Treasury, BLS, BIS) are stored by
    comparing with what QuFin already holds: a new period is dated by its release, a changed value
    becomes a new row from the day QuFin sees it. Nothing is ever overwritten.
 6. **Store the description** of each series: source and publisher, official title, units, unit kind
@@ -110,4 +110,4 @@ series as actual values or as its change over a year (rule 22).
 - A multi-series chart endpoint that puts series on a common basis (rule 23) and converts currencies
   at a stated rate and date.
 - Per-person or per-organisation disclosure of the scorecard recipe (today one setting for all).
-- Connectors for the IMF, BIS, World Bank and central banks (backlog P1-21 to P1-24).
+- Connectors for the World Bank and central banks (backlog P1-23 and P1-24).

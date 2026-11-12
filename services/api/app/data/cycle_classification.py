@@ -10,6 +10,7 @@ A series without a cycle fails to load (macro_catalog.py), so a new series canno
 
 from typing import Literal
 
+from app.data.bis_ids import BIS_SERIES, MEASURES
 from app.data.reserves_ids import RESERVES
 
 Cycle = Literal["leading", "coincident", "lagging"]
@@ -83,4 +84,9 @@ QUFIN_CYCLE: dict[str, tuple[Cycle, str]] = {
     "WDIUPUS2": ("coincident", _PRODUCT),
     # --- BLS (P1-12) ----------------------------------------------------------------------------
     "CIS1010000000000I": ("lagging", "Wages and benefits follow price inflation with a lag."),
+    # --- BIS (P1-22) --------------------------------------------------------------------------
+    **{
+        series_id: (MEASURES[code].cycle, MEASURES[code].cycle_reason)
+        for series_id, (code, _area) in BIS_SERIES.items()
+    },
 }

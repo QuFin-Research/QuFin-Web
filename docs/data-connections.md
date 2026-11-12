@@ -44,11 +44,12 @@ this file; keys are named by the setting that holds them.
 | **OECD** Data Explorer | Composite leading indicator, business and consumer confidence for 14 economies | SDMX 2.1 REST `https://sdmx.oecd.org/public/rest/data/<flow>/<key>?format=jsondata` (section 3) | None | `ingest-oecd` | 34 |
 | **IMF** (International Liquidity) | Official reserves excluding gold, in US dollars, for the 9 economies FRED does not carry (FRED's copies are used for 12 more) | SDMX 2.1 REST `https://api.imf.org/external/sdmx/2.1/data/IMF.STA,IL,13.0.1/<area>.RXF11_REVS.USD.M?format=jsondata`; JSON only with `Accept: application/vnd.sdmx.data+json`, and the body starts with a byte-order mark; one series per request with a pause; no release dates (derived, `app/data/imf_calendar.py`) | None | `ingest-imf` | 9 |
 | **BLS** (US Bureau of Labor Statistics) | The Employment Cost Index (total compensation, civilian workers, seasonally adjusted), which FRED does not carry | REST `POST https://api.bls.gov/publicAPI/v2/timeseries/data/` with a JSON body (`seriesid`, `startyear`, `endyear`); history fetched in year windows (10 years keyless, 20 with a key) | Optional key: `QUFIN_BLS_API_KEY` (keyless works within 25 queries a day; 50 requests per 10 seconds) | `ingest-bls` | 1 |
+| **BIS** (Bank for International Settlements) Data Portal | Central bank policy rates (21 economies), nominal and real effective exchange rates (24), credit-to-GDP ratio and gap (23), for economies FRED carries late or not at all | SDMX REST API v2 `https://stats.bis.org/api/v2/data/dataflow/BIS/<flow>/1.0/<key>` (flows `WS_CBPOL`, `WS_EER`, `WS_CREDIT_GAP`), SDMX-JSON requested in the `Accept` header; one request per measure returns every economy | None | `ingest-bis` | 115 |
 | **US Treasury** Fiscal Data | Debt to the Penny, average interest rates, interest expense | REST `https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/...`, filters `record_date:gte:<date>`, paged | None | `ingest-treasury` | 3 |
 
-Total: 138 macro series and 15 positioning contracts (153 sources), each checked by `check-data`.
+Total: 253 macro series and 15 positioning contracts (268 sources), each checked by `check-data`.
 
-Not connected yet: BIS, World Bank and central-bank batch 1 (backlog P1-22 to P1-24).
+Not connected yet: World Bank and central-bank batch 1 (backlog P1-23 and P1-24).
 A BEA key exists in the local `.env` but has no connector: FRED carries those series
 (rule 17). BLS is connected only for the Employment Cost Index; JOLTS job openings stay on FRED
 (`JTSJOL`), because the same series from BLS would be a duplicate (rules 16 and 17). The licence status of every source is in `docs/licence-register.md`.

@@ -147,5 +147,120 @@ SERIES_UNITS: dict[str, tuple[str, str | None]] = {
     "IMF_RES_HUN": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
     "IMF_RES_SGP": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
     "IMF_RES_ARE": ("amount_currency", "USD"),  # U.S. Dollars (IMF UNIT=USD, in units)
+    "BIS_CBPOL_GB": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_JP": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_CA": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_AU": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_NZ": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_CH": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_NO": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_SE": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_DK": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_CZ": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_HU": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_PL": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_CN": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_IN": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_MX": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_BR": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_TR": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_ZA": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_HK": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_KR": ("rate_percent", None),  # Percent per annum
+    "BIS_CBPOL_SA": ("rate_percent", None),  # Percent per annum
+    "BIS_NEER_GB": ("index", None),  # Index, 2020=100
+    "BIS_NEER_JP": ("index", None),  # Index, 2020=100
+    "BIS_NEER_CA": ("index", None),  # Index, 2020=100
+    "BIS_NEER_AU": ("index", None),  # Index, 2020=100
+    "BIS_NEER_NZ": ("index", None),  # Index, 2020=100
+    "BIS_NEER_CH": ("index", None),  # Index, 2020=100
+    "BIS_NEER_NO": ("index", None),  # Index, 2020=100
+    "BIS_NEER_SE": ("index", None),  # Index, 2020=100
+    "BIS_NEER_DK": ("index", None),  # Index, 2020=100
+    "BIS_NEER_CZ": ("index", None),  # Index, 2020=100
+    "BIS_NEER_HU": ("index", None),  # Index, 2020=100
+    "BIS_NEER_PL": ("index", None),  # Index, 2020=100
+    "BIS_NEER_CN": ("index", None),  # Index, 2020=100
+    "BIS_NEER_IN": ("index", None),  # Index, 2020=100
+    "BIS_NEER_MX": ("index", None),  # Index, 2020=100
+    "BIS_NEER_BR": ("index", None),  # Index, 2020=100
+    "BIS_NEER_TR": ("index", None),  # Index, 2020=100
+    "BIS_NEER_ZA": ("index", None),  # Index, 2020=100
+    "BIS_NEER_HK": ("index", None),  # Index, 2020=100
+    "BIS_NEER_KR": ("index", None),  # Index, 2020=100
+    "BIS_NEER_SA": ("index", None),  # Index, 2020=100
+    "BIS_NEER_XM": ("index", None),  # Index, 2020=100
+    "BIS_NEER_SG": ("index", None),  # Index, 2020=100
+    "BIS_NEER_AE": ("index", None),  # Index, 2020=100
+    "BIS_REER_GB": ("index", None),  # Index, 2020=100
+    "BIS_REER_JP": ("index", None),  # Index, 2020=100
+    "BIS_REER_CA": ("index", None),  # Index, 2020=100
+    "BIS_REER_AU": ("index", None),  # Index, 2020=100
+    "BIS_REER_NZ": ("index", None),  # Index, 2020=100
+    "BIS_REER_CH": ("index", None),  # Index, 2020=100
+    "BIS_REER_NO": ("index", None),  # Index, 2020=100
+    "BIS_REER_SE": ("index", None),  # Index, 2020=100
+    "BIS_REER_DK": ("index", None),  # Index, 2020=100
+    "BIS_REER_CZ": ("index", None),  # Index, 2020=100
+    "BIS_REER_HU": ("index", None),  # Index, 2020=100
+    "BIS_REER_PL": ("index", None),  # Index, 2020=100
+    "BIS_REER_CN": ("index", None),  # Index, 2020=100
+    "BIS_REER_IN": ("index", None),  # Index, 2020=100
+    "BIS_REER_MX": ("index", None),  # Index, 2020=100
+    "BIS_REER_BR": ("index", None),  # Index, 2020=100
+    "BIS_REER_TR": ("index", None),  # Index, 2020=100
+    "BIS_REER_ZA": ("index", None),  # Index, 2020=100
+    "BIS_REER_HK": ("index", None),  # Index, 2020=100
+    "BIS_REER_KR": ("index", None),  # Index, 2020=100
+    "BIS_REER_SA": ("index", None),  # Index, 2020=100
+    "BIS_REER_XM": ("index", None),  # Index, 2020=100
+    "BIS_REER_SG": ("index", None),  # Index, 2020=100
+    "BIS_REER_AE": ("index", None),  # Index, 2020=100
+    "BIS_CREDIT_GB": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_JP": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_CA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_AU": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_NZ": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_CH": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_NO": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_SE": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_DK": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_CZ": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_HU": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_PL": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_CN": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_IN": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_MX": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_BR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_TR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_ZA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_HK": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_KR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_SA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_XM": ("ratio", None),  # Percent of GDP
+    "BIS_CREDIT_SG": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_GB": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_JP": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_CA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_AU": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_NZ": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_CH": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_NO": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_SE": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_DK": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_CZ": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_HU": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_PL": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_CN": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_IN": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_MX": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_BR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_TR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_ZA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_HK": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_KR": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_SA": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_XM": ("ratio", None),  # Percent of GDP
+    "BIS_CREDGAP_SG": ("ratio", None),  # Percent of GDP
     "CIS1010000000000I": ("index", None),  # Index, Dec 2005=100 (BLS ECI)
 }

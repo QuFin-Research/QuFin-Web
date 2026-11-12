@@ -180,6 +180,25 @@ derived to a known kind, matching their declarations.
 | ECI is a lagging indicator | Convention | Wages and benefits follow price inflation with a lag |
 | Name "ECI – Employment Cost Index" | Unverified | Not checked against FRED, Trading Economics or the Forex Factory calendar as rule 18 asks |
 
+## 4d. BIS series (P1-22)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Policy rates (`WS_CBPOL`, monthly) are the rate at the end of the month | Verified | BIS series title "Monthly - End of period"; the series notes state the instrument for each bank (for Japan, the target for the uncollateralised overnight call rate) |
+| Effective exchange rates (`WS_EER`) are monthly averages, broad basket of 64 economies, 2020=100, nominal and real | Verified | BIS attributes COLLECTION "Average of observations through period", TITLE_TS "Broad (64 economies)", UNIT_MEASURE "Index, 2020 = 100"; the load fails if the units text changes |
+| BIS effective exchange rates are the same series FRED republishes (RBGBBIS, NBGBBIS, RBXMBIS) | Verified | UK July 2026: FRED 112.04 and BIS 112.24 (real), 111.75 and 111.74 (nominal); euro area 102.55 and 102.53. The small differences are BIS revisions since FRED's last update |
+| FRED's BIS copies are stale, so the BIS API is read directly (non-US only, rule 17) | Verified | FRED to July 2026 and the BIS API to September 2026 on 12 Nov 2026; FRED's UK credit-to-GDP ends 2025 Q4, BIS 2026 Q1 |
+| The US is left out: FRED carries the dollar indexes and credit with vintages; the euro area is left out of policy rates (ECB deposit rate stored, rule 16); Russia is left out (BIS has had no Russian official data since 28 Feb 2022; coverage list undecided); Singapore and the UAE have no BIS policy rate, the UAE no credit series | Verified | BIS API, 12 Nov 2026; BIS legal page |
+| Credit-to-GDP ratio is private non-financial sector credit from all lenders, as percent of GDP; the gap is actual minus trend, in the same units | Unverified | The API's dimension labels say so (TC_BORROWERS "Private non-financial sector", TC_LENDERS "All sectors", CG_DTYPE A and C) but states no unit attribute. FRED's break-adjusted copy differs by about 1% for the UK (132.6 against 131.3 in 2025 Q4): close, not the same variant |
+| The credit-to-GDP trend uses a one-sided (backward-looking) HP filter, so the gap is not rewritten by later data | Verified | BIS credit gap statistics page (data.bis.org/topics/CREDIT_GAPS, 12 Nov 2026); revisions of the underlying credit data still become new vintages |
+| Dimensions: policy rates and credit in "policy", effective exchange rates in "external" | Design choice | None is scored; revisit when the scorecard moves to eight pillars (ADR 0005) |
+| Cycle: policy rates and credit ratio lagging; effective exchange rates and the credit gap leading | Convention | `app/data/cycle_classification.py` gives the reasons; the gap's lead is the BIS's finding for financial stress, not for output |
+| Change kinds: rates and credit measures in points, effective exchange rates in percent | Design choice | Rule 22: rates and ratios in points; indexes that stay positive in percent |
+| Japan's policy rate has no value for April 2001 to February 2006 and May 2013 to August 2016; nothing else may be missing | Verified | BIS notes "from 4 Apr 2013 to 20 Sep 2016: no policy rate"; the 2001 to 2006 gap is the BIS's own (no values published), reason not stated. Any other gap fails the load (`KNOWN_GAPS`) |
+| Release dates: last weekday of the following month (monthly), of the sixth month after the quarter (credit) | Design choice | No dates in the API; the BIS release calendar (2023 onwards) is never earlier than the rule, which is tested against all 73 listed dates (rule 9: err late) |
+| BIS licence: free use if cited, not misleading, no extra charge to users, no advice | Verified | https://data.bis.org/help/legal, 12 Nov 2026; recorded in the catalog `licence_note` and `docs/licence-register.md` |
+| Names "NEER" and "REER" | Unverified | Standard acronyms and FRED's titles (`docs/indicator-names.md`); Trading Economics and Forex Factory not checked as rule 18 asks |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.
