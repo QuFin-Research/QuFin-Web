@@ -239,6 +239,7 @@ def test_client_asks_v2_for_json_in_the_header_and_reads_every_economy():
     assert request.url.params["startPeriod"] == "2026-01-01"
     assert "format" not in request.url.params  # v2 answers 406 to format=jsondata
     assert request.headers["accept"].startswith("application/vnd.sdmx.data+json")
+    assert "QuFin" in request.headers["user-agent"]  # identifies us, not a bare library string
     by_area = {s.dimensions["REF_AREA"]: s for s in series}
     assert by_area["JP"].observations == [(date(2026, 9, 1), 1.0), (date(2026, 10, 1), 1.25)]
 
@@ -468,6 +469,38 @@ def test_a_failed_request_marks_every_series_of_that_measure_and_continues(db_se
     assert "boom" in by_id["BIS_CBPOL_GB"].error and "boom" in by_id["BIS_CBPOL_JP"].error
     assert by_id["BIS_REER_GB"].error is None
     assert pauses == [ingest_bis.PAUSE_SECONDS]  # one pause between the two requests
+
+
+def test_a_refusal_stops_the_run_so_we_never_hammer_a_source_that_said_no(db_session):  # noqa: F811
+    class Refusing(FakeBis):
+        def many(self, flow, key, start=None):
+            self.calls.append(flow)
+            raise SdmxError("bis returned 429: Too Many Requests")
+
+    client = Refusing()
+    results = ingest_bis.ingest(
+        client,
+        db_session,
+        ["BIS_CBPOL_GB", "BIS_REER_GB", "BIS_CREDIT_GB"],
+        date(2026, 1, 1),
+        TODAY,
+        lambda _s: None,
+    )
+    assert client.calls == ["WS_CBPOL"]  # the other two measures were never requested
+    assert all(r.error for r in results) and len(results) == 3
+
+
+def test_client_honours_retry_after_and_gives_up_after_its_retries():
+    waits, calls = [], []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(429, headers={"Retry-After": "7"}, text="slow down")
+
+    client = BisClient(transport=httpx.MockTransport(handler), sleep=waits.append, max_retries=3)
+    with pytest.raises(SdmxError, match="429"):
+        client.many("WS_CBPOL", "M.GB")
+    assert waits == [7.0, 7.0, 7.0] and len(calls) == 4
 
 
 def test_ids_outside_the_catalog_are_rejected_without_a_request(db_session):  # noqa: F811
