@@ -97,36 +97,44 @@ class Country:
     g7: bool = False
     g20: bool = False
     gcc: bool = False
-    em: bool = False  # emerging market (IMF World Economic Outlook grouping, see the register)
+    em: bool = False  # emerging market: not an IMF advanced economy (WEO April 2026, Table B)
 
 
 _ECB = "European Central Bank"
 COUNTRIES: tuple[Country, ...] = (
-    Country("USA", "US", "United States", "USD", "Federal Reserve", g7=True, g20=True),
+    Country(
+        "USA",
+        "US",
+        "United States",
+        "USD",
+        "Board of Governors of the Federal Reserve System",
+        g7=True,
+        g20=True,
+    ),
     # The euro area is not a country: ISO has no code for it, so "EMU" (the IMF and OECD use the
     # same idea). The EU is the G20 member.
     Country("EMU", "EA", "Euro Area", "EUR", _ECB, g20=True),
     Country("GBR", "GB", "United Kingdom", "GBP", "Bank of England", g7=True, g20=True),
     Country("JPN", "JP", "Japan", "JPY", "Bank of Japan", g7=True, g20=True),
     Country("CAN", "CA", "Canada", "CAD", "Bank of Canada", g7=True, g20=True),
-    Country("DEU", "DE", "Germany", "EUR", _ECB, g7=True, g20=True),
-    Country("FRA", "FR", "France", "EUR", _ECB, g7=True, g20=True),
-    Country("ITA", "IT", "Italy", "EUR", _ECB, g7=True, g20=True),
+    Country("DEU", "DE", "Germany", "EUR", "Deutsche Bundesbank", g7=True, g20=True),
+    Country("FRA", "FR", "France", "EUR", "Bank of France", g7=True, g20=True),
+    Country("ITA", "IT", "Italy", "EUR", "Bank of Italy", g7=True, g20=True),
     Country("AUS", "AU", "Australia", "AUD", "Reserve Bank of Australia", g20=True),
     Country("NZL", "NZ", "New Zealand", "NZD", "Reserve Bank of New Zealand"),
     Country("CHE", "CH", "Switzerland", "CHF", "Swiss National Bank"),
-    Country("NOR", "NO", "Norway", "NOK", "Norges Bank"),
+    Country("NOR", "NO", "Norway", "NOK", "Central Bank of Norway"),
     Country("SWE", "SE", "Sweden", "SEK", "Sveriges Riksbank"),
     Country("DNK", "DK", "Denmark", "DKK", "Danmarks Nationalbank"),
     Country("CZE", "CZ", "Czech Republic", "CZK", "Czech National Bank"),
-    Country("HUN", "HU", "Hungary", "HUF", "Magyar Nemzeti Bank", em=True),
-    Country("POL", "PL", "Poland", "PLN", "National Bank of Poland", em=True),
+    Country("HUN", "HU", "Hungary", "HUF", "Central Bank of Hungary", em=True),
+    Country("POL", "PL", "Poland", "PLN", "Narodowy Bank Polski", em=True),
     Country("CHN", "CN", "China", "CNY", "People's Bank of China", g20=True, em=True),
     Country("IND", "IN", "India", "INR", "Reserve Bank of India", g20=True, em=True),
-    Country("MEX", "MX", "Mexico", "MXN", "Banco de México", g20=True, em=True),
-    Country("BRA", "BR", "Brazil", "BRL", "Banco Central do Brasil", g20=True, em=True),
+    Country("MEX", "MX", "Mexico", "MXN", "Bank of Mexico", g20=True, em=True),
+    Country("BRA", "BR", "Brazil", "BRL", "Central Bank of Brazil", g20=True, em=True),
     Country(
-        "TUR", "TR", "Turkey", "TRY", "Central Bank of the Republic of Turkey", g20=True, em=True
+        "TUR", "TR", "Turkey", "TRY", "Central Bank of the Republic of Türkiye", g20=True, em=True
     ),
     Country("ZAF", "ZA", "South Africa", "ZAR", "South African Reserve Bank", g20=True, em=True),
     Country("KOR", "KR", "South Korea", "KRW", "Bank of Korea", g20=True),
@@ -134,10 +142,18 @@ COUNTRIES: tuple[Country, ...] = (
     Country("SGP", "SG", "Singapore", "SGD", "Monetary Authority of Singapore"),
     Country("ARG", "AR", "Argentina", "ARS", "Central Bank of Argentina", g20=True, em=True),
     Country("IDN", "ID", "Indonesia", "IDR", "Bank Indonesia", g20=True, em=True),
-    Country("RUS", "RU", "Russia", "RUB", "Bank of Russia", g20=True, em=True),
+    Country(
+        "RUS", "RU", "Russia", "RUB", "Central Bank of the Russian Federation", g20=True, em=True
+    ),
     Country("SAU", "SA", "Saudi Arabia", "SAR", "Saudi Central Bank", g20=True, gcc=True, em=True),
     Country(
-        "ARE", "AE", "United Arab Emirates", "AED", "Central Bank of the UAE", gcc=True, em=True
+        "ARE",
+        "AE",
+        "United Arab Emirates",
+        "AED",
+        "Central Bank of the United Arab Emirates",
+        gcc=True,
+        em=True,
     ),
     Country("KWT", "KW", "Kuwait", "KWD", "Central Bank of Kuwait", gcc=True, em=True),
     Country("QAT", "QA", "Qatar", "QAR", "Qatar Central Bank", gcc=True, em=True),
