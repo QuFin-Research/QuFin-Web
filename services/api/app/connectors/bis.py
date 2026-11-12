@@ -20,6 +20,7 @@ DATAFLOW_VERSION = "1.0"
 
 class BisClient(SdmxClient):
     source = "bis"
+    min_interval = 1.0  # rule 28: no published limit; one request per measure
 
     def __init__(self, base_url: str = BASE_URL, **kwargs: Any) -> None:
         kwargs.setdefault("timeout", 120.0)

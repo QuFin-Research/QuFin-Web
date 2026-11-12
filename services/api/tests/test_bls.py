@@ -125,7 +125,9 @@ def test_rate_limits_and_server_errors_are_retried():
         httpx.Response(200, json=message([row(2026, "Q03", "1.0")])),
     ]
     waits = []
-    client = BlsClient(transport=httpx.MockTransport(lambda r: answers.pop(0)), sleep=waits.append)
+    client = BlsClient(
+        transport=httpx.MockTransport(lambda r: answers.pop(0)), sleep=waits.append, min_interval=0
+    )
     assert client.series(ECI, 2026, 2026) == [(date(2026, 7, 1), 1.0)]
     assert waits == [1.0, 2.0]
 

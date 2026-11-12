@@ -58,6 +58,30 @@ The ECB, OECD and every later SDMX source share one parser, `app/connectors/sdmx
 SDMX-JSON, turns periods (day, month `2026-10` or the IMF's `2026-M10`, quarter, year) into dates, and returns each series with its
 attributes (units, scale) exactly as the publisher states them.
 
+## 2b. Supplier limits and how QuFin keeps within them (rule 28)
+
+What each supplier publishes was read on its own site on 12 Nov 2026 (pages named below). "Not
+stated" means the pages read gave no number; QuFin then keeps its own conservative gap. Every
+connector sends the `User-Agent` `QuFin-data-client/1.0 (+https://github.com/QuFin-Research/QuFin-Web)`,
+waits at least `min_interval` between requests (`app/connectors/base.py`, set per connector), honours
+`Retry-After`, and after a 403 or 429 that outlasts its retries asks for nothing more in that run.
+
+| Source | What the supplier states | QuFin's gap and sizes | Source of the statement |
+|---|---|---|---|
+| FRED / ALFRED | Per-minute limit **not stated**; the terms let the Bank set bandwidth or transaction limits. `limit` up to 100,000 observations per request; vintage dates per request capped (2,000 for JSON). Each application should use its own key | 0.6 s; page 100,000; 1,900 vintages per request | fred.stlouisfed.org/docs/api (series_observations, overview, api_key) and /legal |
+| BLS API v2 | 500 queries a day (registered), 50 series per query, 20 years per query, 50 requests per 10 s; BLS may block a user who tries to exceed or circumvent limits. Unregistered v1: 25 a day, 25 series, 10 years | 0.5 s; windows of 20 years with a key, 10 without; one series per run today | bls.gov/developers (api_faqs, termsOfService) |
+| EIA API v2 | 5,000 rows per request. No official rate limit; informal guidance of under 5 requests a second and about 9,000 an hour avoids throttling. Bulk files at eia.gov/opendata/bulk refreshed twice daily. EIA may block use that exceeds or circumvents its limits | 0.5 s; page 5,000 | eia.gov/opendata (faqs, terms-of-service) |
+| US Treasury Fiscal Data | No limit stated; default page size 100, no maximum stated; no key | 0.5 s; page 10,000 (**maximum not verified**) | fiscaldata.treasury.gov/api-documentation |
+| CFTC (Socrata) | CFTC states none. Socrata: requests without an app token share one pool per IP address and get HTTP 429 when throttled; no numbers. `$limit` maximum not found | 0.5 s; page 5,000; no app token yet | dev.socrata.com/docs/app-tokens.html; publicreportinghub.cftc.gov |
+| BIS | No numeric limit; the terms let the BIS limit or suspend an IP address at any time without notice. Bulk CSV and SDMX files at data.bis.org/bulkdownload | 1 s; one request per measure (5 a run); run at most daily | data.bis.org/help/legal, /bulkdownload |
+| OECD | **Not verified** (the pages could not be read on 12 Nov 2026). Observed: HTTP 429 after about 70 requests in a row | 3 s; one series per request | observation recorded in section 3 |
+| ECB | **Not verified** (the ECB pages returned HTTP 503 on 12 Nov 2026) | 1 s | none yet |
+| IMF | No numeric limit on the IMF API page; the page points to a portal account for the API explorer and does not say whether data queries need a key | 1 s; one request per run of series | data.imf.org/en/Resource-Pages/IMF-API |
+
+**Open work (rule 28):** read the OECD, ECB and IMF limit pages and replace "not verified"; find the
+Treasury and CFTC page-size maximums; consider an app token for the CFTC and bulk files for EIA if
+load grows. Runs of any connector stay at most as frequent as its data changes.
+
 ## 3. Worked example: the OECD
 
 **What the OECD is for:** leading indicators and confidence surveys for countries FRED does not carry

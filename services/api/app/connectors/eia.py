@@ -40,6 +40,7 @@ class EiaSeries:
 
 class EiaClient(HttpSource):
     source = "eia"
+    min_interval = 0.5  # rule 28: informal guidance: under 5 requests a second, 9000 an hour
     error = EiaError
 
     def __init__(self, api_key: str, base_url: str = "https://api.eia.gov/v2", **kwargs: Any):

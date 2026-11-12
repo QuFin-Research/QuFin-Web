@@ -1,6 +1,7 @@
 """Ingest BIS series (policy rates, effective exchange rates, credit) into the macro store."""
 
 import logging
+import re
 import time
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
@@ -25,6 +26,8 @@ RELEASES = {
     "WS_CREDIT_GAP": "BIS Credit-to-GDP gaps",
 }
 PAUSE_SECONDS = 1.0
+# The BIS refusing us (rate limit or block): stop for this run rather than retry into a ban.
+REFUSED = re.compile(r"returned (403|429)\b")
 
 
 def _check_complete(series_id: str, measure: BisMeasure, periods: Sequence[date]) -> None:
@@ -74,8 +77,15 @@ def ingest(
         if sid in BIS_SERIES and sid in BY_ID:
             by_measure[BIS_SERIES[sid][0]].append(sid)
     store = MacroStore(session)
+    refused = False
     for i, (code, ids) in enumerate(by_measure.items()):
         measure = MEASURES[code]
+        if refused:
+            results.extend(
+                IngestResult(sid, None, "not requested: the BIS refused an earlier request")
+                for sid in ids
+            )
+            continue
         if i:
             sleep(PAUSE_SECONDS)
         areas = "+".join(BIS_SERIES[sid][1] for sid in ids)
@@ -87,6 +97,7 @@ def ingest(
         except SdmxError as exc:
             log.warning("BIS request for %s failed: %s", code, exc)
             results.extend(IngestResult(sid, None, str(exc)) for sid in ids)
+            refused = bool(REFUSED.search(str(exc)))
             continue
         release_of = monthly_release if measure.frequency == "Monthly" else quarterly_release
         for series_id in ids:

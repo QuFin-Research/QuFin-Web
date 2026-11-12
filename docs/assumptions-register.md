@@ -196,8 +196,17 @@ derived to a known kind, matching their declarations.
 | Change kinds: rates and credit measures in points, effective exchange rates in percent | Design choice | Rule 22: rates and ratios in points; indexes that stay positive in percent |
 | Japan's policy rate has no value for April 2001 to February 2006 and May 2013 to August 2016; nothing else may be missing | Verified | BIS notes "from 4 Apr 2013 to 20 Sep 2016: no policy rate"; the 2001 to 2006 gap is the BIS's own (no values published), reason not stated. Any other gap fails the load (`KNOWN_GAPS`) |
 | Release dates: last weekday of the following month (monthly), of the sixth month after the quarter (credit) | Design choice | No dates in the API; the BIS release calendar (2023 onwards) is never earlier than the rule, which is tested against all 73 listed dates (rule 9: err late) |
+| Request volume stays well inside any sensible limit; we identify ourselves and stop when refused | Design choice | The BIS publishes no numeric rate limit (terms: it "may limit access"). One run is 5 requests, 1 s apart, with a QuFin `User-Agent`; 429 and 5xx retry with the server's `Retry-After`; a 403 or 429 that outlasts the retries stops the rest of the run. Runs must stay scheduled at most daily |
 | BIS licence: free use if cited, not misleading, no extra charge to users, no advice | Verified | https://data.bis.org/help/legal, 12 Nov 2026; recorded in the catalog `licence_note` and `docs/licence-register.md` |
 | Names "NEER" and "REER" | Unverified | Standard acronyms and FRED's titles (`docs/indicator-names.md`); Trading Economics and Forex Factory not checked as rule 18 asks |
+
+## 4e. Supplier limits (rule 28)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The gaps between requests (`min_interval`) keep every connector below its supplier's stated limit | Verified for BLS, EIA, BIS terms; **Unverified** for FRED, OECD, ECB, IMF, Treasury, CFTC | Table in `docs/data-connections.md` section 2b: FRED, Treasury and CFTC state no number, OECD and ECB pages could not be read on 12 Nov 2026 |
+| A 403 or 429 means "stop for this run" | Design choice | Rule 28; a one-off 403 on a single series therefore also stops the rest of that run, which is the safer failure |
+| Treasury page size 10,000 and CFTC page size 5,000 are accepted by the suppliers | Unverified | Both load today; neither supplier's page states a maximum |
 
 ## 5. Known mismatches between a series and its textbook definition
 
