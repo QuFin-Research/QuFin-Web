@@ -128,7 +128,7 @@ COUNTRIES: tuple[Country, ...] = (
     Country("DNK", "DK", "Denmark", "DKK", "Danmarks Nationalbank"),
     Country("CZE", "CZ", "Czech Republic", "CZK", "Czech National Bank"),
     Country("HUN", "HU", "Hungary", "HUF", "Central Bank of Hungary", em=True),
-    Country("POL", "PL", "Poland", "PLN", "Narodowy Bank Polski", em=True),
+    Country("POL", "PL", "Poland", "PLN", "Narodowy Bank Polski", g20=True, em=True),
     Country("CHN", "CN", "China", "CNY", "People's Bank of China", g20=True, em=True),
     Country("IND", "IN", "India", "INR", "Reserve Bank of India", g20=True, em=True),
     Country("MEX", "MX", "Mexico", "MXN", "Bank of Mexico", g20=True, em=True),
@@ -136,7 +136,7 @@ COUNTRIES: tuple[Country, ...] = (
     Country(
         "TUR", "TR", "Turkey", "TRY", "Central Bank of the Republic of Türkiye", g20=True, em=True
     ),
-    Country("ZAF", "ZA", "South Africa", "ZAR", "South African Reserve Bank", g20=True, em=True),
+    Country("ZAF", "ZA", "South Africa", "ZAR", "South African Reserve Bank", em=True),
     Country("KOR", "KR", "South Korea", "KRW", "Bank of Korea", g20=True),
     Country("HKG", "HK", "Hong Kong", "HKD", "Hong Kong Monetary Authority"),
     Country("SGP", "SG", "Singapore", "SGD", "Monetary Authority of Singapore"),
