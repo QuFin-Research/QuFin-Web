@@ -25,7 +25,8 @@ from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
-from app.data.indicator_concepts import SERIES_CONCEPTS
+from app.data.country_sources import COUNTRY_SOURCES, portal_label
+from app.data.indicator_concepts import CONCEPTS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID
 from app.data.taxonomy import COUNTRIES, COUNTRY_BY_ISO2, TaxonomyError, canonical_code
 from app.domain.harmonize import adjustment_tag
@@ -33,7 +34,7 @@ from app.jobs.check_data import LAG_WINDOW, macro_status
 from app.jobs.ingest_fred import prune
 from app.stores.macro import MacroStore
 
-EXPECTED_COUNTRIES = 85  # the QuFin Country List (Rule J)
+EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule J) plus Chile and Colombia
 Level = Literal["error", "warning"]
 
 
@@ -58,6 +59,62 @@ class DoctorReport:
     @property
     def warnings(self) -> list[Finding]:
         return [f for f in self.findings if f.level == "warning" and not f.fixed]
+
+
+WIDELY_HELD = 8  # an indicator held by this many countries is one a country should have
+
+
+@dataclass(frozen=True)
+class Gap:
+    """A country-indicator pair with no stored series, and where tier 3 says to look (Rule O)."""
+
+    iso3: str
+    country: str
+    concept: str
+    indicator: str
+    portal: str
+    registered: date | None
+
+
+def unpopulated_pairs(session: Session) -> list[Gap]:
+    """Every country that lacks a widely held indicator, with its registered national portal."""
+    held: dict[str, set[str]] = defaultdict(set)
+    for s in MacroStore(session).list_series():
+        concept = SERIES_CONCEPTS.get((s.meta.country, s.meta.id))
+        if concept:
+            held[concept].add(s.meta.country)
+    wide = sorted(c for c, countries in held.items() if len(countries) >= WIDELY_HELD)
+    gaps = []
+    for place in COUNTRIES:
+        for concept in wide:
+            if place.iso2 in held[concept]:
+                continue
+            entry = COUNTRY_SOURCES.get(place.iso3)
+            gaps.append(
+                Gap(
+                    place.iso3,
+                    place.name,
+                    concept,
+                    CONCEPTS[concept].name if concept in CONCEPTS else concept,
+                    portal_label(place.iso3),
+                    entry.registered if entry else None,
+                )
+            )
+    return gaps
+
+
+def format_gaps(gaps: Sequence[Gap]) -> str:
+    if not gaps:
+        return "doctor: no unpopulated country-indicator pairs"
+    lines = [
+        "country                  indicator                                 tier 3 portal to try"
+    ]
+    for g in gaps:
+        lines.append(f"{g.country:<24} {g.indicator:<41} {g.portal}")
+    lines.append(
+        f"doctor: {len(gaps)} unpopulated pairs (indicators held by {WIDELY_HELD}+ countries)"
+    )
+    return "\n".join(lines)
 
 
 def backup_database(session: Session, now: datetime | None = None) -> Path | None:
@@ -248,6 +305,17 @@ class _Run:
                     "take it out of the catalog with the reason recorded",
                 )
 
+    def gaps(self) -> None:
+        pairs = unpopulated_pairs(self.session)
+        if pairs:
+            countries = len({g.iso3 for g in pairs})
+            self.add(
+                "unpopulated pairs",
+                "warning",
+                f"{len(pairs)} pairs in {countries} countries",
+                "tiers 1 and 2 hold no series; doctor --gaps lists each with its tier 3 portal",
+            )
+
     def countries(self) -> None:
         if len(COUNTRIES) != EXPECTED_COUNTRIES:
             self.add(
@@ -279,6 +347,7 @@ CHECKS: Sequence[str] = (
     "catalog",
     "frozen",
     "countries",
+    "gaps",
 )
 
 

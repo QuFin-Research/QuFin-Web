@@ -155,7 +155,7 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 
 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
-    assert len(BIS_SERIES) == 153  # 115 + 12 (DE, FR, IT) + Kuwait policy rate + 25 property prices
+    assert len(BIS_SERIES) == 155  # 153 + the Chile and Colombia policy rates
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"

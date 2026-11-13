@@ -11,6 +11,8 @@ uv run python -m app.cli ingest-oecd                 # OECD leading indicators, 
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
 uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
+uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
+uv run python -m app.cli ingest-singstat             # Singapore: unemployment
 uv run python -m app.cli ingest-ons                  # UK ONS: unemployment, real GDP, core CPI
 uv run python -m app.cli ingest-bis                  # BIS policy rates, exchange rates, credit
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
@@ -30,6 +32,7 @@ import logging
 import sys
 from datetime import UTC, date, datetime, timedelta
 
+from app.connectors.bcb import BcbClient
 from app.connectors.bis import BisClient
 from app.connectors.bls import BlsClient
 from app.connectors.cftc import CftcClient
@@ -40,6 +43,7 @@ from app.connectors.fred import FredClient
 from app.connectors.imf import ImfClient
 from app.connectors.oecd import OecdClient
 from app.connectors.ons import OnsClient
+from app.connectors.singstat import SingStatClient
 from app.connectors.treasury import TreasuryClient
 from app.connectors.worldbank import WorldBankClient
 from app.core.config import get_settings
@@ -56,6 +60,7 @@ from app.jobs import (
     ingest_eia,
     ingest_eurostat,
     ingest_imf,
+    ingest_national,
     ingest_oecd,
     ingest_ons,
     ingest_treasury,
@@ -240,6 +245,36 @@ def _ingest_worldbank(args: argparse.Namespace) -> int:
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
+def _ingest_bcb(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "bcb"]
+    with BcbClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_national.ingest_bcb(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<14} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_singstat(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "singstat"]
+    with SingStatClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_national.ingest_singstat(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised quarters" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<14} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
 def _ingest_bis(args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     series_ids = args.series or [s.id for s in CATALOG if s.source == "bis"]
@@ -310,6 +345,10 @@ def _doctor(args: argparse.Namespace) -> int:
     with session_scope() as session:
         report = doctor.run(session, _today(), fix=args.fix, quick=args.quick)
     print(doctor.format_report(report))
+    if args.gaps:
+        with session_scope() as session:
+            print()
+            print(doctor.format_gaps(doctor.unpopulated_pairs(session)))
     return 0 if not report.errors else 1
 
 
@@ -498,9 +537,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     wb.set_defaults(func=_ingest_worldbank)
 
+    for name, func, label in (
+        ("ingest-bcb", _ingest_bcb, "Brazil: unemployment and goods trade balance (BCB SGS)"),
+        ("ingest-singstat", _ingest_singstat, "Singapore: unemployment (SingStat)"),
+    ):
+        nat = sub.add_parser(name, help=f"ingest {label}")
+        nat.add_argument(
+            "series", nargs="*", help="series ids (default: every series of the source)"
+        )
+        nat.add_argument(
+            "--start",
+            type=date.fromisoformat,
+            default=DEFAULT_OBSERVATION_START,
+            help="first period to load (default: 1990, or the source's own start)",
+        )
+        nat.set_defaults(func=func)
+
     doc = sub.add_parser("doctor", help="check the database's health; --fix repairs what is safe")
     doc.add_argument("--fix", action="store_true", help="repair (a backup is taken first)")
     doc.add_argument("--quick", action="store_true", help="skip the vintage overlap scan")
+    doc.add_argument(
+        "--gaps", action="store_true", help="list unpopulated pairs with tier 3 portals"
+    )
     doc.set_defaults(func=_doctor)
 
     bls = sub.add_parser("ingest-bls", help="ingest BLS series (Employment Cost Index)")

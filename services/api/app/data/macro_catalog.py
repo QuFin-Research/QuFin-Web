@@ -16,13 +16,18 @@ from typing import Literal
 from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES
 from app.data.cycle_classification import QUFIN_CYCLE
 from app.data.gap_ids import (
+    BCB_COUNTRY,
+    BCB_SERIES,
     EURO_MEMBERS,
     EUROSTAT_SERIES,
     FRED_ADDITIONS,
     HISTORY_START,
     KUWAIT_POLICY,
+    NEW_POLICY_AREAS,
     ONS_COUNTRY,
     ONS_SERIES,
+    SINGSTAT_COUNTRY,
+    SINGSTAT_SERIES,
 )
 from app.data.macro_ids import IMF_CPI, MACRO_COUNTRY, OECD_MACRO
 from app.data.reserves_ids import FRED_RESERVES, RESERVES
@@ -68,6 +73,8 @@ class CatalogSeries:
         "ons",
         "treasury",
         "worldbank",
+        "bcb",
+        "singstat",
     ]
     country: str
     dimension: Dimension
@@ -507,6 +514,30 @@ _DECLARED: tuple[CatalogSeries, ...] = (
         )
         for w in WB_SERIES
     ),
+    *(
+        CatalogSeries(
+            b.id,
+            "bcb",
+            BCB_COUNTRY,
+            b.dimension,
+            b.cycle,
+            change=b.change,
+            history_start=HISTORY_START,
+        )
+        for b in BCB_SERIES
+    ),
+    *(
+        CatalogSeries(
+            s.id,
+            "singstat",
+            SINGSTAT_COUNTRY,
+            "labour",
+            "lagging",
+            change="diff",
+            history_start=HISTORY_START,
+        )
+        for s in SINGSTAT_SERIES
+    ),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.
@@ -534,7 +565,9 @@ _DEEP_HISTORY: frozenset[str] = frozenset(
     {
         sid
         for sid, (code, area) in BIS_SERIES.items()
-        if code == "SPP" or area in EURO_MEMBERS or (code == "CBPOL" and area == KUWAIT_POLICY)
+        if code == "SPP"
+        or area in EURO_MEMBERS
+        or (code == "CBPOL" and area in (KUWAIT_POLICY, *NEW_POLICY_AREAS))
     }
     | {
         f"OECD_{_OECD_ID[m]}_{a}"

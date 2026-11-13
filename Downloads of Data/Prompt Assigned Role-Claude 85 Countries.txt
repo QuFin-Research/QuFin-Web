@@ -1,0 +1,51 @@
+## Assigned Role
+Act as a **Principal Quantitative Data Architect & Full-Stack Financial Systems Engineer** for **QuFin** (`QuFin-Research/QuFin-Web`).
+
+## Token-Saving & Smart Execution Guardrails (CRITICAL)
+1. **ZERO REWORK / DELTA-ONLY EXECUTION:** The previous master prompt (Rules A–H, deduplication audit, backend comparison/PoC APIs, and frontend studio) has **already been executed** and the existing database is populated. **Do NOT re-run, rewrite, or re-ingest work that is already implemented and passing.**
+2. **Inspect First, Act Only on Gaps:** Begin by checking `git log -n 5`, `RULEBOOK.md`, and running a single lightweight inspection of `services/api/app/data/` and `qufin.db` to see what already exists. Only touch files required for the new v3 Excel gaps and UK ONS fallback.
+3. **Keyless First / Human-in-the-Loop for Missing API Keys:**
+   - Prioritize **100% Keyless APIs** first: FRED (via existing `QUFIN_FRED_API_KEY`), **UK Office for National Statistics (`https://ons.gov.uk` / `ons.gov.uk` time-series JSON/CSV endpoints — 100% free & keyless)**, OECD SDMX, IMF SDMX, BIS SDMX, ECB SDMX, U.S. Treasury Fiscal Data, World Bank API, and Eurostat.
+   - If a high-priority Sprint series genuinely requires a new API key that is NOT present in `.env` (e.g., BEA, Census, or BLS), **STOP and prompt the user with the exact registration URL and `.env` variable name** instead of wasting tokens guessing or failing repeatedly.
+
+---
+
+## Reference Workbook: `QuFin_Merged_Macro_Taxonomy_and_Sprint_Mapping-v3.xlsx`
+Read the attached/local workbook `QuFin_Merged_Macro_Taxonomy_and_Sprint_Mapping-v3.xlsx` (specifically sheets `Sprint_Ingestion_Mapping`, `Master_Taxonomy_169`, `QuFin Country List`, and `Source_URLs_and_APIs`).
+
+---
+
+## Updated & New Binding Rules (Rule H Extension & Rule I)
+
+### Rule H (Updated): FRED Primary Source Priority & Country-Specific Authentic Fallbacks
+1. **FRED/ALFRED Precedence:** Whenever a macroeconomic indicator is available on **FRED/ALFRED** with **Seasonally Adjusted (`SA`)** values and **vintage revision history**, **FRED must be used as the sole canonical source**.
+2. **UK (`GBR`) Official ONS Fallback (`https://www.ons.gov.uk/`):** For United Kingdom (`GBR`) macroeconomic series (such as UK Unemployment Rate `MGSX`, UK CPIH/CPI `L522`/`D7BT`, UK GDP QoQ `IHYQ`, Retail Sales, or Average Weekly Earnings) where **FRED lacks `SA` + vintage data**, use the **UK Office for National Statistics (`ons.gov.uk` free keyless API / time-series data endpoint)** as the primary authentic fallback before OECD or IMF.
+3. **Strict No-Duplication Guardrail:** Never duplicate the same indicator/country pair across multiple sources.
+
+### Rule I (New): Deep Historical Training Horizon (`1990-01-01` Floor)
+1. **Historical Depth Mandate:** To train QuFin's quantitative models on full economic cycles, every newly ingested series **must fetch the deepest available vintage history starting from `1990-01-01`** (or at minimum **`2000-01-01`** where 1990s data does not exist at the source).
+2. **Do Not Re-Download Existing Series:** Leave already-populated series untouched unless adding missing Sprint 1–4 coverage.
+
+---
+
+## Delta Execution Plan (Sprints 1–4 & UK ONS Gap Closure Only)
+
+### Step 1: Delta Gap Check (Single Pass — Save Tokens)
+1. Check `.env` keys available (`QUFIN_FRED_API_KEY`, `QUFIN_EIA_API_KEY`, etc.) and compare `Sprint_Ingestion_Mapping` (Sprints 1–4) + `QuFin Country List` against `services/api/app/data/macro_catalog.py` and `qufin.db`.
+2. List ONLY the **unimplemented Sprint 1–4 series**, including:
+   - **UK (`GBR`) Gaps via FRED first, then `ons.gov.uk` (Keyless):** UK Unemployment Rate (`MGSX`), UK Real GDP / GDP QoQ (`IHYQ`), UK Core CPI, and UK Trade Balance.
+   - **G7 & GCC Parity:** BIS/OECD parity for `DEU, FRA, ITA`, zero-data GCC countries `KWT, QAT`, cross-country G20 `Real GDP`, `Industrial Production`, `Core CPI`, `Trade Balance`, and `HOUSING` Residential Property Prices.
+3. **Key Check:** If any Sprint 1–4 series requires a missing API key not in `.env`, list those exact keys and ask the user before proceeding with that specific source; immediately execute all **Keyless (including `ons.gov.uk`) + existing FRED** series without waiting.
+
+### Step 2: Register, Build UK ONS Connector (if needed) & Ingest New Series (`1990-01-01` Start)
+1. If UK (`GBR`) series are not covered by FRED `SA` + revisions, add a clean, lightweight keyless connector `services/api/app/connectors/ons.py` + `services/api/app/jobs/ingest_ons.py` + `ingest-ons` CLI command (with unit tests in `tests/test_ons.py`) using `ons.gov.uk`'s free public time-series API (`https://ons.gov.uk` or `https://ons.gov.uk`).
+2. Register the unimplemented Sprint 1–4 series in `services/api/app/data/` (`macro_catalog.py`, `indicator_concepts.py`, `series_units.py`, `cycle_classification.py`, and country taxonomy if any of the 85 countries in `QuFin Country List` are missing), enforcing **Rules B, D, E, H, and I** (`1990-01-01` start date).
+3. Run targeted ingestion **ONLY for the newly added series IDs** (e.g., `uv run python -m app.cli ingest-fred <NEW_IDS> --start 1990-01-01`, `ingest-ons <NEW_IDS> --start 1990-01-01`, `ingest-oecd <NEW_IDS> --start 1990-01-01`, `ingest-imf <NEW_IDS> --start 1990-01-01`, etc.) so existing database rows are not re-downloaded.
+
+### Step 3: Verify Frontend Sync & Run Lightweight Quality Gate
+1. Confirm `apps/web` dynamically displays the new `ons` source attribution, `HOUSING` pillar, new countries (`KWT`, `QAT`, etc.), and `1990+` historical range in the interactive comparison chart without breaking UI layout.
+2. Inside `services/api`:
+   - Run `uv run python -m app.cli check-data` to confirm all active series are `OK`.
+   - Run `uv run ruff check --fix .`, `uv run ruff format .`, and targeted `uv run pytest` on modified/new modules.
+3. Verify `git status` is clean (no `*.db`, `*.db-journal`, `data/exports/`, `data/raw/`, or `~$*`), commit cleanly, and push to the active branch.
+4. Provide a concise delta summary: (a) new series ingested (including UK `ons.gov.uk` series) + earliest observation dates (`1990` vs `2000`), (b) any missing API keys needed from the user, and (c) updated `check-data` count.

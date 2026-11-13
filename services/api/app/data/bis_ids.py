@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-from app.data.gap_ids import EURO_MEMBERS, KUWAIT_POLICY, SPP_AREAS
+from app.data.gap_ids import EURO_MEMBERS, KUWAIT_POLICY, NEW_POLICY_AREAS, SPP_AREAS
 
 Frequency = Literal["Monthly", "Quarterly"]
 
@@ -55,7 +55,7 @@ _POLICY_AREAS = (
     "KR",
     "SA",
 )
-_POLICY_WITH_KUWAIT = (*_POLICY_AREAS, KUWAIT_POLICY)
+_POLICY_WITH_KUWAIT = (*_POLICY_AREAS, KUWAIT_POLICY, *NEW_POLICY_AREAS)
 _EER_AREAS = (*_POLICY_AREAS, "XM", "SG", "AE", *EURO_MEMBERS)
 _CREDIT_AREAS = (*_POLICY_AREAS, "XM", "SG", *EURO_MEMBERS)
 

@@ -9,6 +9,10 @@ different thing from what the monthly sources already give these countries (rule
 - current account balance, percent of GDP (a new concept: the US series is an amount);
 - trade balance, goods and services, current US dollars.
 
+Unemployment is not taken for the 17 EU members that Eurostat publishes monthly (rule K);
+Bulgaria and Malta stay here because their Eurostat load answered 307, so each pair has one
+source (rule M); see `gap_ids.py`.
+
 Not taken: consumer prices (the IMF has them monthly for most of these countries, rule K, and a
 second copy would be a duplicate), and total reserves (the World Bank's include gold, the IMF's
 reserves series do not: a different indicator). Only a country-indicator pair whose latest year is
@@ -112,10 +116,9 @@ WB_INDICATORS: tuple[WbIndicator, ...] = (
         "rate_percent", None,
         "labour", "lagging", "Employers hire and fire after output has already turned.", "diff",
         (
-            "ALB", "ARM", "AUT", "AZE", "BEL", "BGR", "BIH", "BLR", "BRN", "CMR", "COG", "CYP",
-            "EGY", "ESP", "EST", "FIN", "GHA", "GRC", "HRV", "IRL", "IRN", "ISL", "ISR", "KEN",
-            "KHM", "LTU", "LUX", "LVA", "MDA", "MKD", "MLT", "MNE", "MYS", "NGA", "NLD", "PRK",
-            "PRT", "ROU", "SRB", "SVK", "SVN", "UZB", "VEN",
+            "ALB", "ARM", "AZE", "BGR", "BIH", "BLR", "BRN", "CMR", "COG", "EGY", "GHA", "IRN",
+            "ISL", "ISR", "KEN", "KHM", "MDA", "MKD", "MLT", "MNE", "MYS", "NGA", "PRK", "SRB",
+            "UZB", "VEN",
         ),
     ),
     WbIndicator(

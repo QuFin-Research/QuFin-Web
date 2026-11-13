@@ -55,6 +55,7 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Compare studio (`/v1/studio/*`) | Series on one frequency: actual or change | **Live** (point-in-time store) | Each series states source, SA or NSA tag and latest release date; notices for mixed adjustment or scale |
 | Macro, Compare, Studio: UK (ONS), housing (BIS), Germany/France/Italy, Kuwait, Qatar | Series from 1990 | **Live** | Source and publisher named on each series; the ONS appears as "Office for National Statistics (UK)" |
 | Macro, Compare, Studio: 50 further economies, Eurostat and ONS additions | Series from 1990 where the source goes back | **Live** | Source and publisher named on each series ("World Bank", "Eurostat", "International Monetary Fund") |
+| Macro, Compare, Studio: Brazil (BCB), Singapore (SingStat), 17 EU members (Eurostat), South Africa, Chile, Colombia | Unemployment, trade balance, policy rates | **Live** | Source and publisher named on each series |
 
 Not verified: exact release dates for the 2018-19 shutdown weeks (derived from the CFTC's
 stated catch-up rule) and the times of day of late releases (treated as end of day).

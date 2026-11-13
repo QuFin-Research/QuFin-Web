@@ -239,6 +239,10 @@ COUNTRIES: tuple[Country, ...] = (
     Country("UKR", "UA", "Ukraine", "UAH", "National Bank of Ukraine", em=True),
     Country("UZB", "UZ", "Uzbekistan", "UZS", "Central Bank of Uzbekistan", em=True),
     Country("VEN", "VE", "Venezuela", "VES", "Central Bank of Venezuela", em=True),
+    # Added by the owner on 13 Nov 2026 beyond the 85-country list (OECD members; attributes from
+    # general knowledge, unverified like the other 50).
+    Country("CHL", "CL", "Chile", "CLP", "Central Bank of Chile", em=True),
+    Country("COL", "CO", "Colombia", "COP", "Banco de la Republica", em=True),
 )
 COUNTRY_BY_ISO2 = {c.iso2: c for c in COUNTRIES}
 COUNTRY_BY_ISO3 = {c.iso3: c for c in COUNTRIES}

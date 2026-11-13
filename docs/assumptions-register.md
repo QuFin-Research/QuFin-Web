@@ -306,11 +306,12 @@ The rules are adopted; the code does not meet them yet. Each line says what is t
 
 | Rule | Status today | Gap |
 |---|---|---|
-| J: 85 countries, 169 indicators | **85 countries in the taxonomy**; 83 have stored series; 621 series | The 169-indicator taxonomy is not in the catalog; no automatic cross-country sweep exists (the new countries were filled by hand-chosen IMF, World Bank, Eurostat and FRED series); the 50 new countries' attributes are unverified |
+| J: 85 countries, 169 indicators | **87 countries in the taxonomy** (85 plus Chile and Colombia); 83 have stored series; 621 series | The 169-indicator taxonomy is not in the catalog; no automatic cross-country sweep exists (the new countries were filled by hand-chosen IMF, World Bank, Eurostat and FRED series); the 50 new countries' attributes are unverified |
 | K: highest frequency first | Partly: ECB policy rate daily, US claims weekly. BIS policy rates and effective exchange rates are monthly for countries whose central banks publish daily | No audit of every series against the highest frequency its source offers; no hourly series |
 | L: release time and retry ladder | `HttpSource` retries 3 times (2, 4, 8 seconds), honours `Retry-After`, stops after a 403 or 429 (rule 28) | No jitter and no 15 second to 1 hour ladder; no per-series `next_release_at` column (`macro_status` derives it); no scheduler |
 | M: FRED first, authentic fallbacks | In force for the US and UK (ONS). Industrial production and core CPI for the G7 are not loaded | Eurostat SDMX, World Bank and the national portals (StatCan, ABS, e-Stat, KOSIS, INEGI, CBRT, GASTAT, Stats SA, NBS) have no connector |
 | N: QuFin Doctor | **Built:** `doctor [--fix] [--quick]` checks orphaned vintages, non-finite values, vintage date order and overlap, SA/NSA tags and canonical codes, duplicate country-indicator pairs, stale and missing series, frozen or overdue series, and the 85-country taxonomy; one summary line after every ingest | Not yet run in continuous integration; quarantine of a frozen series is a recommendation (take it out of the catalog), not an automatic step |
+| O: three-tier cascade | Tiers 1 and 2 are in use; **tier 3 registry exists** (`country_sources.py`, 23 portals plus ECB, UNECE, WTO) and three national portals are connected: the UK ONS, the Brazilian central bank and SingStat; `doctor --gaps` lists every unpopulated pair with its tier 3 portal | Terms of every portal but the ONS are unread; no other national connector; the 2 countries without data (Isle of Man, Liechtenstein) and the pairs left out for want of a source (Korea trade balance, G7 unemployment for Brazil, South Africa, China, India, Saudi Arabia, Singapore) are not yet listed with the tiers checked |
 
 
 ## 4l. 85-country expansion, doctor, Eurostat and World Bank (13 Nov 2026)
@@ -331,3 +332,20 @@ The rules are adopted; the code does not meet them yet. Each line says what is t
 | Australia's goods trade balance is FRED `XTNTVA01AUM667S`; Korea's is not loaded | Verified | FRED to August 2026 for Australia; `XTNTVA01KRM667S` stopped in December 2024 |
 | Japanese policy rate has no value for March 1999 to July 2000 | Verified | The BIS API (13 Nov 2026); added to the known gaps |
 | The Eurostat API was announced unavailable on Friday 13 November 14:00 to 23:00 | Noted | If a Eurostat load failed on that day, rerun it |
+
+
+## 4m. Tier 3 registry, national-portal series and fail-fast log (13 Nov 2026)
+
+Each probe was one attempt (no retry loops). Tiers checked are named for every miss (Rule O).
+
+| Judgement | Status | Basis |
+|---|---|---|
+| `app/data/country_sources.py` registers the 23 national portals and the ECB, UNECE and WTO | Done | Written from general knowledge on 13 Nov 2026, no browsing. Its `terms_checked` date is set only for the ONS, whose terms were read (the brief asked for 2026-11-13 on all entries: not done, because no other terms were read); `endpoint_verified` is set for the ONS, the BCB and SingStat, which were called live |
+| Free-key portals and their `.env` names | Listed | `QUFIN_INSEE_API_KEY`, `QUFIN_BDF_API_KEY`, `QUFIN_DESTATIS_API_KEY`, `QUFIN_ESTAT_APP_ID`, `QUFIN_INEGI_TOKEN`, `QUFIN_BANXICO_TOKEN`, `QUFIN_KOSIS_API_KEY`, `QUFIN_ECOS_API_KEY`, `QUFIN_EVDS_API_KEY`, `QUFIN_MAS_API_KEY`, `QUFIN_STATSNZ_API_KEY`, `QUFIN_BCCH_API_KEY`, `QUFIN_WTO_API_KEY`; the US keys `QUFIN_BLS_API_KEY`, `QUFIN_BEA_API_KEY` and `QUFIN_FRED_API_KEY` exist. The names are QuFin's own; the registration pages were not looked up |
+| South Africa quarterly unemployment from FRED `LRUNTTTTZAQ156S` | Verified | SA, 2000 Q3 to 2026 Q2, updated 15 Oct 2026; monthly does not exist (tiers 1 checked) |
+| Brazil unemployment (BCB SGS 24369) and goods trade balance (22707) | Verified | Both to September 2026. 24369 starts in 2012: windows before it answer 404 "Value(s) not found", handled as empty. Neither is seasonally adjusted. FRED has no Brazilian unemployment; the OECD has no monthly series (tiers 1 and 2 checked on 13 Nov 2026) |
+| Singapore unemployment from SingStat table M182342, series 1 | Verified | Called "Total Unemployment Rate, (SA)" in the table, not "Overall" as in the brief; quarterly, 1992 1Q to 2026 3Q. The terms were not read |
+| Eurostat monthly unemployment (`une_rt_m`, SA, total, percent of labour force) for 17 EU members | Verified | Replaces the World Bank's annual figure for Austria, Belgium, Croatia, Cyprus, Estonia, Finland, Greece (Eurostat code EL), Ireland, Latvia, Lithuania, Luxembourg, the Netherlands, Portugal, Romania, Slovakia, Slovenia and Spain (rule K, rule M); the 17 World Bank series were removed |
+| Bulgaria and Malta keep the World Bank's annual unemployment | Fail-fast | Probed fine, but the load answered HTTP 307 (a redirect) for both on 13 Nov 2026; not retried. Tiers checked: 1 (FRED not probed), 2 (Eurostat 307). Retry later |
+| Switzerland monthly unemployment | Not available | OECD answered 404 on 13 Nov 2026 (tier 2). Tier 1 (FRED) not probed; tier 3 (Swiss Federal Statistical Office) registered, terms unread |
+| Chile and Colombia are in the taxonomy (87 countries) | Done | Added at the owner's request beyond the 85-country list; currency, central bank and emerging-market flag unverified like the other 50. The policy rates come from the BIS (`BIS_CBPOL_CL` to October 2026, from 1997; `BIS_CBPOL_CO` from 1995) and monthly unemployment from the OECD (Chile to August 2026 from 1990, Colombia to September 2026 from 2007). Their CPI was not asked for and is not loaded |

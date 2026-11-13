@@ -240,7 +240,7 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     - A connector is not merged until its row in `docs/data-connections.md` states the limits and how
       the code keeps within them, and tests show the identification and the stop on refusal.
 
-## Part 5. Frequency, adjustment, vintages, charting and coverage (Rules A-N)
+## Part 5. Frequency, adjustment, vintages, charting and coverage (Rules A-O)
 
 These rules extend, and never loosen, rules 1-28. Where one seems to overlap another, the stricter
 reading applies.
@@ -341,6 +341,19 @@ N. **A self-running database health and integrity engine ("QuFin Doctor").** QuF
    that have frozen are quarantined or flagged. A repair never deletes data without a backup and a
    line in the report saying what was done.
 
+O. **National statistics office and central bank fallback hierarchy.** For every
+   `(country, indicator)` pair in the taxonomy the canonical source is resolved in this order:
+   - **Tier 1, FRED/ALFRED:** whenever it provides `SA` values with vintage revisions (rule M).
+   - **Tier 2, multilateral aggregators:** the BIS, IMF, OECD, Eurostat, ECB or World Bank,
+     when they give a current, un-frozen series at the highest available frequency (rule K).
+   - **Tier 3, official national portals:** where tiers 1 and 2 lack the indicator or only have
+     frozen mirrors, the country's official statistics office, central bank or government open
+     data portal, each registered in `app/data/country_sources.py` with the date its terms and
+     limits were read (rules 7 and 28), and, for the remaining economies, the UNECE and WTO
+     statistical portals.
+   A country-indicator pair may stay unpopulated only if all three tiers have no active, current
+   feed, and each such pair is listed with the tiers checked and the date, so no gap is silent.
+
 ## Change log
 
 | Date | Rule | Change |
@@ -355,3 +368,5 @@ N. **A self-running database health and integrity engine ("QuFin Doctor").** QuF
 | 12 Nov 2026 | A-H | Added Part 5: earliest signal, seasonal adjustment, vintages, one frequency per comparison, `PoC`, chart limits, frequency filter, FRED first (owner instruction) |
 | 13 Nov 2026 | H, I | H: UK fallback to the ONS where FRED lacks a current SA series with vintages. Added I: every series loads from 1990 (owner instruction) |
 | 13 Nov 2026 | J-N | Added: 85-country and 169-indicator cross-matrix, highest frequency first, release-calendar precision with a retry ladder (rule 28 governs), FRED first with authentic fallbacks, and the QuFin Doctor health engine (owner instruction) |
+| 13 Nov 2026 | O | Added: three-tier source cascade (FRED, multilateral aggregators, official national portals) and no silent gaps (owner instruction) |
+| 13 Nov 2026 | J | The country universe is 87: the 85 of the QuFin Country List plus Chile and Colombia (owner instruction) |

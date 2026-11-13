@@ -152,10 +152,10 @@ def test_a_series_past_its_release_window_is_reported_as_frozen_with_the_way_out
     assert frozen[0].subject == "UNRATE" and "quarantine" in frozen[0].detail
 
 
-def test_the_taxonomy_must_hold_all_85_countries_and_countries_without_data_are_listed(
+def test_the_taxonomy_must_hold_all_87_countries_and_countries_without_data_are_listed(
     db_session,
 ):
-    assert len(COUNTRIES) == doctor.EXPECTED_COUNTRIES == 85
+    assert len(COUNTRIES) == doctor.EXPECTED_COUNTRIES == 87
     put(db_session, "UNRATE")
     report = doctor.run(db_session, TODAY)
     assert found(report, "country taxonomy") == []
@@ -212,3 +212,30 @@ def test_the_commands_are_registered(command):
     with pytest.raises(SystemExit) as stop:
         main([command, "--help"])
     assert stop.value.code == 0
+
+
+def test_unpopulated_pairs_list_the_tier_3_portal_and_the_check_date(db_session, monkeypatch):
+    # Eight countries hold unemployment, so it counts as a widely held indicator.
+    for n, country in enumerate(["US", "GB", "FR", "IT", "JP", "CA", "AU", "KR"]):
+        series_id = f"T{n}"
+        put(db_session, series_id, country=country)
+        monkeypatch.setitem(SERIES_CONCEPTS, (country, series_id), "unemployment_rate")
+    gaps = doctor.unpopulated_pairs(db_session)
+    germany = next(g for g in gaps if g.iso3 == "DEU")
+    assert germany.indicator == "Unemployment Rate" and germany.registered == date(2026, 11, 13)
+    assert "Destatis GENESIS" in germany.portal and "terms not yet read" in germany.portal
+    assert not any(g.iso3 == "USA" for g in gaps)  # the US holds it
+    iceland = next(g for g in gaps if g.iso3 == "ISL")
+    assert iceland.registered is None and "UNECE" in iceland.portal  # no national portal registered
+    report = doctor.run(db_session, TODAY)
+    summary = found(report, "unpopulated pairs")[0]
+    assert summary.level == "warning" and "doctor --gaps" in summary.detail
+    text = doctor.format_gaps(gaps)
+    assert "Germany" in text and "unpopulated pairs" in text.splitlines()[-1]
+
+
+def test_no_gap_is_reported_when_nothing_is_widely_held(db_session):
+    put(db_session, "UNRATE")  # one country is not a widely held indicator
+    assert doctor.unpopulated_pairs(db_session) == []
+    assert "no unpopulated" in doctor.format_gaps([])
+    assert found(doctor.run(db_session, TODAY), "unpopulated pairs") == []

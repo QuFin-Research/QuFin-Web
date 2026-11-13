@@ -27,7 +27,7 @@ HISTORY_START = date(1990, 1, 1)  # Rule I: the training horizon for every serie
 class FredAddition:
     id: str
     country: str  # ISO2
-    dimension: Literal["growth", "external"]
+    dimension: Literal["growth", "external", "labour"]
     concept: str
     unit_kind: str
     currency: str | None
@@ -73,6 +73,21 @@ FRED_ADDITIONS: tuple[FredAddition, ...] = (
             "diff",
         )
         for iso2 in ("DE", "FR", "IT", "JP", "CA", "AU")  # US dollars, exchange rate converted
+    ),
+)
+FRED_ADDITIONS = (
+    *FRED_ADDITIONS,
+    # South Africa: quarterly (the OECD has no monthly series), seasonally adjusted with vintages.
+    FredAddition(
+        "LRUNTTTTZAQ156S",
+        "ZA",
+        "labour",
+        "unemployment_rate",
+        "rate_percent",
+        None,
+        "lagging",
+        "Employers hire and fire after output has already turned.",
+        "diff",
     ),
 )
 FRED_ADDITION_BY_ID = {a.id: a for a in FRED_ADDITIONS}
@@ -192,7 +207,7 @@ class EurostatSeries:
     units: str
     adjustment: str
     concept: str
-    dimension: Literal["growth", "inflation"]
+    dimension: Literal["growth", "inflation", "labour"]
     unit_kind: str
     cycle: Literal["leading", "coincident", "lagging"]
     cycle_reason: str
@@ -249,4 +264,123 @@ EUROSTAT_SERIES: tuple[EurostatSeries, ...] = (
         for geo in ("DE", "FR", "IT")
     ),
 )
+# Monthly unemployment (seasonally adjusted, percent of the labour force, ages 15 to 74 and over as
+# Eurostat defines it) for the EU members that had only the World Bank's annual figure (rule K):
+# probed live on 13 Nov 2026, current to September or October 2026. Greece is "EL" at Eurostat.
+# Bulgaria and Malta were probed fine but answered HTTP 307 (a redirect) when loaded, so they stay
+# on the World Bank's annual figure (one attempt, logged in the assumptions register).
+_UNE = {"freq": "M", "s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T"}
+_UNE_GEO: dict[str, str] = {
+    "AT": "AT",
+    "BE": "BE",
+    "HR": "HR",
+    "CY": "CY",
+    "EE": "EE",
+    "FI": "FI",
+    "EL": "GR",
+    "IE": "IE",
+    "LV": "LV",
+    "LT": "LT",
+    "LU": "LU",
+    "NL": "NL",
+    "PT": "PT",
+    "RO": "RO",
+    "SK": "SK",
+    "SI": "SI",
+    "ES": "ES",
+}
+EUROSTAT_SERIES = (
+    *EUROSTAT_SERIES,
+    *(
+        EurostatSeries(
+            f"ESTAT_UNE_{geo}",
+            iso2,
+            "une_rt_m",
+            {**_UNE, "geo": geo},
+            f"Unemployment rate, seasonally adjusted, total, {geo}",
+            "Percent",
+            "Seasonally Adjusted",
+            "unemployment_rate",
+            "labour",
+            "rate_percent",
+            "lagging",
+            "Employers hire and fire after output has already turned.",
+            "diff",
+            release="Eurostat Labour market",
+        )
+        for geo, iso2 in _UNE_GEO.items()
+    ),
+)
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}
+
+
+@dataclass(frozen=True)
+class BcbSeries:
+    id: str  # QuFin id: BCB_<code>
+    code: int  # SGS series code
+    title: str
+    units: str
+    adjustment: str
+    concept: str
+    dimension: Literal["labour", "external"]
+    unit_kind: str
+    currency: str | None
+    cycle: Literal["leading", "coincident", "lagging"]
+    cycle_reason: str
+    change: Literal["pct", "diff"]
+    release: str
+
+
+# Brazil from the central bank's SGS (keyless, verified live 13 Nov 2026: both to September 2026).
+# FRED has no Brazilian unemployment (LRHUTTTTBRM156S does not exist) and the OECD has no monthly
+# series. 24369 is the PNAD Continua unemployment rate (moving quarter, monthly, from 2012);
+# 22707 is the monthly goods trade balance in millions of US dollars. Neither is seasonally
+# adjusted.
+BCB_SERIES: tuple[BcbSeries, ...] = (
+    BcbSeries(
+        "BCB_24369", 24369, "Unemployment rate, PNAD Continua", "Percent",
+        "Not Seasonally Adjusted", "unemployment_rate", "labour", "rate_percent", None,
+        "lagging", "Employers hire and fire after output has already turned.", "diff",
+        "IBGE PNAD Continua (via BCB SGS)",
+    ),
+    BcbSeries(
+        "BCB_22707", 22707, "Trade balance, goods, monthly", "Millions of U.S. Dollars",
+        "Not Seasonally Adjusted", "merchandise_trade_balance", "external", "amount_currency",
+        "USD",
+        "lagging", _TRADE_REASON, "diff", "Balance of payments (via BCB SGS)",
+    ),
+)  # fmt: skip
+BCB_BY_ID = {s.id: s for s in BCB_SERIES}
+BCB_COUNTRY = "BR"
+
+
+@dataclass(frozen=True)
+class SingStatSeries:
+    id: str
+    table: str
+    series_no: str
+    title: str
+    units: str
+    concept: str
+    release: str
+
+
+# Singapore from the Department of Statistics Table Builder (keyless, verified live 13 Nov 2026):
+# table M182342, row 1 "Total Unemployment Rate, (SA)", quarterly 1992 1Q to 2026 3Q. FRED has none
+# and the OECD has no monthly series for Singapore.
+SINGSTAT_SERIES: tuple[SingStatSeries, ...] = (
+    SingStatSeries(
+        "SINGSTAT_UNE",
+        "M182342",
+        "1",
+        "Total unemployment rate, seasonally adjusted",
+        "Percent",
+        "unemployment_rate",
+        "SingStat Labour Force Survey",
+    ),
+)
+SINGSTAT_BY_ID = {s.id: s for s in SINGSTAT_SERIES}
+SINGSTAT_COUNTRY = "SG"
+
+# Policy rates added on 13 Nov 2026 (BIS WS_CBPOL, current to October 2026): Chile and Colombia.
+NEW_POLICY_AREAS: tuple[str, ...] = ("CL", "CO")

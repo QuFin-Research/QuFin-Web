@@ -36,6 +36,7 @@ def hicp_release(period: date) -> date:
 RELEASES: dict[str, Callable[[date], date]] = {
     "sts_inpr_m": production_release,
     "prc_hicp_minr": hicp_release,
+    "une_rt_m": hicp_release,  # unemployment follows the month by about four weeks
 }
 
 

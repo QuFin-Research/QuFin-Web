@@ -15,7 +15,15 @@ economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 from dataclasses import dataclass
 
 from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES
-from app.data.gap_ids import EUROSTAT_SERIES, FRED_ADDITIONS, ONS_SERIES
+from app.data.gap_ids import (
+    BCB_COUNTRY,
+    BCB_SERIES,
+    EUROSTAT_SERIES,
+    FRED_ADDITIONS,
+    ONS_SERIES,
+    SINGSTAT_COUNTRY,
+    SINGSTAT_SERIES,
+)
 from app.data.macro_catalog import BY_ID, OECD_SERIES
 from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import RESERVES
@@ -578,6 +586,8 @@ SERIES_CONCEPTS |= {(a.country, a.id): a.concept for a in FRED_ADDITIONS}
 SERIES_CONCEPTS |= {("GB", s.id): s.concept for s in ONS_SERIES}
 SERIES_CONCEPTS |= {(e.country, e.id): e.concept for e in EUROSTAT_SERIES}
 SERIES_CONCEPTS |= {(w.iso2, w.id): w.indicator.concept for w in WB_SERIES}
+SERIES_CONCEPTS |= {(BCB_COUNTRY, b.id): b.concept for b in BCB_SERIES}
+SERIES_CONCEPTS |= {(SINGSTAT_COUNTRY, s.id): s.concept for s in SINGSTAT_SERIES}
 
 
 # Concepts whose series do not share one scale as stored, and the basis countries are compared on.
