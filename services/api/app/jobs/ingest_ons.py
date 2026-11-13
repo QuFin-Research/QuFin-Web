@@ -24,6 +24,7 @@ RELEASES = {
     "MGSX": "ONS Labour market overview",
     "ABMI": "ONS GDP quarterly national accounts",
     "DKO8": "ONS Consumer price inflation",
+    "BOKI": "ONS UK trade",
 }
 PAUSE_SECONDS = 2.0
 

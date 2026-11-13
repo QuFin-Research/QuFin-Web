@@ -17,6 +17,7 @@ from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES
 from app.data.cycle_classification import QUFIN_CYCLE
 from app.data.gap_ids import (
     EURO_MEMBERS,
+    EUROSTAT_SERIES,
     FRED_ADDITIONS,
     HISTORY_START,
     KUWAIT_POLICY,
@@ -25,6 +26,7 @@ from app.data.gap_ids import (
 )
 from app.data.macro_ids import IMF_CPI, MACRO_COUNTRY, OECD_MACRO
 from app.data.reserves_ids import FRED_RESERVES, RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 # The five scored pillars, plus external and fiscal (stored and shown; scored once the
 # scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
@@ -46,14 +48,27 @@ Cycle = Literal["leading", "coincident", "lagging"]
 # ratios and indexes that can be zero or negative; a percent change of those misleads.
 ChangeKind = Literal["pct", "diff"]
 
-# Enough history for the walk-forward windows without pulling every vintage since 1939.
-DEFAULT_OBSERVATION_START = date(2000, 1, 1)
+# Rule I: every series loads the deepest history its source holds from 1990, so all series share
+# one start and indicators compare over the same dates. Earlier would pull vintages since 1939.
+DEFAULT_OBSERVATION_START = date(1990, 1, 1)
 
 
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["bis", "bls", "eia", "ecb", "fred", "imf", "oecd", "ons", "treasury"]
+    source: Literal[
+        "bis",
+        "bls",
+        "eia",
+        "ecb",
+        "eurostat",
+        "fred",
+        "imf",
+        "oecd",
+        "ons",
+        "treasury",
+        "worldbank",
+    ]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -466,6 +481,31 @@ _DECLARED: tuple[CatalogSeries, ...] = (
             history_start=HISTORY_START,
         )
         for s in ONS_SERIES
+    ),
+    *(
+        CatalogSeries(
+            e.id,
+            "eurostat",
+            e.country,
+            e.dimension,
+            e.cycle,
+            change=e.change,
+            published_as_change=e.published_as_change,
+            history_start=HISTORY_START,
+        )
+        for e in EUROSTAT_SERIES
+    ),
+    *(
+        CatalogSeries(
+            w.id,
+            "worldbank",
+            w.iso2,
+            w.indicator.dimension,
+            w.indicator.cycle,
+            change=w.indicator.change,
+            history_start=HISTORY_START,
+        )
+        for w in WB_SERIES
     ),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the

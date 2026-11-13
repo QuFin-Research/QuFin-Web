@@ -406,7 +406,8 @@ def test_a_missing_quarter_is_a_partial_response(db_session):  # noqa: F811
 
 
 def test_japans_documented_policy_rate_gaps_are_accepted_and_others_are_not(db_session):  # noqa: F811
-    (a1, b1), (a2, b2) = KNOWN_GAPS["BIS_CBPOL_JP"]
+    (a0, b0), (a1, b1), (a2, b2) = KNOWN_GAPS["BIS_CBPOL_JP"]
+    assert (a0, b0) == (date(1999, 3, 1), date(2000, 7, 1))  # found loading from 1990
     assert (a1, b1) == (date(2001, 4, 1), date(2006, 2, 1))
     assert (a2, b2) == (date(2013, 5, 1), date(2016, 8, 1))
     edges = [(date(2001, 3, 1), 0.1), (date(2006, 3, 1), 0.25), (date(2006, 4, 1), 0.25)]

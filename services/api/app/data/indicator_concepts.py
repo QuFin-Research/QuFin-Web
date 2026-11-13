@@ -15,10 +15,11 @@ economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 from dataclasses import dataclass
 
 from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES
-from app.data.gap_ids import FRED_ADDITIONS, ONS_SERIES
+from app.data.gap_ids import EUROSTAT_SERIES, FRED_ADDITIONS, ONS_SERIES
 from app.data.macro_catalog import BY_ID, OECD_SERIES
 from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 # Globally recognised indicator acronyms and the full names they stand for. An indicator is known
 # by this name everywhere in QuFin (database, API, charts, comparisons, backtests, docs), whatever
@@ -303,6 +304,10 @@ CONCEPTS: dict[str, Concept] = {
         "Residential Property Prices",
         "Nominal price index of homes (2010 = 100): housing is the most rate-sensitive spending.",
     ),
+    "current_account_to_gdp": Concept(
+        "Current Account Balance (% of GDP)",
+        "The current account balance as a share of GDP; a deficit means borrowing from abroad.",
+    ),
     "trade_balance": Concept(
         "Trade Balance",
         "Exports minus imports of goods and services; a deficit means buying more abroad.",
@@ -571,6 +576,8 @@ SERIES_CONCEPTS |= {
 # Coverage gaps (Sprints 1-4): FRED series of other economies and the UK's ONS series.
 SERIES_CONCEPTS |= {(a.country, a.id): a.concept for a in FRED_ADDITIONS}
 SERIES_CONCEPTS |= {("GB", s.id): s.concept for s in ONS_SERIES}
+SERIES_CONCEPTS |= {(e.country, e.id): e.concept for e in EUROSTAT_SERIES}
+SERIES_CONCEPTS |= {(w.iso2, w.id): w.indicator.concept for w in WB_SERIES}
 
 
 # Concepts whose series do not share one scale as stored, and the basis countries are compared on.
@@ -593,6 +600,13 @@ COMPARED_AS: dict[str, str] = {
     "leading_index": (
         "The same OECD amplitude-adjusted composite leading indicator (long-term average = 100): "
         "FRED's unit text for the US series omits the base"
+    ),
+    "merchandise_trade_balance": (
+        "Standardised against each series' own history: the UK balance is in pounds, the others in "
+        "US dollars (OECD figures converted at exchange rates)"
+    ),
+    "industrial_production": (
+        "Year-on-year change: the US index is 2017=100, Eurostat's is 2021=100"
     ),
     "real_gdp": (
         "Year-on-year growth: each country's real GDP is an amount in its own currency and chained "

@@ -11,9 +11,10 @@ A series without a cycle fails to load (macro_catalog.py), so a new series canno
 from typing import Literal
 
 from app.data.bis_ids import BIS_SERIES, MEASURES
-from app.data.gap_ids import FRED_ADDITIONS, ONS_SERIES
+from app.data.gap_ids import EUROSTAT_SERIES, FRED_ADDITIONS, ONS_SERIES
 from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 Cycle = Literal["leading", "coincident", "lagging"]
 
@@ -94,6 +95,8 @@ QUFIN_CYCLE: dict[str, tuple[Cycle, str]] = {
     # --- Coverage gaps (Sprints 1-4) ---------------------------------------------------------
     **{a.id: (a.cycle, a.cycle_reason) for a in FRED_ADDITIONS},
     **{s.id: (s.cycle, s.cycle_reason) for s in ONS_SERIES},
+    **{e.id: (e.cycle, e.cycle_reason) for e in EUROSTAT_SERIES},
+    **{w.id: (w.indicator.cycle, w.indicator.cycle_reason) for w in WB_SERIES},
     # --- Consumer prices and unemployment by country (P1-23) ---------------------------------
     **{series_id: ("lagging", _INFLATION) for series_id in IMF_CPI},
     **{

@@ -37,12 +37,22 @@ def inflation_release(period: date) -> date:
     return _last_weekday_before(_first_of(period.year, period.month + 2))
 
 
+def trade_release(period: date) -> date:
+    """Trade in goods follows about six weeks after the month (September data on 12 November):
+    dated the last weekday of the third month from its start."""
+    return _last_weekday_before(_first_of(period.year, period.month + 3))
+
+
 def national_accounts_release(period: date) -> date:
     return _last_weekday_before(_first_of(period.year, period.month + 6))
 
 
 RELEASES: dict[str, dict[str, Callable[[date], date]]] = {
-    "Monthly": {"MGSX": labour_market_release, "DKO8": inflation_release},
+    "Monthly": {
+        "MGSX": labour_market_release,
+        "DKO8": inflation_release,
+        "BOKI": trade_release,
+    },
     "Quarterly": {"ABMI": national_accounts_release},
 }
 

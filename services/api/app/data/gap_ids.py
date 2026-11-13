@@ -3,8 +3,10 @@
 Checked live on 13 Nov 2026. What was added, and what was left out and why:
 
 - FRED/ALFRED (Rule H): real GDP for Germany, France, Italy, Japan and Canada, and the goods trade
-  balance of six economies, all seasonally adjusted with vintages. Left out because FRED's copy is
-  frozen: industrial production (`*PROINDMISMEI`, last March 2024) and core CPI (`*CPICORMINMEI`,
+  balance of five economies (the UK is left out: its series fell overdue on 13 Nov 2026, because
+  FRED posts the OECD's UK figures every second month), all seasonally adjusted with vintages.
+  Left out because FRED's copy is frozen: industrial production (`*PROINDMISMEI`, last March
+  2024) and core CPI (`*CPICORMINMEI`,
   last March 2025 or June 2021), the OECD's MEI series that FRED no longer updates; the UK real GDP
   series `CLVMNACSCAB1GQUK` (marked DISCONTINUED, last July 2020); and the Brazilian and South
   African unemployment series (`LRHUTTTT{BR,ZA}M156S` do not exist on FRED).
@@ -70,7 +72,7 @@ FRED_ADDITIONS: tuple[FredAddition, ...] = (
             _TRADE_REASON,
             "diff",
         )
-        for iso2 in ("DE", "FR", "IT", "GB", "JP", "CA")  # US dollars, exchange rate converted
+        for iso2 in ("DE", "FR", "IT", "JP", "CA", "AU")  # US dollars, exchange rate converted
     ),
 )
 FRED_ADDITION_BY_ID = {a.id: a for a in FRED_ADDITIONS}
@@ -85,7 +87,7 @@ class OnsSeries:
     title: str
     units: str
     concept: str
-    dimension: Literal["growth", "inflation", "labour"]
+    dimension: Literal["growth", "inflation", "labour", "external"]
     unit_kind: str
     currency: str | None
     cycle: Literal["leading", "coincident", "lagging"]
@@ -142,6 +144,24 @@ ONS_SERIES: tuple[OnsSeries, ...] = (
         published_as_change=True,
     ),
 )
+ONS_SERIES = (
+    *ONS_SERIES,
+    OnsSeries(
+        "ONS_BOKI",
+        "BOKI",
+        "economy/nationalaccounts/balanceofpayments/timeseries/boki/mret",
+        "Monthly",
+        "Trade in goods: worldwide balance, balance of payments basis, current prices, SA",
+        "Millions of Pounds",
+        "merchandise_trade_balance",
+        "external",
+        "amount_currency",
+        "GBP",
+        "lagging",
+        _TRADE_REASON,
+        "diff",
+    ),
+)
 ONS_BY_ID = {s.id: s for s in ONS_SERIES}
 ONS_COUNTRY = "GB"
 
@@ -160,3 +180,73 @@ KUWAIT_POLICY = "KW"
 # Germany, France and Italy: effective exchange rates and credit are published per country; their
 # policy rate is the ECB's, already stored for the euro area (rule 16).
 EURO_MEMBERS: tuple[str, ...] = ("DE", "FR", "IT")
+
+
+@dataclass(frozen=True)
+class EurostatSeries:
+    id: str  # QuFin id: ESTAT_<MEASURE>_<geo>
+    country: str  # ISO2 ("EA" for the euro area)
+    dataset: str
+    filters: dict[str, str]
+    title: str
+    units: str
+    adjustment: str
+    concept: str
+    dimension: Literal["growth", "inflation"]
+    unit_kind: str
+    cycle: Literal["leading", "coincident", "lagging"]
+    cycle_reason: str
+    change: Literal["pct", "diff"]
+    published_as_change: bool = False
+    release: str = "Eurostat"
+
+
+# Industrial production (seasonally and calendar adjusted, 2021 = 100) for the euro area and its
+# three largest economies, and core HICP for the three (the euro area's is already stored from
+# the ECB, rule 16). FRED's copies stopped in 2024 and 2025 (see above). Checked 13 Nov 2026:
+# production to September 2026 and from 1990; core HICP (annual rate, COICOP 2018 dataset
+# `prc_hicp_minr`) to October 2026 and from 1997. The old `prc_hicp_midx` ends in December 2025.
+_IP = {"freq": "M", "indic_bt": "PRD", "nace_r2": "B-D", "s_adj": "SCA", "unit": "I21"}
+_CORE = {"freq": "M", "unit": "RCH_A", "coicop18": "TOT_X_NRG_FOOD"}
+EUROSTAT_SERIES: tuple[EurostatSeries, ...] = (
+    *(
+        EurostatSeries(
+            f"ESTAT_IP_{geo}",
+            iso2,
+            "sts_inpr_m",
+            {**_IP, "geo": geo},
+            f"Production in industry, seasonally and calendar adjusted, {geo}",
+            "Index, 2021=100",
+            "Seasonally and Calendar Adjusted",
+            "industrial_production",
+            "growth",
+            "index",
+            "coincident",
+            "Output is the cycle itself: production moves with it.",
+            "pct",
+            release="Eurostat Short-term business statistics",
+        )
+        for geo, iso2 in (("EA21", "EA"), ("DE", "DE"), ("FR", "FR"), ("IT", "IT"))
+    ),
+    *(
+        EurostatSeries(
+            f"ESTAT_CORE_{geo}",
+            geo,
+            "prc_hicp_minr",
+            {**_CORE, "geo": geo},
+            f"HICP excluding energy, food, alcohol and tobacco: annual rate of change, {geo}",
+            "Percentage change",
+            "Not Seasonally Adjusted",
+            "core_consumer_prices",
+            "inflation",
+            "rate_percent",
+            "lagging",
+            "Prices follow activity with a lag.",
+            "diff",
+            published_as_change=True,
+            release="Eurostat HICP",
+        )
+        for geo in ("DE", "FR", "IT")
+    ),
+)
+EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}

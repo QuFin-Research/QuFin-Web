@@ -64,7 +64,56 @@ ISO3_TO_ISO2: dict[str, str] = {
     "ARE": "AE",
     "SGP": "SG",
     "HKG": "HK",
+    "ALB": "AL",
+    "ARM": "AM",
+    "AUT": "AT",
+    "AZE": "AZ",
+    "BLR": "BY",
+    "BEL": "BE",
+    "BIH": "BA",
+    "BRN": "BN",
+    "BGR": "BG",
+    "KHM": "KH",
+    "HRV": "HR",
+    "CYP": "CY",
+    "EGY": "EG",
+    "EST": "EE",
+    "FIN": "FI",
+    "GHA": "GH",
+    "GRC": "GR",
+    "ISL": "IS",
+    "IRN": "IR",
+    "IRL": "IE",
+    "ISR": "IL",
+    "KEN": "KE",
+    "LVA": "LV",
+    "LTU": "LT",
+    "LUX": "LU",
+    "MKD": "MK",
+    "MYS": "MY",
+    "MLT": "MT",
+    "MDA": "MD",
+    "MNE": "ME",
+    "NLD": "NL",
+    "NGA": "NG",
+    "PRT": "PT",
+    "COG": "CG",
+    "ROU": "RO",
+    "SRB": "RS",
+    "SVK": "SK",
+    "SVN": "SI",
+    "ESP": "ES",
+    "UKR": "UA",
+    "UZB": "UZ",
+    "VEN": "VE",
 }
+
+# Economies added with the 85-country list (Rule J), probed on 13 Nov 2026 and left out of the IMF
+# CPI because it was not current: Cambodia (latest April 2026), Cameroon (February 2026), Serbia
+# (December 2025), plus Malta, which loaded but failed the release check (latest June 2026, due
+# 30 Sept); and not published by the IMF at all: Andorra, the Faroe Islands, the Isle of
+# Man, Kosovo, Liechtenstein, Monaco, North Korea.
+_NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})
 
 # Who publishes what, as live on 12 Nov 2026 (one request per area, 2000 onwards, no missing
 # months). Areas absent from a tuple were checked and are not available from that source.
@@ -74,7 +123,7 @@ ISO3_TO_ISO2: dict[str, str] = {
 # began in late 2024, so it has 17 months. Kuwait loaded but the release check marked it overdue
 # (latest month June 2026, due 30 Sept): it joins when the IMF catches up.
 IMF_CPI_AREAS: tuple[str, ...] = tuple(
-    a for a in ISO3_TO_ISO2 if a not in {"NZL", "QAT", "ARE", "KWT"}
+    a for a in ISO3_TO_ISO2 if a not in {"NZL", "QAT", "ARE", "KWT"} and a not in _NOT_YET
 )
 # OECD unemployment (monthly, seasonally adjusted, ILO definition). Not available monthly for
 # Switzerland, New Zealand, Argentina, Indonesia, India, Brazil, China, South Africa, Russia, the

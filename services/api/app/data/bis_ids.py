@@ -177,10 +177,15 @@ MEASURES: dict[str, BisMeasure] = {
 
 # Months the BIS publishes no value for, inclusive: Japan had no policy rate while the Bank of
 # Japan ran quantitative easing (the BIS states 4 Apr 2013 to 20 Sep 2016 in its series notes and
-# publishes nothing for March 2001 to March 2006 either). Any other missing period is a partial
-# response and fails the load.
+# publishes nothing for March 2001 to March 2006 either; it also has no value for March 1999 to
+# July 2000, the years of the zero-rate policy, found when loading from 1990 on 13 Nov 2026).
+# Any other missing period is a partial response and fails the load.
 KNOWN_GAPS: dict[str, tuple[tuple[date, date], ...]] = {
-    "BIS_CBPOL_JP": ((date(2001, 4, 1), date(2006, 2, 1)), (date(2013, 5, 1), date(2016, 8, 1))),
+    "BIS_CBPOL_JP": (
+        (date(1999, 3, 1), date(2000, 7, 1)),
+        (date(2001, 4, 1), date(2006, 2, 1)),
+        (date(2013, 5, 1), date(2016, 8, 1)),
+    ),
 }
 
 
