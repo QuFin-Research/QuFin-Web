@@ -58,6 +58,25 @@ def _currency(text: str, country: str, source: str = "") -> str | None:
     return None
 
 
+_AMOUNT_OF = re.compile(r"^(millions?|billions?|trillions?|thousands?) of ")
+_POUNDS = re.compile(r"^(millions?|billions?|trillions?|thousands?) of pounds")
+
+
+def _national_amount(text: str, country: str) -> str | None:
+    """Amounts the source states in a currency that is not named "dollars" or "euro": yen and
+    pounds sterling by name, and FRED's "Domestic Currency", which is the country's own."""
+    if re.search(r"yen", text):
+        return "JPY"
+    if _POUNDS.match(text):
+        return "GBP"
+    if "domestic currency" in text and _AMOUNT_OF.match(text):
+        from app.data.taxonomy import COUNTRY_BY_ISO2  # taxonomy imports the catalog
+
+        place = COUNTRY_BY_ISO2.get(country)
+        return place.currency if place else None
+    return None
+
+
 def classify(units: str, country: str, source: str = "") -> UnitInfo:
     text = units.strip().lower()
     basis = _SCALE.sub("", text).replace("u.s. dollars", "dollars")
@@ -77,6 +96,8 @@ def classify(units: str, country: str, source: str = "") -> UnitInfo:
     if " per " in text and "dollar" in text:  # "Dollars per Barrel"
         currency = _currency(text, country, source)
         return UnitInfo("price_per_unit" if currency else "unknown", currency, basis)
+    if own := _national_amount(text, country):  # yen, pounds, "Domestic Currency"
+        return UnitInfo("amount_currency", own, basis)
     if "dollar" in text or "euro" in text:
         currency = _currency(text, country, source)
         return UnitInfo("amount_currency" if currency else "unknown", currency, basis)

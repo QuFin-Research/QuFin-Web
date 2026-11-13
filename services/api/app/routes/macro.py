@@ -7,6 +7,7 @@ from app.core.auth import DbSession
 from app.core.clock import Today
 from app.data.indicator_concepts import CONCEPTS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID, ChangeKind
+from app.data.taxonomy import COUNTRY_BY_ISO2
 from app.domain.changes import change_measures
 from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
 from app.schemas.freshness import DataFreshness, DataTimeliness
@@ -45,8 +46,10 @@ def _series(meta: SeriesMeta) -> MacroSeries:
     entry = BY_ID.get(meta.id)
     if entry is not None:  # the catalog is the source of truth, so a re-tag needs no re-load
         fields["cycle"] = entry.cycle
+    country = COUNTRY_BY_ISO2.get(meta.country)
     return MacroSeries(
         **fields,
+        country_iso3=country.iso3 if country else None,
         name=concept.name,
         explanation=concept.explanation,
         concept=key,
@@ -66,9 +69,12 @@ _META_FIELDS = (
     "cycle",
     "last_updated",
     "source_name",
+    "publisher",
     "release_name",
     "unit_kind",
     "currency",
+    "canonical_code",
+    "pillar",
 )
 
 

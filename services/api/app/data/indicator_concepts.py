@@ -15,8 +15,19 @@ economies can be compared side by side. Rules (RULEBOOK.md, rules 16-19):
 from dataclasses import dataclass
 
 from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES
+from app.data.gap_ids import (
+    BCB_COUNTRY,
+    BCB_SERIES,
+    EUROSTAT_SERIES,
+    FRED_ADDITIONS,
+    ONS_SERIES,
+    SINGSTAT_COUNTRY,
+    SINGSTAT_SERIES,
+)
 from app.data.macro_catalog import BY_ID, OECD_SERIES
+from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 # Globally recognised indicator acronyms and the full names they stand for. An indicator is known
 # by this name everywhere in QuFin (database, API, charts, comparisons, backtests, docs), whatever
@@ -293,6 +304,18 @@ CONCEPTS: dict[str, Concept] = {
         "The currency's value against a basket of trading partners' currencies.",
     ),
     # --- External and fiscal -------------------------------------------------------------------
+    "merchandise_trade_balance": Concept(
+        "Trade Balance, Goods",
+        "Exports minus imports of goods only, in US dollars; a deficit means buying more abroad.",
+    ),
+    "residential_property_prices": Concept(
+        "Residential Property Prices",
+        "Nominal price index of homes (2010 = 100): housing is the most rate-sensitive spending.",
+    ),
+    "current_account_to_gdp": Concept(
+        "Current Account Balance (% of GDP)",
+        "The current account balance as a share of GDP; a deficit means borrowing from abroad.",
+    ),
     "trade_balance": Concept(
         "Trade Balance",
         "Exports minus imports of goods and services; a deficit means buying more abroad.",
@@ -467,7 +490,7 @@ US_SERIES_CONCEPTS: dict[str, str] = {
     "DCOILWTICO": "crude_oil_wti",
     "DCOILBRENTEU": "crude_oil_brent",
     "DHHNGSP": "natural_gas",
-    "CIS1010000000000I": "employment_cost_index",
+    "ECIALLCIV": "employment_cost_index",
 }
 
 # Euro area: the same concept keys as the US, so names match across countries (rule 18).
@@ -509,6 +532,8 @@ NON_FRED_ALLOWED: dict[str, str] = {
         "WDIUPUS2",
     )
 } | {
+    "BIS_SPP_US": "FRED's copy of the BIS index (QUSN628BIS, NSA, with vintages) was a quarter "
+    "behind the BIS API on 13 Nov 2026 (FRED to 2026 Q1, BIS to Q2)",
     # Mandatory lagging fiscal gauges of a currency (rule 17); FRED carries debt only quarterly.
     "TREAS_DEBT_TOTAL": "Daily Debt to the Penny is not on FRED, which has quarterly debt only "
     "(checked 5 Nov 2026)",
@@ -516,7 +541,6 @@ NON_FRED_ALLOWED: dict[str, str] = {
     "(checked 5 Nov 2026)",
     "TREAS_INTEREST_EXPENSE": "Monthly interest expense on the public debt is not on FRED, "
     "which has quarterly interest payments only (checked 5 Nov 2026)",
-    "CIS1010000000000I": "Employment Cost Index is not on FRED (checked 7 Nov 2026)",
 }
 
 # Not stored because they are exactly derivable from series that are (no duplicated data).
@@ -540,14 +564,65 @@ SERIES_CONCEPTS |= {
 
 SERIES_CONCEPTS |= {(country, series_id): "fx_reserves" for series_id, country in RESERVES.items()}
 
+# Consumer prices (IMF) and unemployment (OECD) in every country the comparison view covers.
+SERIES_CONCEPTS |= {(BY_ID[sid].country, sid): "consumer_prices" for sid in IMF_CPI}
+SERIES_CONCEPTS |= {(BY_ID[sid].country, sid): "unemployment_rate" for sid in OECD_MACRO}
+
 _BIS_CONCEPT = {
     "CBPOL": "policy_rate",
     "NEER": "nominal_effective_exchange_rate",
     "REER": "real_effective_exchange_rate",
     "CREDIT": "credit_to_gdp_ratio",
     "CREDGAP": "credit_to_gdp_gap",
+    "SPP": "residential_property_prices",
 }
 SERIES_CONCEPTS |= {
     (BIS_COUNTRIES[series_id], series_id): _BIS_CONCEPT[code]
     for series_id, (code, _area) in BIS_SERIES.items()
+}
+
+# Coverage gaps (Sprints 1-4): FRED series of other economies and the UK's ONS series.
+SERIES_CONCEPTS |= {(a.country, a.id): a.concept for a in FRED_ADDITIONS}
+SERIES_CONCEPTS |= {("GB", s.id): s.concept for s in ONS_SERIES}
+SERIES_CONCEPTS |= {(e.country, e.id): e.concept for e in EUROSTAT_SERIES}
+SERIES_CONCEPTS |= {(w.iso2, w.id): w.indicator.concept for w in WB_SERIES}
+SERIES_CONCEPTS |= {(BCB_COUNTRY, b.id): b.concept for b in BCB_SERIES}
+SERIES_CONCEPTS |= {(SINGSTAT_COUNTRY, s.id): s.concept for s in SINGSTAT_SERIES}
+
+
+# Concepts whose series do not share one scale as stored, and the basis countries are compared on.
+# A concept is one indicator in every country (rules 18 and 19), but the countries' offices publish
+# it differently; ranking or pooling the stored values would compare unlike numbers (rule 23).
+# `check-data` fails for a concept that mixes scales and is not declared here.
+COMPARED_AS: dict[str, str] = {
+    "consumer_prices": (
+        "Year-on-year change: the US series is an index level (1982-84=100), the euro area's is "
+        "already an annual rate of change"
+    ),
+    "core_consumer_prices": (
+        "Year-on-year change: the US series is an index level (1982-84=100), the euro area's is "
+        "already an annual rate of change"
+    ),
+    "consumer_sentiment": (
+        "Standardised against each series' own history: the Michigan survey (1966:Q1=100) and the "
+        "OECD indicators (long-term average = 100) have different bases"
+    ),
+    "leading_index": (
+        "The same OECD amplitude-adjusted composite leading indicator (long-term average = 100): "
+        "FRED's unit text for the US series omits the base"
+    ),
+    "merchandise_trade_balance": (
+        "Standardised against each series' own history: the UK balance is in pounds, the others in "
+        "US dollars (OECD figures converted at exchange rates)"
+    ),
+    "industrial_production": (
+        "Year-on-year change: the US index is 2017=100, Eurostat's is 2021=100"
+    ),
+    "real_gdp": (
+        "Year-on-year growth: each country's real GDP is an amount in its own currency and chained "
+        "base year, and the US series is a seasonally adjusted annual rate"
+    ),
+    "money_supply": (
+        "Year-on-year change: the US amount is in dollars and the euro area's in euro"
+    ),
 }

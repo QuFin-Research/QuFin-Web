@@ -4,9 +4,13 @@ Checked live on 12 Nov 2026 against the BIS Data Portal API (v2). Every economy 
 current observation for its measure (latest month September or October 2026, latest quarter
 2026 Q1). Left out, and why:
 
-- the United States: FRED carries the US dollar indexes and credit series with vintages
-  (rule 17), and the Fed's own policy rate is stored from FRED;
-- the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16);
+- the United States, except for property prices: FRED carries the US dollar indexes and credit
+  series with vintages (rule 17), and the Fed's own policy rate is stored from FRED, but
+  FRED's copy of the BIS property price index (not seasonally adjusted, with vintages) was a
+  quarter behind the BIS API on 13 Nov 2026 (FRED to 2026 Q1, BIS to Q2), so the BIS is read;
+- the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16), so
+  Germany, France and Italy (the BIS has no policy rate for them) get effective exchange rates and
+  credit only;
 - Russia: the BIS stopped receiving Russian official data after 28 Feb 2022 and the coverage
   list marks Russia as undecided (docs/coverage-universe.md);
 - Singapore and the United Arab Emirates for policy rates (BIS has none) and the UAE for credit
@@ -20,6 +24,8 @@ read directly. Kept apart from the catalog so the cycle classification and tests
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
+
+from app.data.gap_ids import EURO_MEMBERS, KUWAIT_POLICY, NEW_POLICY_AREAS, SPP_AREAS
 
 Frequency = Literal["Monthly", "Quarterly"]
 
@@ -49,8 +55,9 @@ _POLICY_AREAS = (
     "KR",
     "SA",
 )
-_EER_AREAS = (*_POLICY_AREAS, "XM", "SG", "AE")
-_CREDIT_AREAS = (*_POLICY_AREAS, "XM", "SG")
+_POLICY_WITH_KUWAIT = (*_POLICY_AREAS, KUWAIT_POLICY, *NEW_POLICY_AREAS)
+_EER_AREAS = (*_POLICY_AREAS, "XM", "SG", "AE", *EURO_MEMBERS)
+_CREDIT_AREAS = (*_POLICY_AREAS, "XM", "SG", *EURO_MEMBERS)
 
 _MARKET = "Market prices discount the future, so they turn before activity."
 
@@ -66,7 +73,7 @@ class BisMeasure:
     # The BIS UNIT_MEASURE attribute the units were verified against, when it publishes one.
     unit_measure: str | None
     areas: tuple[str, ...]
-    dimension: Literal["policy", "external"]
+    dimension: Literal["policy", "external", "housing"]
     cycle: Literal["leading", "lagging"]
     cycle_reason: str
     change: Literal["pct", "diff"]
@@ -86,7 +93,7 @@ MEASURES: dict[str, BisMeasure] = {
             "Central bank policy rate (end of month)",
             "Percent per annum",
             None,
-            _POLICY_AREAS,
+            _POLICY_WITH_KUWAIT,
             "policy",
             "lagging",
             "Central banks move rates after the data have turned.",
@@ -150,16 +157,35 @@ MEASURES: dict[str, BisMeasure] = {
             "diff",
             area_dimension="BORROWERS_CTY",
         ),
+        BisMeasure(
+            "SPP",
+            "WS_SPP",
+            "Q.{areas}.N.628",
+            "Quarterly",
+            "Residential property prices, nominal index",
+            "Index, 2010=100",
+            None,
+            SPP_AREAS,
+            "housing",
+            "leading",
+            "Housing is the most rate-sensitive part of spending, so it turns before the economy.",
+            "pct",
+        ),
     )
 }
 
 
 # Months the BIS publishes no value for, inclusive: Japan had no policy rate while the Bank of
 # Japan ran quantitative easing (the BIS states 4 Apr 2013 to 20 Sep 2016 in its series notes and
-# publishes nothing for March 2001 to March 2006 either). Any other missing period is a partial
-# response and fails the load.
+# publishes nothing for March 2001 to March 2006 either; it also has no value for March 1999 to
+# July 2000, the years of the zero-rate policy, found when loading from 1990 on 13 Nov 2026).
+# Any other missing period is a partial response and fails the load.
 KNOWN_GAPS: dict[str, tuple[tuple[date, date], ...]] = {
-    "BIS_CBPOL_JP": ((date(2001, 4, 1), date(2006, 2, 1)), (date(2013, 5, 1), date(2016, 8, 1))),
+    "BIS_CBPOL_JP": (
+        (date(1999, 3, 1), date(2000, 7, 1)),
+        (date(2001, 4, 1), date(2006, 2, 1)),
+        (date(2013, 5, 1), date(2016, 8, 1)),
+    ),
 }
 
 

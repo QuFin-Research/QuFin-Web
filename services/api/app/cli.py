@@ -9,8 +9,17 @@ uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
+uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
+uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
+uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
+uv run python -m app.cli ingest-singstat             # Singapore: unemployment
+uv run python -m app.cli ingest-ons                  # UK ONS: unemployment, real GDP, core CPI
 uv run python -m app.cli ingest-bis                  # BIS policy rates, exchange rates, credit
 uv run python -m app.cli ingest-treasury             # Treasury debt, rates, interest
+uv run python -m app.cli sync-taxonomy               # canonical codes, pillars and countries
+uv run python -m app.cli build-calendar              # releases: previous, actual, next due
+uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC indicators
+uv run python -m app.cli doctor [--fix]           # database health check and safe repair
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
@@ -23,32 +32,46 @@ import logging
 import sys
 from datetime import UTC, date, datetime, timedelta
 
+from app.connectors.bcb import BcbClient
 from app.connectors.bis import BisClient
 from app.connectors.bls import BlsClient
 from app.connectors.cftc import CftcClient
 from app.connectors.ecb import EcbClient
 from app.connectors.eia import EiaClient
+from app.connectors.eurostat import EurostatClient
 from app.connectors.fred import FredClient
 from app.connectors.imf import ImfClient
 from app.connectors.oecd import OecdClient
+from app.connectors.ons import OnsClient
+from app.connectors.singstat import SingStatClient
 from app.connectors.treasury import TreasuryClient
+from app.connectors.worldbank import WorldBankClient
 from app.core.config import get_settings
+from app.data.benchmarks import BENCHMARK_SERIES
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import (
+    build_calendar,
+    doctor,
     ingest_bis,
     ingest_bls,
     ingest_cftc,
     ingest_ecb,
     ingest_eia,
+    ingest_eurostat,
     ingest_imf,
+    ingest_national,
     ingest_oecd,
+    ingest_ons,
     ingest_treasury,
+    ingest_worldbank,
+    sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune
 from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
+from app.stores.macro import MacroStore
 from app.stores.migrate import upgrade_to_head
 from app.stores.raw_zone import RawZone
 
@@ -86,6 +109,7 @@ def _ingest_fred(args: argparse.Namespace) -> int:
         print(f"{series_id:<10} removed: no longer in the catalog")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -112,6 +136,7 @@ def _ingest_eia(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<22} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -126,6 +151,7 @@ def _ingest_ecb(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<36} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -140,6 +166,7 @@ def _ingest_treasury(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<26} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -154,6 +181,7 @@ def _ingest_oecd(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<20} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -168,6 +196,82 @@ def _ingest_imf(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<16} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_ons(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "ons"]
+    with OnsClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_ons.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<16} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_eurostat(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "eurostat"]
+    with EurostatClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_eurostat.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<18} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_worldbank(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "worldbank"]
+    with WorldBankClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_worldbank.ingest(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised years" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<14} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_bcb(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "bcb"]
+    with BcbClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_national.ingest_bcb(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<14} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_singstat(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    series_ids = args.series or [s.id for s in CATALOG if s.source == "singstat"]
+    with SingStatClient(raw=_raw_zone()) as client, session_scope() as session:
+        results = ingest_national.ingest_singstat(client, session, series_ids, args.start)
+        checks = check_macro(session, _today())
+    for r in results:
+        status = f"{r.rows} new or revised quarters" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<14} {status}")
+    print()
+    print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -182,6 +286,7 @@ def _ingest_bis(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<22} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -196,6 +301,7 @@ def _ingest_cftc(args: argparse.Namespace) -> int:
         print(f"{r.symbol:<8} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -220,7 +326,30 @@ def _ingest_bls(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<18} {status}")
     print()
     print(format_report(checks))
+    _doctor_summary()
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _doctor_summary() -> None:
+    """One line after every ingest (Rule N): the quick checks, without any repair."""
+    with session_scope() as session:
+        report = doctor.run(session, _today(), quick=True)
+    print(
+        f"doctor: {len(report.errors)} errors, {len(report.warnings)} warnings "
+        "(uv run python -m app.cli doctor for the list)"
+    )
+
+
+def _doctor(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        report = doctor.run(session, _today(), fix=args.fix, quick=args.quick)
+    print(doctor.format_report(report))
+    if args.gaps:
+        with session_scope() as session:
+            print()
+            print(doctor.format_gaps(doctor.unpopulated_pairs(session)))
+    return 0 if not report.errors else 1
 
 
 def _check_data(_args: argparse.Namespace) -> int:
@@ -237,6 +366,43 @@ def _scorecard_bias(args: argparse.Namespace) -> int:
         report = bias_backtest(session, args.start, args.end)
     print(format_bias_report(report))
     return 0 if report.passed else 1
+
+
+def _sync_taxonomy(_args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        result = sync_taxonomy.sync(session)
+    print(f"{result.countries} countries; {result.series} series coded, {result.changed} changed")
+    if result.uncoded:
+        print(f"NO CODE for {len(result.uncoded)} series: {', '.join(result.uncoded)}")
+    return 1 if result.uncoded else 0
+
+
+def _build_calendar(_args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        result = build_calendar.build(session, _today())
+    print(f"calendar: {result.released} released events, {result.scheduled} scheduled")
+    return 0
+
+
+def _seed_benchmarks(_args: argparse.Namespace) -> int:
+    """Code the benchmark indicators and show each one's latest real value."""
+    upgrade_to_head(get_engine())
+    missing = 0
+    with session_scope() as session:
+        sync_taxonomy.sync(session)
+        store = MacroStore(session)
+        for series_id in BENCHMARK_SERIES:
+            meta = store.get_series(series_id)
+            last = store.last_period(series_id)
+            if meta is None or last is None:
+                print(f"NOT LOADED  {series_id}: run its ingest command first")
+                missing += 1
+                continue
+            value = store.as_of(series_id, None, start=last)[-1].value
+            print(f"{meta.canonical_code:<48} {last}  {value}  {meta.units}")
+    return 1 if missing else 0
 
 
 def _raw_zone() -> RawZone | None:
@@ -318,6 +484,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     imf.set_defaults(func=_ingest_imf)
 
+    ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
+    ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")
+    ons.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help="first period to load (default: each series' own history, 1990 for new series)",
+    )
+    ons.set_defaults(func=_ingest_ons)
+
     bis = sub.add_parser(
         "ingest-bis", help="ingest BIS policy rates, effective exchange rates and credit-to-GDP"
     )
@@ -341,6 +517,50 @@ def main(argv: list[str] | None = None) -> int:
     cftc.add_argument("--full", action="store_true", help="re-read all history, not just new weeks")
     cftc.set_defaults(func=_ingest_cftc)
 
+    estat = sub.add_parser("ingest-eurostat", help="ingest Eurostat series (production, core HICP)")
+    estat.add_argument("series", nargs="*", help="series ids (default: every Eurostat series)")
+    estat.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help="first month to load (default: 1990, or the source's own start)",
+    )
+    estat.set_defaults(func=_ingest_eurostat)
+
+    wb = sub.add_parser("ingest-worldbank", help="ingest World Bank annual indicators")
+    wb.add_argument("series", nargs="*", help="series ids (default: every World Bank series)")
+    wb.add_argument(
+        "--start",
+        type=date.fromisoformat,
+        default=DEFAULT_OBSERVATION_START,
+        help="first year to load (default: 1990, or the source's own start)",
+    )
+    wb.set_defaults(func=_ingest_worldbank)
+
+    for name, func, label in (
+        ("ingest-bcb", _ingest_bcb, "Brazil: unemployment and goods trade balance (BCB SGS)"),
+        ("ingest-singstat", _ingest_singstat, "Singapore: unemployment (SingStat)"),
+    ):
+        nat = sub.add_parser(name, help=f"ingest {label}")
+        nat.add_argument(
+            "series", nargs="*", help="series ids (default: every series of the source)"
+        )
+        nat.add_argument(
+            "--start",
+            type=date.fromisoformat,
+            default=DEFAULT_OBSERVATION_START,
+            help="first period to load (default: 1990, or the source's own start)",
+        )
+        nat.set_defaults(func=func)
+
+    doc = sub.add_parser("doctor", help="check the database's health; --fix repairs what is safe")
+    doc.add_argument("--fix", action="store_true", help="repair (a backup is taken first)")
+    doc.add_argument("--quick", action="store_true", help="skip the vintage overlap scan")
+    doc.add_argument(
+        "--gaps", action="store_true", help="list unpopulated pairs with tier 3 portals"
+    )
+    doc.set_defaults(func=_doctor)
+
     bls = sub.add_parser("ingest-bls", help="ingest BLS series (Employment Cost Index)")
     bls.add_argument("series", nargs="*", help="series ids (default: every BLS series)")
     bls.add_argument(
@@ -355,6 +575,16 @@ def main(argv: list[str] | None = None) -> int:
         "check-data", help="check every data source is still published on schedule"
     )
     check.set_defaults(func=_check_data)
+
+    sub.add_parser(
+        "sync-taxonomy", help="set every series' canonical code and pillar; refresh countries"
+    ).set_defaults(func=_sync_taxonomy)
+    sub.add_parser(
+        "build-calendar", help="build the economic calendar from the point-in-time store"
+    ).set_defaults(func=_build_calendar)
+    sub.add_parser(
+        "seed-benchmarks", help="code the 15 benchmark G20/GCC indicators and show their values"
+    ).set_defaults(func=_seed_benchmarks)
 
     bias = sub.add_parser(
         "scorecard-bias",

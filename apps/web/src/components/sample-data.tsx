@@ -50,7 +50,7 @@ export function SampleDataBanner() {
         <AlertDescription>
           Prices, charts, signals, hit rates, drivers, backtests and decision tests are generated
           for development; they are not market data and not trading signals. Live data: Macro data,
-          Positioning and the US macro scorecard.
+          Compare countries, Comparison studio, Positioning and the US macro scorecard.
         </AlertDescription>
       </Alert>
     </div>

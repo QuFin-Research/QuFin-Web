@@ -15,7 +15,23 @@ from typing import Literal
 
 from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES
 from app.data.cycle_classification import QUFIN_CYCLE
+from app.data.gap_ids import (
+    BCB_COUNTRY,
+    BCB_SERIES,
+    EURO_MEMBERS,
+    EUROSTAT_SERIES,
+    FRED_ADDITIONS,
+    HISTORY_START,
+    KUWAIT_POLICY,
+    NEW_POLICY_AREAS,
+    ONS_COUNTRY,
+    ONS_SERIES,
+    SINGSTAT_COUNTRY,
+    SINGSTAT_SERIES,
+)
+from app.data.macro_ids import IMF_CPI, MACRO_COUNTRY, OECD_MACRO
 from app.data.reserves_ids import FRED_RESERVES, RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 # The five scored pillars, plus external and fiscal (stored and shown; scored once the
 # scorecard moves to eight pillars, ADR 0005) and markets (reference prices, never scored).
@@ -29,6 +45,7 @@ Dimension = Literal[
     "fiscal",
     "energy",
     "markets",
+    "housing",
 ]
 Cycle = Literal["leading", "coincident", "lagging"]
 # How a change is measured. pct: percent change, for quantities and price indexes. diff:
@@ -36,14 +53,29 @@ Cycle = Literal["leading", "coincident", "lagging"]
 # ratios and indexes that can be zero or negative; a percent change of those misleads.
 ChangeKind = Literal["pct", "diff"]
 
-# Enough history for the walk-forward windows without pulling every vintage since 1939.
-DEFAULT_OBSERVATION_START = date(2000, 1, 1)
+# Rule I: every series loads the deepest history its source holds from 1990, so all series share
+# one start and indicators compare over the same dates. Earlier would pull vintages since 1939.
+DEFAULT_OBSERVATION_START = date(1990, 1, 1)
 
 
 @dataclass(frozen=True)
 class CatalogSeries:
     id: str
-    source: Literal["bis", "bls", "eia", "ecb", "fred", "imf", "oecd", "treasury"]
+    source: Literal[
+        "bis",
+        "bls",
+        "eia",
+        "ecb",
+        "eurostat",
+        "fred",
+        "imf",
+        "oecd",
+        "ons",
+        "treasury",
+        "worldbank",
+        "bcb",
+        "singstat",
+    ]
     country: str
     dimension: Dimension
     cycle: Cycle | None = None
@@ -66,6 +98,16 @@ class CatalogSeries:
     # growth): taking a change again would be a change of a change. Forces `change="diff"`,
     # and the release check fails if a percent change or y/y transform is configured for it.
     published_as_change: bool = False
+    # Rule I: the first observation to load when the caller asks for the default start.
+    history_start: date | None = None
+
+
+def start_for(series_id: str, requested: date) -> date:
+    """The start a job should use: the series' own deeper history unless a start was given."""
+    entry = BY_ID.get(series_id)
+    if entry is not None and entry.history_start and requested == DEFAULT_OBSERVATION_START:
+        return entry.history_start
+    return requested
 
 
 def _us(
@@ -169,6 +211,9 @@ def _bls(id: str) -> CatalogSeries:
 # sentiment is already stored (rule 16). The US leading indicator comes from FRED, which
 # carries it live with vintages (rule 17).
 _OECD_ISO2 = {
+    "DEU": "DE",
+    "FRA": "FR",
+    "ITA": "IT",
     "GBR": "GB",
     "JPN": "JP",
     "CAN": "CA",
@@ -185,8 +230,11 @@ _OECD_ISO2 = {
     "POL": "PL",
 }
 _OECD_LIVE = {
-    "LI": ("GBR", "JPN", "CAN", "AUS", "MEX", "TUR", "KOR"),
+    "LI": ("GBR", "JPN", "CAN", "AUS", "MEX", "TUR", "KOR", "DEU", "FRA", "ITA"),
     "BCICP": (
+        "DEU",
+        "FRA",
+        "ITA",
         "GBR",
         "JPN",
         "AUS",
@@ -202,6 +250,9 @@ _OECD_LIVE = {
         "KOR",
     ),
     "CCICP": (
+        "DEU",
+        "FRA",
+        "ITA",
         "GBR",
         "JPN",
         "CAN",
@@ -257,6 +308,23 @@ def _bis(series_id: str) -> CatalogSeries:
         measure.dimension,
         change=measure.change,
         licence_note=_BIS_LICENCE,
+    )
+
+
+def _oecd_unemployment(series_id: str) -> CatalogSeries:
+    """Unemployment rate, percent of the labour force (OECD, ILO definition); change in points."""
+    return CatalogSeries(series_id, "oecd", MACRO_COUNTRY[series_id], "labour", change="diff")
+
+
+def _imf_cpi(series_id: str) -> CatalogSeries:
+    """Consumer prices as the IMF publishes them: the annual rate of change, never changed again."""
+    return CatalogSeries(
+        series_id,
+        "imf",
+        MACRO_COUNTRY[series_id],
+        "inflation",
+        change="diff",
+        published_as_change=True,
     )
 
 
@@ -362,8 +430,9 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _treasury("TREAS_DEBT_TOTAL"),  # Debt to the Penny: total public debt, daily
     _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
     _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
-    # --- BLS: Employment Cost Index (P1-12; JOLTS is JTSJOL on FRED), not scored ---
-    _bls("CIS1010000000000I"),  # Employment Cost Index, total compensation, civilian workers
+    # --- Employment Cost Index (P1-12): FRED carries it SA with vintages, so it is the single
+    # source (rule 17, Rule H); the BLS copy CIS1010000000000I was removed as a duplicate. ---
+    _us("ECIALLCIV", "labour"),  # ECI, total compensation, civilian workers
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
     _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
     _eia("W_EPC0_SAX_YCUOK_MBBL"),  # Cushing, OK crude stocks
@@ -390,6 +459,85 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     *(_bis(series_id) for series_id in BIS_SERIES),
     # --- OECD leading indicators and confidence (P1-20), not scored -------------------
     *(_oecd(series_id) for series_id in OECD_SERIES),
+    # --- Consumer prices and unemployment for the comparison view (P1-23), not scored -----
+    *(_imf_cpi(series_id) for series_id in IMF_CPI),
+    *(_oecd_unemployment(series_id) for series_id in OECD_MACRO),
+    # --- Coverage gaps (Sprints 1-4): FRED for other economies, ONS for the UK (Rule H), each
+    # loaded from 1990 where the source goes back that far (Rule I) --------------------------
+    *(
+        CatalogSeries(
+            a.id,
+            "fred",
+            a.country,
+            a.dimension,
+            a.cycle,
+            change=a.change,
+            history_start=HISTORY_START,
+        )
+        for a in FRED_ADDITIONS
+    ),
+    *(
+        CatalogSeries(
+            s.id,
+            "ons",
+            ONS_COUNTRY,
+            s.dimension,
+            s.cycle,
+            change=s.change,
+            published_as_change=s.published_as_change,
+            history_start=HISTORY_START,
+        )
+        for s in ONS_SERIES
+    ),
+    *(
+        CatalogSeries(
+            e.id,
+            "eurostat",
+            e.country,
+            e.dimension,
+            e.cycle,
+            change=e.change,
+            published_as_change=e.published_as_change,
+            history_start=HISTORY_START,
+        )
+        for e in EUROSTAT_SERIES
+    ),
+    *(
+        CatalogSeries(
+            w.id,
+            "worldbank",
+            w.iso2,
+            w.indicator.dimension,
+            w.indicator.cycle,
+            change=w.indicator.change,
+            history_start=HISTORY_START,
+        )
+        for w in WB_SERIES
+    ),
+    *(
+        CatalogSeries(
+            b.id,
+            "bcb",
+            BCB_COUNTRY,
+            b.dimension,
+            b.cycle,
+            change=b.change,
+            history_start=HISTORY_START,
+        )
+        for b in BCB_SERIES
+    ),
+    *(
+        CatalogSeries(
+            s.id,
+            "singstat",
+            SINGSTAT_COUNTRY,
+            "labour",
+            "lagging",
+            change="diff",
+            history_start=HISTORY_START,
+        )
+        for s in SINGSTAT_SERIES
+    ),
     # --- Markets: daily reference prices (P1-25), not scored ---------------------------
     # Fed H.10 noon buying rates in New York (public domain), quoted as the market quotes the
     # pair; published weekly for the previous week.
@@ -411,9 +559,31 @@ _DECLARED: tuple[CatalogSeries, ...] = (
 )
 
 
+# Series added by the coverage-gap sprints that come from a source whose catalog helper does not
+# set the start itself: they load from 1990 too (Rule I). Series stored before keep their start.
+_DEEP_HISTORY: frozenset[str] = frozenset(
+    {
+        sid
+        for sid, (code, area) in BIS_SERIES.items()
+        if code == "SPP"
+        or area in EURO_MEMBERS
+        or (code == "CBPOL" and area in (KUWAIT_POLICY, *NEW_POLICY_AREAS))
+    }
+    | {
+        f"OECD_{_OECD_ID[m]}_{a}"
+        for m in _OECD_LIVE
+        for a in _OECD_LIVE[m]
+        if a in ("DEU", "FRA", "ITA")
+    }
+    | {"IMF_RES_KWT", "IMF_RES_QAT"}
+)
+
+
 def _with_cycle(series: CatalogSeries) -> CatalogSeries:
     """Every series has a cycle: the Conference Board's where it is an index component, else
     QuFin's classification (cycle_classification.py). A series with neither fails to load."""
+    if series.id in _DEEP_HISTORY:
+        series = replace(series, history_start=HISTORY_START)
     if series.cycle is not None:
         return series
     if series.id not in QUFIN_CYCLE:

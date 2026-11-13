@@ -173,8 +173,7 @@ derived to a known kind, matching their declarations.
 
 | Judgement | Status | Basis |
 |---|---|---|
-| BLS series id `CIS1010000000000I` is the Employment Cost Index, total compensation, civilian workers, seasonally adjusted, index Dec 2005=100 | Verified | BLS API v2, 12 Nov 2026: returns 2026 Q3 = 178.574; the first ids tried (`CIU0000000000`, `JTS0000000000`) return "Series does not exist" |
-| The ECI is not on FRED under this definition, so BLS is the source (rule 17) | Unverified | Recorded in `NON_FRED_ALLOWED` on 7 Nov 2026; FRED was not searched again on 12 Nov 2026 |
+| The Employment Cost Index (total compensation, civilian workers, SA, index Dec 2005=100) comes from FRED as `ECIALLCIV` only | Verified | FRED page, 12 Nov 2026: Seasonally Adjusted, Quarterly, Index Dec 2005=100; ingest loaded 149 vintage rows to 2026 Q3. BLS id `CIS1010000000000I` (BLS API v2: 2026 Q3 = 178.574) was removed as a duplicate (Rule H). The earlier note "not on FRED" (7 Nov 2026) was wrong |
 | JOLTS job openings come from FRED (`JTSJOL`) only | Verified | The BLS series `JTS000000000000000JOL` carried the same values as `JTSJOL`; `check-data` flagged the duplicate (rule 16) and the BLS copy was removed |
 | ECI release dates: 125 days after the first day of the quarter | Design choice | The API serves no release dates; BLS releases ECI near the end of the month after the quarter (about 90 to 120 days after the quarter's first day); 125 days errs late (rule 9) |
 | ECI is a lagging indicator | Convention | Wages and benefits follow price inflation with a lag |
@@ -208,6 +207,50 @@ derived to a known kind, matching their declarations.
 | A 403 or 429 means "stop for this run" | Design choice | Rule 28; a one-off 403 on a single series therefore also stops the rest of that run, which is the safer failure |
 | Treasury page size 10,000 and CFTC page size 5,000 are accepted by the suppliers | Unverified | Both load today; neither supplier's page states a maximum |
 
+## 4f. Canonical taxonomy and calendar (ADR 0007)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Each series' pillar: its concept's override, else its old dimension (listed in `app/data/taxonomy.py`) | Design choice | Surveys, consumption, financial conditions, the dollar and the employment cost index were filed under the wrong dimension; the overrides move them. Not scored |
+| A vintage dated D is known from D+1 (UTC) when a timestamp is asked for | Design choice | Vintages carry dates, not times; a timestamp on D could precede the release (rule 9: err late) |
+| The euro area is coded `EMU` | Design choice | ISO has no code for it; the IMF and OECD treat it as an aggregate |
+| G7, G20 and GCC flags | Verified, G20 per the G20 website | G20 follows the state participants shown on g20.org on 12 Nov 2026 (owner's screenshot): Argentina, Australia, Brazil, Canada, China, France, Germany, India, Indonesia, Italy, Japan, Mexico, **Poland**, Russia, Saudi Arabia, South Korea, Türkiye, the United Kingdom and the United States. **South Africa is not shown and Poland is**, so the flags follow the site; the EU Council's Nov 2025 summit pages still list South Africa as a member, so this is the current participant list (2026 presidency), not a change in the founding membership. The screenshot was cropped below the United States, so the EU and African Union entries were not seen and the euro-area flag is kept from the Council pages. G7 and GCC memberships are stable public facts |
+| The emerging-market flag is "not an IMF advanced economy" | Verified | IMF World Economic Outlook, April 2026, Statistical Appendix, Table B lists the advanced economies (Korea, Czech Republic, Singapore, Hong Kong SAR, Denmark, Sweden, Switzerland, New Zealand, Norway, Australia, the G7 and the euro area among them); every other economy is emerging or developing by the IMF's own definition. Hungary, Poland, China, India, Mexico, Brazil, Türkiye, South Africa, Argentina, Indonesia, Russia and the Gulf states are therefore flagged emerging. The IMF says its classification "is not based on strict criteria" and changes over time: re-read it each April and October |
+| Currency per country | Verified | ISO 4217 list one, published 17 Sep 2026 by SIX (the maintenance agency) |
+| Central bank per country | Verified for 31 of 34 | The BIS member central banks page (bis.org/about/member_cb.htm, read 12 Nov 2026) gives the official name; Germany, France and Italy show their national central banks (Eurosystem members), the euro area shows the ECB. Qatar Central Bank, Central Bank of Bahrain and Central Bank of Oman are not BIS members: their names come from secondary sources (a central-bank directory and the Arab Monetary Fund governors list), not their own sites |
+| OECD amplitude adjustment (`AA`) and working-day adjustment (`SWDA`) keep their own codes | Design choice | They are not plain seasonal adjustment |
+| The first print is the calendar's "actual" | Design choice | A later revision is a vintage, not the release figure a consensus is compared with |
+| Daily series are left out of the calendar | Design choice | Rates and prices are not scheduled releases |
+| Calendar release dates are the stored first-publication dates; scheduled ones use the usual lag | Design choice | Rule 9: derived, erring late; the time of day is empty until recorded |
+| Consensus and surprise | Not available | Trading Economics and Forex Factory consensus is proprietary and may not be scraped (rule 28); needs a licensed feed |
+| The surprise score is standardised by the spread of that series' own past surprises, from at least 8 | Design choice | Needs consensus history; empty otherwise |
+
+## 4g. Publishers and comparable scales (ADR 0007)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| `source_name` keeps the producer's wording; `publisher` is the one canonical organisation | Design choice | The same organisation was stored under spellings that differ by a qualifier or punctuation (the IMF, the OECD, the Treasury, the Federal Reserve Board); counts, filters and licence lookups by publisher would split. Aliases are in `app/data/publishers.py` |
+| One concept across countries is by design, even where the national series differ (rules 18 and 19) | Rule | A concept is the indicator, not one national series: consumer prices are "CPI" in every country, consumer confidence is "CCI" |
+| Five concepts mix scales as stored: consumer prices and core consumer prices (US index level against the euro area's annual rate), consumer confidence (Michigan 1966:Q1=100 against the OECD's long-term average = 100), the leading index (the US series' unit text omits the OECD base) and money supply (dollars against euro) | Verified | Read from the stored units of every series; declared with the basis countries are compared on in `COMPARED_AS` (`app/data/indicator_concepts.py`) |
+| The US leading index is the same OECD amplitude-adjusted indicator as the other countries' | Verified | FRED's title for `USALOLITOAASTSAM` says "Amplitude Adjusted"; only its unit text omits the base |
+| A concept that mixes scales and is not declared fails `check-data` | Design choice | A country added later with a different scale (the World Bank and central-bank batches, P1-23 and P1-24) cannot pass unnoticed (rule 23) |
+| The by-indicator view must compare on the declared basis, never on the stored values of a concept with `sameScale: false` | Design choice | `/v1/macro/indicators` returns `sameScale`, `scaleNote` and `comparedAs` for each indicator |
+
+## 4h. Country comparison: consumer prices and unemployment (P1-23)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Countries are compared on year-on-year change (prices) and on the unemployment rate, never on index levels or head counts | Design choice | `app/domain/comparison.py`; `/v1/macro/compare/{concept}`. A concept without a basis in `BASES` is refused (404) |
+| The US price index is converted to its year-on-year change from the seasonally adjusted index (`CPIAUCSL`); the others are published as annual rates | Verified | The IMF's own US figure for Sept 2026 is 3.74%; the conversion gives 3.72%. The 0.02-point gap is seasonal adjustment (the IMF series is not seasonally adjusted) |
+| IMF consumer prices are each country's national all-items CPI as its statistics office publishes it, not a harmonised index | Verified (dataflow key), not compared with national releases | Key `<ISO3>.CPI._T.YOY_PCH_PA_PT.M`. Definitions differ at the margin (housing, baskets); euro area members' HICP is not used, so Germany's figure is the national CPI |
+| OECD unemployment is the ILO definition, ages 15 and over, both sexes, seasonally adjusted | Verified | Key `<ISO3>.UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M`; Germany Sept 2026: 4.1% |
+| Coverage: 29 countries for prices, 15 for unemployment; the rest are listed on the page as not compared yet | Verified 12 Nov 2026 | New Zealand (quarterly CPI, IMF answers 400), Qatar and the UAE (latest 2025) and Kuwait (June 2026, overdue) are out for prices; the UK (July 2026, overdue) and the 17 countries the OECD does not publish monthly are out for unemployment. Nothing is filled with annual or estimated figures (rule 1) |
+| Australia's monthly CPI has 17 months of history | Verified | Monthly CPI began in late 2024; shorter than the 10 years a z-score needs, so it cannot be scored yet |
+| The US unemployment change over 12 months is empty for October 2026 | Verified | October 2025 has no value: the BLS did not publish it |
+| Request limits of the IMF CPI dataflow and the OECD labour-force flow | Not verified | No limit is published for either; the connectors pace themselves (IMF 1 s, OECD 3 s) and stop on a 403 or 429 (rule 28) |
+| Release dates of both flows are derived, erring late | Design choice | Neither API serves release dates (rule 9) |
+| FRED's copies of these series were not compared with the direct feeds | Not verified | Rule 17 applies to the US; the other countries are read directly as for the BIS |
+
 ## 5. Known mismatches between a series and its textbook definition
 
 - Unit labour costs (`ULCMFG`) is the manufacturing sector; the Conference Board uses nonfarm business.
@@ -220,7 +263,89 @@ derived to a known kind, matching their declarations.
 
 - The one-line plain-English explanations of each concept were written by QuFin and not compared line by line with a producer's text.
 - Which pillar each series feeds and its importance beyond the sign (see section 2).
-- Non-US series (only the euro area is loaded): audit each when added.
+- Non-US series beyond the euro area, the BIS, OECD indices, reserves, consumer prices and unemployment: audit each when added.
 - Licence status of every source (`docs/licence-register.md` tracks it; several are still *to confirm*).
 
 All five pillars count equally in the overall score (weighted only by confidence): interim, same status as the indicator weights.
+
+## 4i. Comparison studio: frequency harmonisation and PoC (Rules D-G)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Compared series are shown at the lowest frequency they share; nothing is up-sampled | Rule D | `app/domain/harmonize.py`, `tests/test_harmonize.py` |
+| Down-sampling: stocks and levels at period end, rates, ratios and indexes as the period average, flows as the period sum | Judgement | By unit kind; flows are the listed concepts `FLOW_CONCEPTS` (jobless claims, trade balance, budget balance, interest expense, current account). Seasonally adjusted annual rate series (housing starts, retail sales) are averaged, because summing a monthly annual rate is wrong. The rule applied is returned on every series |
+| An unfinished period (a month with three of four weeks) is dropped, never shown as a full period | Judgement | `aggregate` checks that every monthly or quarterly member is present and that the last weekly or daily observation falls within a week (four days for daily) of the period's end |
+| PoC is the change from the previous display period (week, month, quarter, half-year or year, per the chosen frequency); a rate or spread changes in points; a series published as a change is shown as published; a zero or negative base gives no percent change | Rules 13, 22, E | `poc()`; basis-point output is not offered, points are shown as `pp` |
+| `SA` is a source adjustment text starting "Seasonally"; `NSA` is "Not Seasonally"; anything else (OECD amplitude adjusted) is `OTHER` and never called seasonally adjusted | Rule B | `adjustment_tag` |
+| `last_vintage` is the release date of the latest published value of any period, not a revision count | Rule C | Taken from the stored vintages |
+| Actual values of different unit kinds are returned with a notice rather than refused | Judgement | Uses the rule 23 unit check |
+| The 10-country cap is enforced by the API for countries and for series in an overlay | Rule F | `MAX_COUNTRIES` |
+
+
+## 4j. Coverage-gap sprints: Germany, France, Italy, Kuwait, Qatar, the UK, housing (13 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The v3 workbook's FRED industrial production (`*PROINDMISMEI`) and core CPI (`*CPICORMINMEI`) are not loaded | Verified | FRED to March 2024 and March 2025 (June 2021 for Japan core): the OECD MEI copies are frozen. Another source is needed (OECD SDMX flows were not probed) |
+| UK real GDP `CLVMNACSCAB1GQUK` is not loaded | Verified | FRED marks it DISCONTINUED (last 2020 Q3); the ONS `ABMI` (chained volume level, SA) replaces it. The workbook's `IHYQ` (quarter-on-quarter growth) is derived exactly from `ABMI`, so it is not stored as well (rule 16) |
+| UK unemployment from the ONS (`MGSX`, 16 and over, SA, three-month window dated by its last month), not FRED or the OECD | Verified | FRED `LRHUTTTTGBM156S` is SA with vintages but ended June 2026 (updated 15 Oct 2026) and the OECD copy was overdue on 12 Nov 2026; the ONS has July 2026 and the release check passes it |
+| UK core CPI is the ONS 12-month rate excluding energy, food, alcohol and tobacco (`DKO8`) | Verified | Series title read from the ONS; published as a change, so never changed again (rule 13) |
+| ONS values have no vintages, so each period is dated by a late-erring rule (`ons_calendar.py`) | Unverified | Exact ONS release dates per past period were not read; a UK backtest is conservative, not exact |
+| Real GDP of Germany, France, Italy, Japan, Canada is from FRED (`CLVMNACSCAB1GQ{DE,FR,IT}`, `JPNRGDPEXP`, `NGDPRSAXDCCAQ`), SA with vintages | Verified | FRED metadata, 13 Nov 2026; each in its own currency, so compared as growth (`COMPARED_AS`); the US series is an annual-rate level |
+| Goods trade balance of Germany, France, Italy, Japan and Canada is a new concept, `merchandise_trade_balance`, in US dollars | Verified | FRED `XTNTVA01{DE,FR,IT,JP,CA}M667S` are goods only (OECD, exchange-rate converted); the US `BOPGSTB` is goods and services, so it is a different concept and not compared with these. The UK series `XTNTVA01GBM667S` was loaded and then removed: it fell overdue on 13 Nov 2026 (FRED posts the OECD's UK figures every second month); replaced by the ONS series `ONS_BOKI` (section 4l) |
+| Germany, France and Italy get no policy rate | Verified | The BIS has none for them (the ECB rate, stored for the euro area, applies); effective exchange rates, credit and credit gap are loaded per country |
+| Kuwait has a BIS policy rate and IMF reserves; Qatar has IMF reserves only | Verified | BIS policy rate to October 2026 for Kuwait, none for Qatar; IMF reserves to September (Kuwait) and August 2026 (Qatar). Their CPI stays out: Kuwait to June 2026 (overdue), Qatar to August 2025 |
+| Residential property prices: BIS nominal index (2010 = 100), 25 economies; the HOUSING pillar is stored and shown, not scored; cycle "leading" (rate-sensitive) | Judgement | Pillar and cycle are QuFin's classification (`cycle_classification.py`). Japan left out: 2025 Q4 against 2026 Q2 for all others, failed the release check. Russia left out (BIS stopped receiving its official data) |
+| The US property price index is read from the BIS, not FRED | Verified | FRED's copy `QUSN628BIS` (NSA, with vintages) ended 2026 Q1 while the BIS had 2026 Q2 (13 Nov 2026) |
+| Rule I: every series starts in 1990 (extended to the 297 earlier series on 13 Nov 2026) | Verified | Each source was reloaded from 1990-01-01; a series starts later only where its source does (for example FRED GDP 1991 for Germany and 1994 for Japan, the BIS policy rate for the Czech Republic and China, Australian CPI). The BIS has no Japanese policy rate for March 1999 to July 2000, added to the known gaps |
+| Not loaded for want of a source: unemployment for Brazil, South Africa, China, India, Saudi Arabia, Singapore; trade balance for Australia and Korea; industrial production and core CPI for the G7 | Gap | No keyless monthly source found; needs a decision on national sources |
+
+## 4k. Rules J to N: where the code stands (13 Nov 2026)
+
+The rules are adopted; the code does not meet them yet. Each line says what is true today.
+
+| Rule | Status today | Gap |
+|---|---|---|
+| J: 85 countries, 169 indicators | **87 countries in the taxonomy** (85 plus Chile and Colombia); 83 have stored series; 621 series | The 169-indicator taxonomy is not in the catalog; no automatic cross-country sweep exists (the new countries were filled by hand-chosen IMF, World Bank, Eurostat and FRED series); the 50 new countries' attributes are unverified |
+| K: highest frequency first | Partly: ECB policy rate daily, US claims weekly. BIS policy rates and effective exchange rates are monthly for countries whose central banks publish daily | No audit of every series against the highest frequency its source offers; no hourly series |
+| L: release time and retry ladder | `HttpSource` retries 3 times (2, 4, 8 seconds), honours `Retry-After`, stops after a 403 or 429 (rule 28) | No jitter and no 15 second to 1 hour ladder; no per-series `next_release_at` column (`macro_status` derives it); no scheduler |
+| M: FRED first, authentic fallbacks | In force for the US and UK (ONS). Industrial production and core CPI for the G7 are not loaded | Eurostat SDMX, World Bank and the national portals (StatCan, ABS, e-Stat, KOSIS, INEGI, CBRT, GASTAT, Stats SA, NBS) have no connector |
+| N: QuFin Doctor | **Built:** `doctor [--fix] [--quick]` checks orphaned vintages, non-finite values, vintage date order and overlap, SA/NSA tags and canonical codes, duplicate country-indicator pairs, stale and missing series, frozen or overdue series, and the 85-country taxonomy; one summary line after every ingest | Not yet run in continuous integration; quarantine of a frozen series is a recommendation (take it out of the catalog), not an automatic step |
+| O: three-tier cascade | Tiers 1 and 2 are in use; **tier 3 registry exists** (`country_sources.py`, 23 portals plus ECB, UNECE, WTO) and three national portals are connected: the UK ONS, the Brazilian central bank and SingStat; `doctor --gaps` lists every unpopulated pair with its tier 3 portal | Terms of every portal but the ONS are unread; no other national connector; the 2 countries without data (Isle of Man, Liechtenstein) and the pairs left out for want of a source (Korea trade balance, G7 unemployment for Brazil, South Africa, China, India, Saudi Arabia, Singapore) are not yet listed with the tiers checked |
+
+
+## 4l. 85-country expansion, doctor, Eurostat and World Bank (13 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The 50 added countries' currency, central bank and emerging-market flag | **Unverified** | Written from general knowledge, not read at each central bank or the IMF (WEO Table B). Bulgaria is entered as euro (adopted 1 Jan 2026); Kosovo uses ISO-like code XKX (the World Bank's) and XK; North Macedonia's name follows the official name, the workbook says "Macedonia"; Andorra, Faroe Islands, Isle of Man, Liechtenstein, Monaco have no central bank of their own and say so; their `em` flag is false by default |
+| Every one of the 85 countries has data | **Not met: 2 countries** | Liechtenstein has no current series from the IMF or the World Bank (its only World Bank figure is a 2015 GDP) and the Isle of Man has real GDP to 2023 only, which fails the release check: both need a national source. The other 83 have live series |
+| IMF monthly CPI and reserves for the new economies | Verified | Probed live 13 Nov 2026, one series per request; those not current were left out: CPI for Cambodia (April 2026), Cameroon (February 2026), Serbia (December 2025), Malta (loaded, failed the release check); reserves for Bosnia (March 2025), Cameroon and Congo (December 2024), Montenegro (December 2025), Venezuela (June 2018), Iran (none). The IMF has no series for Andorra, Faroe Islands, Isle of Man, Kosovo, Liechtenstein, Monaco and North Korea |
+| Spain's reserves come from FRED (`TRESEGESM052N`), not the IMF | Verified | FRED carries it to September 2026 (rule 17); no other new economy has a FRED reserves series |
+| Real GDP growth is not stored beside real GDP | Judgement | Rule 16: growth is derived exactly from the level; the comparison studio computes the year-on-year change |
+| World Bank consumer prices and reserves are not taken | Judgement | The IMF has monthly CPI for most (rule K) and a second copy would be a duplicate (rule 16); the World Bank's total reserves include gold, the IMF series does not |
+| World Bank unemployment is an annual modelled ILO estimate | Judgement | For the euro area members Eurostat publishes monthly unemployment; rule K says the monthly series should replace the annual: **not yet done** |
+| World Bank values are dated 31 December of the following year | Unverified | The World Bank gives no release date per value; a rule that is never early, so a backtest is conservative |
+| UK goods trade balance is the ONS `BOKI` (£ millions, SA, to September 2026) | Verified | Series title read at the ONS; released 12 Nov 2026; replaces the FRED mirror that went overdue; compared against the dollar series by standardising (`COMPARED_AS`) |
+| Industrial production and core CPI for the euro area, Germany, France, Italy are from Eurostat | Verified | Production to September 2026 from 1990; core HICP (dataset `prc_hicp_minr`, annual rate) to October 2026 from 1997; the old dataset `prc_hicp_midx` ends in December 2025 and FRED's mirrors are frozen. The euro area core HICP is already stored from the ECB, so Eurostat supplies Germany, France and Italy only (rule 16) |
+| Industrial production for the euro area uses the 21-member aggregate (`EA21`) | Judgement | Bulgaria joined on 1 Jan 2026; Eurostat's `EA21` is the current composition, back-cast; the ECB's HICP series stored for the euro area is `U2` (changing composition) |
+| Australia's goods trade balance is FRED `XTNTVA01AUM667S`; Korea's is not loaded | Verified | FRED to August 2026 for Australia; `XTNTVA01KRM667S` stopped in December 2024 |
+| Japanese policy rate has no value for March 1999 to July 2000 | Verified | The BIS API (13 Nov 2026); added to the known gaps |
+| The Eurostat API was announced unavailable on Friday 13 November 14:00 to 23:00 | Noted | If a Eurostat load failed on that day, rerun it |
+
+
+## 4m. Tier 3 registry, national-portal series and fail-fast log (13 Nov 2026)
+
+Each probe was one attempt (no retry loops). Tiers checked are named for every miss (Rule O).
+
+| Judgement | Status | Basis |
+|---|---|---|
+| `app/data/country_sources.py` registers the 23 national portals and the ECB, UNECE and WTO | Done | Written from general knowledge on 13 Nov 2026, no browsing. Its `terms_checked` date is set only for the ONS, whose terms were read (the brief asked for 2026-11-13 on all entries: not done, because no other terms were read); `endpoint_verified` is set for the ONS, the BCB and SingStat, which were called live |
+| Free-key portals and their `.env` names | Listed | `QUFIN_INSEE_API_KEY`, `QUFIN_BDF_API_KEY`, `QUFIN_DESTATIS_API_KEY`, `QUFIN_ESTAT_APP_ID`, `QUFIN_INEGI_TOKEN`, `QUFIN_BANXICO_TOKEN`, `QUFIN_KOSIS_API_KEY`, `QUFIN_ECOS_API_KEY`, `QUFIN_EVDS_API_KEY`, `QUFIN_MAS_API_KEY`, `QUFIN_STATSNZ_API_KEY`, `QUFIN_BCCH_API_KEY`, `QUFIN_WTO_API_KEY`; the US keys `QUFIN_BLS_API_KEY`, `QUFIN_BEA_API_KEY` and `QUFIN_FRED_API_KEY` exist. The names are QuFin's own; the registration pages were not looked up |
+| South Africa quarterly unemployment from FRED `LRUNTTTTZAQ156S` | Verified | SA, 2000 Q3 to 2026 Q2, updated 15 Oct 2026; monthly does not exist (tiers 1 checked) |
+| Brazil unemployment (BCB SGS 24369) and goods trade balance (22707) | Verified | Both to September 2026. 24369 starts in 2012: windows before it answer 404 "Value(s) not found", handled as empty. Neither is seasonally adjusted. FRED has no Brazilian unemployment; the OECD has no monthly series (tiers 1 and 2 checked on 13 Nov 2026) |
+| Singapore unemployment from SingStat table M182342, series 1 | Verified | Called "Total Unemployment Rate, (SA)" in the table, not "Overall" as in the brief; quarterly, 1992 1Q to 2026 3Q. The terms were not read |
+| Eurostat monthly unemployment (`une_rt_m`, SA, total, percent of labour force) for 17 EU members | Verified | Replaces the World Bank's annual figure for Austria, Belgium, Croatia, Cyprus, Estonia, Finland, Greece (Eurostat code EL), Ireland, Latvia, Lithuania, Luxembourg, the Netherlands, Portugal, Romania, Slovakia, Slovenia and Spain (rule K, rule M); the 17 World Bank series were removed |
+| Bulgaria and Malta keep the World Bank's annual unemployment | Fail-fast | Probed fine, but the load answered HTTP 307 (a redirect) for both on 13 Nov 2026; not retried. Tiers checked: 1 (FRED not probed), 2 (Eurostat 307). Retry later |
+| Switzerland monthly unemployment | Not available | OECD answered 404 on 13 Nov 2026 (tier 2). Tier 1 (FRED) not probed; tier 3 (Swiss Federal Statistical Office) registered, terms unread |
+| Chile and Colombia are in the taxonomy (87 countries) | Done | Added at the owner's request beyond the 85-country list; currency, central bank and emerging-market flag unverified like the other 50. The policy rates come from the BIS (`BIS_CBPOL_CL` to October 2026, from 1997; `BIS_CBPOL_CO` from 1995) and monthly unemployment from the OECD (Chile to August 2026 from 1990, Colombia to September 2026 from 2007). Their CPI was not asked for and is not loaded |

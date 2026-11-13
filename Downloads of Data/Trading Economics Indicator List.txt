@@ -1,0 +1,156 @@
+Prices
+Consumer Price Index CPI
+Core Consumer Prices
+Core Inflation Rate
+CPI Housing Utilities
+Export Prices
+Food Inflation
+GDP Deflator
+Harmonised Consumer Prices
+Harmonised Inflation Rate MoM
+Harmonised Inflation Rate YoY
+Import Prices
+Inflation Expectations
+Inflation Rate
+Inflation Rate MoM
+Producer Price Inflation MoM
+Producer Prices
+Producer Prices Change
+Money
+Banks Balance Sheet
+Cash Reserve Ratio
+Central Bank Balance Sheet
+Deposit Interest Rate
+Foreign Exchange Reserves
+Implied Rates
+Interbank Rate
+Interest Rate
+Lending Rate
+Loan Growth
+Loans to Private Sector
+Money Supply M0
+Money Supply M1
+Money Supply M2
+Money Supply M3
+Private Debt to GDP
+Trade
+Balance of Trade
+Capital Flows
+Crude Oil Production
+Current Account
+Current Account to GDP
+Exports
+External Debt
+Foreign Direct Investment
+Gold Reserves
+Imports
+Remittances
+Terms of Trade
+Terrorism Index
+Tourism Revenues
+Tourist Arrivals
+Weapons Sales
+GDP
+Full Year GDP Growth
+GDP
+GDP Annual Growth Rate
+GDP Constant Prices
+GDP from Agriculture
+GDP from Construction
+GDP from Manufacturing
+GDP from Mining
+GDP from Public Administration
+GDP from Services
+GDP from Transport
+GDP from Utilities
+GDP Growth Rate
+GDP per Capita
+GDP per Capita PPP
+Gross Fixed Capital Formation
+Gross National Product
+Housing
+Building Permits
+Construction Output
+Home Ownership Rate
+Housing Index
+Housing Starts
+Price to Rent Ratio
+Residential Property Prices
+Business
+Bankruptcies
+Business Confidence
+Capacity Utilization
+Car Production
+Car Registrations
+Cement Production
+Changes in Inventories
+Corporate Profits
+Electric Car Registrations
+Electricity Production
+Factory Orders
+Industrial Production
+Industrial Production Mom
+Leading Economic Index
+Manufacturing Production
+Mining Production
+New Orders
+Small Business Sentiment
+Steel Production
+Total Vehicle Sales
+ZEW Economic Sentiment Index
+Energy
+Crude Oil Rigs
+Natural Gas Stocks Capacity
+Natural Gas Stocks Injection
+Natural Gas Stocks Inventory
+Natural Gas Stocks Withdrawal
+Taxes
+Corporate Tax Rate
+Personal Income Tax Rate
+Sales Tax Rate
+Social Security Rate
+Social Security Rate For Companies
+Social Security Rate For Employees
+Consumer
+Bank Lending Rate
+Consumer Confidence
+Consumer Credit
+Consumer Spending
+Disposable Personal Income
+Gasoline Prices
+Households Debt to GDP
+Households Debt to Income
+Personal Savings
+Personal Spending
+Private Sector Credit
+Retail Sales MoM
+Retail Sales YoY
+Climate
+CO2 Emissions
+Precipitation
+Temperature
+Health
+Hospital Beds
+Hospitals
+ICU Beds
+Medical Doctors
+Nurses
+News
+News Stream
+Economic Releases
+Market News
+Calendar
+Economic Indicators
+Stock Earnings
+OPEC Meetings & Reports
+IMF Meetings
+G7 Summits
+G20 Summits
+Holidays
+UN Comtrade
+Exports by Country
+Exports by Category
+Imports by Country
+Imports by Category
+WorldBank
+Development Indicators

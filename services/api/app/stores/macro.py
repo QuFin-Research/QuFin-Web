@@ -7,6 +7,7 @@ one. Asking "what was known on day D" is then a range filter, which keeps backte
 scorecards free of look-ahead from later revisions.
 """
 
+import logging
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
@@ -27,8 +28,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.data.publishers import canonical_publisher
+from app.data.taxonomy import TaxonomyError, canonical_code, pillar_for, scale_of
 from app.domain.units import classify
 from app.stores.db import Base, as_utc
+
+log = logging.getLogger(__name__)
 
 # ALFRED's marker for "still the current value".
 OPEN_END = date(9999, 12, 31)
@@ -49,6 +54,8 @@ class MacroSeriesRow(Base):
     cycle: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # Who produces the data (e.g. "University of Michigan") and the release it comes in.
     source_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # The organisation behind source_name, one spelling each (app/data/publishers.py).
+    publisher: Mapped[str | None] = mapped_column(String(255), nullable=True)
     release_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # FRED's note when it publishes later than the source, e.g. "delayed by 1 month".
     delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -61,6 +68,16 @@ class MacroSeriesRow(Base):
     first_period: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_period: Mapped[date | None] = mapped_column(Date, nullable=True)
     vintage_rows: Mapped[int] = mapped_column(Integer, default=0)
+    # Canonical taxonomy (app/data/taxonomy.py): ISO3.PILLAR.INDICATOR.FREQ.ADJ, the pillar it
+    # belongs to, and the multiplier in the units text (Millions of Dollars -> 1e6).
+    canonical_code: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    pillar: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    scale: Mapped[float] = mapped_column(Float, default=1.0, server_default="1")
+
+    __table_args__ = (
+        Index("ix_macro_series_canonical_code", "canonical_code", unique=True),
+        Index("ix_macro_series_pillar", "pillar"),
+    )
 
 
 class MacroObservationRow(Base):
@@ -106,6 +123,11 @@ class SeriesMeta:
     # Derived from `units` when stored; not set by ingest jobs (rule 23).
     unit_kind: str | None = None
     currency: str | None = None
+    # Derived from the catalog and the source's own frequency and adjustment when stored.
+    canonical_code: str | None = None
+    pillar: str | None = None
+    scale: float = 1.0
+    publisher: str | None = None
 
 
 @dataclass(frozen=True)
@@ -139,10 +161,14 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         dimension=row.dimension,
         cycle=row.cycle,
         source_name=row.source_name,
+        publisher=row.publisher,
         release_name=row.release_name,
         delay_notice=row.delay_notice,
         unit_kind=row.unit_kind,
         currency=row.currency,
+        canonical_code=row.canonical_code,
+        pillar=row.pillar,
+        scale=row.scale,
         last_updated=as_utc(row.last_updated) if row.last_updated else None,
     )
 
@@ -266,10 +292,20 @@ class MacroStore:
         series.dimension = meta.dimension
         series.cycle = meta.cycle
         series.source_name = meta.source_name
+        series.publisher = canonical_publisher(meta.source_name)
         series.release_name = meta.release_name
         series.delay_notice = meta.delay_notice
         unit = classify(meta.units, meta.country, meta.source)
         series.unit_kind, series.currency = unit.kind, unit.currency
+        try:
+            series.canonical_code = canonical_code(
+                meta.id, meta.country, meta.frequency, meta.seasonal_adjustment
+            )
+        except TaxonomyError as exc:  # a new source wording: load the data, flag the code
+            log.warning("%s has no canonical code: %s", meta.id, exc)
+            series.canonical_code = None
+        series.pillar = pillar_for(meta.country, meta.id)
+        series.scale = scale_of(meta.units)
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
         self.session.add(series)

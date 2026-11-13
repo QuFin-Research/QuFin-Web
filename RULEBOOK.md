@@ -240,6 +240,120 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     - A connector is not merged until its row in `docs/data-connections.md` states the limits and how
       the code keeps within them, and tests show the identification and the stop on refusal.
 
+## Part 5. Frequency, adjustment, vintages, charting and coverage (Rules A-O)
+
+These rules extend, and never loosen, rules 1-28. Where one seems to overlap another, the stricter
+reading applies.
+
+A. **Earliest signal for leading indicators.** For a leading indicator (jobless claims, retail
+   activity, financial conditions) the database ingests the earliest release frequency an
+   authoritative source publishes: weekly over monthly, monthly over quarterly. A lower-frequency
+   series never replaces a higher-frequency equivalent when both exist (rule 14).
+
+B. **Seasonal adjustment is declared and preferred.** Every series carries its adjustment as `SA`
+   or `NSA`. A comparison across countries or indicators prefers `SA` series where the source
+   publishes them, and never mixes `SA` with `NSA` silently: a mix is shown with an explicit
+   notice.
+
+C. **Vintages are kept and served.** Wherever the source provides revisions (FRED/ALFRED), the
+   store keeps every vintage and chart endpoints serve them. Charts show the latest revised path
+   by default while the vintage timestamps stay available, so a point-in-time backtest has no
+   look-ahead (rule 6).
+
+D. **One frequency when countries are compared.** Two or more countries on one indicator are
+   evaluated at the same frequency: the lowest common one among the selected series. Daily and
+   weekly series are aggregated down before anything is drawn or any change is computed, and a
+   series is never up-sampled. The aggregation depends on what the series is: period end for a
+   stock or level, period average for a rate or index, period sum for a flow.
+
+E. **`PoC` beside the actual value.** Every comparison offers the actual value and `PoC`
+   (percentage of change) over the chosen display frequency: week, month, quarter, half year or
+   year earlier. A rate, spread or any series that can be zero or negative changes in its own
+   units (points, or basis points), never in percent (rules 13 and 22). A series the source
+   already publishes as a change is not changed again.
+
+F. **Charting limits.** Mode 1 plots one indicator for at most 10 countries; mode 2 plots several
+   indicators for one country, as actual values on separate axes or as `PoC`. The cap, the
+   frequency alignment and both computations are enforced in the API; the web app renders the
+   selectors and the result.
+
+G. **The frequency filter shows only what is possible.** Both the user and admin dashboards offer
+   a frequency filter (daily, weekly, monthly, quarterly, semi-annual, annual) and a metric mode.
+   The filter allows only frequencies shared by every selected series, and states in words why a
+   frequency is unavailable.
+
+H. **FRED/ALFRED first, one source per series.** An indicator on FRED with `SA` values and
+   vintages comes from FRED only. A direct connector (BLS, IMF, OECD, ECB and so on) serves only
+   indicators or countries FRED lacks, lacks in `SA`, or lacks vintages for. Duplicates are
+   flagged and removed so each indicator and country resolves to one source id (rules 16 and 17).
+   The release check compares stored series from every source for this.
+   For the United Kingdom, where FRED has no current seasonally adjusted series with vintages, the
+   Office for National Statistics (`ons.gov.uk`, keyless, Open Government Licence) is the
+   first fallback, ahead of the OECD or the IMF. Each fallback records, in
+   `docs/assumptions-register.md`, what FRED was found to lack and when.
+
+I. **Deep history: every series from 1990.** Every series, new or existing, loads the deepest
+   history its source holds from `1990-01-01` (from `2000-01-01` at the least where the source has
+   nothing earlier), so all series share one start and indicators compare over the same dates
+   (owner instruction, 13 Nov 2026). The default start is `DEFAULT_OBSERVATION_START` in the
+   catalog, so a routine run does not trim it. A series whose source begins later keeps its own
+   first date, stated in the coverage report.
+
+J. **Universal 85-country and 169-indicator cross-matrix.** QuFin's active country universe is
+   all 85 economies and blocs in the `QuFin Country List` of the taxonomy workbook (beyond the
+   first 35). Whenever an indicator is added to `Master_Taxonomy_169`, the ingestion engine probes
+   all 85 countries across the authoritative suppliers (FRED/ALFRED, BIS, IMF, OECD, ECB,
+   Eurostat, World Bank, and official national statistics offices and central banks) and ingests
+   every valid series back to `1990-01-01` as soon as it is available. "Valid" is as rules 1 to 3
+   define it: a series that is not published live stays out, and the sweep keeps to every
+   supplier's limits (rule 28).
+
+K. **Highest frequency first (the granularity ladder).** For every indicator and country the
+   system takes the highest native frequency an authoritative source publishes, in this order:
+   hourly, daily, weekly, monthly, quarterly, semi-annual, annual. A lower-frequency series never
+   replaces a higher-frequency one when both exist from authoritative sources, so regime changes
+   show as early as possible. This generalises rules 14 and A to every indicator.
+
+L. **Release-calendar precision and a resilient retry policy.** Every ingested series tracks its
+   official `next_release_at` timestamp, and the scheduler triggers ingestion at the release
+   window, so models train on the freshest data. When an upstream portal answers HTTP 429, 502,
+   503 or 504, or times out, the connector retries with exponential backoff and jitter at about
+   15 seconds, 60 seconds, 5 minutes, 15 minutes and 1 hour before it marks the feed degraded.
+   Rule 28 governs where it differs: a `Retry-After` longer than a step is honoured, and a 403 or
+   a 429 that outlasts the retries stops requests to that supplier for the run, so the ladder can
+   never become a way round a limit.
+
+M. **FRED first, authentic fallbacks, never two sources.** FRED/ALFRED is the sole canonical
+   source whenever it provides seasonally adjusted (`SA`) values with vintage revisions (rule H).
+   Where FRED lacks `SA` and vintages, or carries a frozen mirror (for example the `*PROINDMISMEI`
+   and `*CPICORMINMEI` series), the series comes straight from an authentic international portal
+   (Eurostat SDMX, OECD SDMX, BIS SDMX, IMF SDMX, the World Bank API) or an official national portal
+   (UK ONS, StatCan, ABS, e-Stat, KOSIS, Banxico and INEGI, CBRT, GASTAT, Stats SA, NBS). The same
+   country-indicator pair is never stored from two sources (rules 16 and H). This rule extends
+   rule H's list of fallbacks; it does not replace it.
+
+N. **A self-running database health and integrity engine ("QuFin Doctor").** QuFin keeps a fast,
+   deterministic command line check with automatic repair, `uv run python -m app.cli doctor --fix`,
+   that runs after every ingestion job and in continuous integration. It verifies and, where it
+   can do so safely, repairs: (a) no duplicate country-indicator mapping (rule M); (b) no orphaned
+   vintage rows and no null or NaN corruption; (c) strictly increasing dates; (d) the `SA` and
+   `NSA` tags are accurate; (e) release-schedule freshness (`check-data`); and (f) upstream series
+   that have frozen are quarantined or flagged. A repair never deletes data without a backup and a
+   line in the report saying what was done.
+
+O. **National statistics office and central bank fallback hierarchy.** For every
+   `(country, indicator)` pair in the taxonomy the canonical source is resolved in this order:
+   - **Tier 1, FRED/ALFRED:** whenever it provides `SA` values with vintage revisions (rule M).
+   - **Tier 2, multilateral aggregators:** the BIS, IMF, OECD, Eurostat, ECB or World Bank,
+     when they give a current, un-frozen series at the highest available frequency (rule K).
+   - **Tier 3, official national portals:** where tiers 1 and 2 lack the indicator or only have
+     frozen mirrors, the country's official statistics office, central bank or government open
+     data portal, each registered in `app/data/country_sources.py` with the date its terms and
+     limits were read (rules 7 and 28), and, for the remaining economies, the UNECE and WTO
+     statistical portals.
+   A country-indicator pair may stay unpopulated only if all three tiers have no active, current
+   feed, and each such pair is listed with the tiers checked and the date, so no gap is silent.
+
 ## Change log
 
 | Date | Rule | Change |
@@ -251,3 +365,8 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
 | 6 Nov 2026 | 27 | Added: every data connection is documented in `docs/data-connections.md` |
 | 6 Nov 2026 | 27 | Widened: ingestion and retrieval are documented in `docs/data-pipeline.md` |
 | 12 Nov 2026 | 28 | Added: every connector follows its supplier's published limits and policies and must never be banned (owner instruction) |
+| 12 Nov 2026 | A-H | Added Part 5: earliest signal, seasonal adjustment, vintages, one frequency per comparison, `PoC`, chart limits, frequency filter, FRED first (owner instruction) |
+| 13 Nov 2026 | H, I | H: UK fallback to the ONS where FRED lacks a current SA series with vintages. Added I: every series loads from 1990 (owner instruction) |
+| 13 Nov 2026 | J-N | Added: 85-country and 169-indicator cross-matrix, highest frequency first, release-calendar precision with a retry ladder (rule 28 governs), FRED first with authentic fallbacks, and the QuFin Doctor health engine (owner instruction) |
+| 13 Nov 2026 | O | Added: three-tier source cascade (FRED, multilateral aggregators, official national portals) and no silent gaps (owner instruction) |
+| 13 Nov 2026 | J | The country universe is 87: the 85 of the QuFin Country List plus Chile and Colombia (owner instruction) |

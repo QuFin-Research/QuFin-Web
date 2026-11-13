@@ -13,7 +13,7 @@ from app.connectors.bis import BisClient
 from app.connectors.sdmx import SdmxError, SdmxSeries
 from app.data.bis_calendar import monthly_release, quarterly_release
 from app.data.bis_ids import BIS_SERIES, KNOWN_GAPS, MEASURES, BisMeasure
-from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START
+from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, start_for
 from app.jobs.ingest_fred import IngestResult
 from app.stores.macro import MacroStore, SeriesMeta
 
@@ -24,6 +24,7 @@ RELEASES = {
     "WS_CBPOL": "BIS Central bank policy rates",
     "WS_EER": "BIS Effective exchange rates",
     "WS_CREDIT_GAP": "BIS Credit-to-GDP gaps",
+    "WS_SPP": "BIS Residential property prices",
 }
 PAUSE_SECONDS = 1.0
 # The BIS refusing us (rate limit or block): stop for this run rather than retry into a ban.
@@ -92,7 +93,11 @@ def ingest(
         try:
             fetched = {
                 s.dimensions.get(measure.area_dimension, ""): s
-                for s in client.many(measure.flow, measure.key.format(areas=areas), start)
+                for s in client.many(
+                    measure.flow,
+                    measure.key.format(areas=areas),
+                    min(start_for(s, start) for s in ids),
+                )
             }
         except SdmxError as exc:
             log.warning("BIS request for %s failed: %s", code, exc)

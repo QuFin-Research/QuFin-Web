@@ -11,7 +11,10 @@ A series without a cycle fails to load (macro_catalog.py), so a new series canno
 from typing import Literal
 
 from app.data.bis_ids import BIS_SERIES, MEASURES
+from app.data.gap_ids import BCB_SERIES, EUROSTAT_SERIES, FRED_ADDITIONS, ONS_SERIES
+from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import RESERVES
+from app.data.worldbank_ids import WB_SERIES
 
 Cycle = Literal["leading", "coincident", "lagging"]
 
@@ -83,10 +86,23 @@ QUFIN_CYCLE: dict[str, tuple[Cycle, str]] = {
     "WGFUPUS2": ("coincident", _PRODUCT),
     "WDIUPUS2": ("coincident", _PRODUCT),
     # --- BLS (P1-12) ----------------------------------------------------------------------------
-    "CIS1010000000000I": ("lagging", "Wages and benefits follow price inflation with a lag."),
+    "ECIALLCIV": ("lagging", "Wages and benefits follow price inflation with a lag."),
     # --- BIS (P1-22) --------------------------------------------------------------------------
     **{
         series_id: (MEASURES[code].cycle, MEASURES[code].cycle_reason)
         for series_id, (code, _area) in BIS_SERIES.items()
+    },
+    # --- Coverage gaps (Sprints 1-4) ---------------------------------------------------------
+    **{a.id: (a.cycle, a.cycle_reason) for a in FRED_ADDITIONS},
+    **{s.id: (s.cycle, s.cycle_reason) for s in ONS_SERIES},
+    **{e.id: (e.cycle, e.cycle_reason) for e in EUROSTAT_SERIES},
+    **{w.id: (w.indicator.cycle, w.indicator.cycle_reason) for w in WB_SERIES},
+    **{b.id: (b.cycle, b.cycle_reason) for b in BCB_SERIES},
+    "SINGSTAT_UNE": ("lagging", "Employers hire and fire after output has already turned."),
+    # --- Consumer prices and unemployment by country (P1-23) ---------------------------------
+    **{series_id: ("lagging", _INFLATION) for series_id in IMF_CPI},
+    **{
+        series_id: ("lagging", "Employers hire and fire after output has already turned.")
+        for series_id in OECD_MACRO
     },
 }

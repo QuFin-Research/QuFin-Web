@@ -155,7 +155,7 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 
 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
-    assert len(BIS_SERIES) == 115
+    assert len(BIS_SERIES) == 155  # 153 + the Chile and Colombia policy rates
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
@@ -169,7 +169,12 @@ def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
 
 def test_economies_left_out_stay_out():
     ids = set(BIS_SERIES)
-    assert not {i for i in ids if i.endswith("_US") or i.endswith("_RU")}
+    # The US is carried by FRED with vintages, except property prices: FRED's copy of the BIS index
+    # (not seasonally adjusted, with vintages) ran a quarter behind the BIS on 13 Nov 2026.
+    assert not {i for i in ids if i.endswith("_US") and not i.startswith("BIS_SPP_")}
+    assert not {i for i in ids if i.endswith("_RU")}
+    assert "BIS_CBPOL_DE" not in ids and "BIS_CBPOL_FR" not in ids  # the ECB rate, rule 16
+    assert "BIS_CBPOL_KW" in ids and "BIS_CBPOL_QA" not in ids
     assert "BIS_CBPOL_XM" not in ids  # the ECB deposit rate is stored already (rule 16)
     assert "BIS_CBPOL_SG" not in ids
     assert "BIS_CBPOL_AE" not in ids
@@ -401,7 +406,8 @@ def test_a_missing_quarter_is_a_partial_response(db_session):  # noqa: F811
 
 
 def test_japans_documented_policy_rate_gaps_are_accepted_and_others_are_not(db_session):  # noqa: F811
-    (a1, b1), (a2, b2) = KNOWN_GAPS["BIS_CBPOL_JP"]
+    (a0, b0), (a1, b1), (a2, b2) = KNOWN_GAPS["BIS_CBPOL_JP"]
+    assert (a0, b0) == (date(1999, 3, 1), date(2000, 7, 1))  # found loading from 1990
     assert (a1, b1) == (date(2001, 4, 1), date(2006, 2, 1))
     assert (a2, b2) == (date(2013, 5, 1), date(2016, 8, 1))
     edges = [(date(2001, 3, 1), 0.1), (date(2006, 3, 1), 0.25), (date(2006, 4, 1), 0.25)]
@@ -541,7 +547,7 @@ def test_ingest_bis_command_is_registered():
 
 def test_every_measure_has_a_verified_flow_and_a_known_area_dimension():
     assert json.dumps(sorted(MEASURES)) == json.dumps(
-        ["CBPOL", "CREDGAP", "CREDIT", "NEER", "REER"]
+        ["CBPOL", "CREDGAP", "CREDIT", "NEER", "REER", "SPP"]
     )
     for measure in MEASURES.values():
         assert "{areas}" in measure.key

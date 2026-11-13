@@ -8,7 +8,7 @@ from datetime import date, timedelta
 from sqlalchemy.orm import Session
 
 from app.connectors.fred import FredClient, FredError
-from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, CatalogSeries
+from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, CatalogSeries, start_for
 from app.stores.macro import MacroStore, SeriesMeta, Vintage
 
 log = logging.getLogger(__name__)
@@ -29,7 +29,7 @@ def ingest_series(
 ) -> int:
     info = client.series(entry.id)
     release = client.release(entry.id)
-    vintages = client.vintages(entry.id, observation_start)
+    vintages = client.vintages(entry.id, start_for(entry.id, observation_start))
     if entry.market:
         vintages = date_pre_archive_periods(vintages)
     vintages = not_before_period(vintages)

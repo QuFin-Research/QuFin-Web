@@ -22,10 +22,13 @@ class MacroSeries(ApiModel):
     frequency: str
     seasonal_adjustment: str
     country: str
-    dimension: ScoreDimension | Literal["external", "fiscal", "energy", "markets"] = Field(
-        description='Scorecard pillar; "external" and "fiscal" are shown and scored once the '
-        'scorecard has eight pillars; "energy" is oil supply and demand and "markets" are '
-        "reference prices, never scored"
+    dimension: ScoreDimension | Literal["external", "fiscal", "energy", "markets", "housing"] = (
+        Field(
+            description='Scorecard pillar; "external" and "fiscal" are shown and scored once the '
+            'scorecard has eight pillars; "energy" is oil supply and demand and "markets" are '
+            'reference prices, never scored; "housing" is residential property prices, stored '
+            "and shown until the scorecard has a housing pillar"
+        )
     )
     cycle: Literal["leading", "coincident", "lagging"] | None = Field(
         description="When the series tends to turn relative to the business cycle"
@@ -37,7 +40,21 @@ class MacroSeries(ApiModel):
     )
     currency: str | None = Field(description="ISO currency of amounts and prices; null if none")
     source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
+    publisher: str | None = Field(
+        default=None,
+        description="The publishing organisation under one spelling, for grouping and filtering",
+    )
     release_name: str | None = Field(description="The release the series is published in")
+    canonical_code: str | None = Field(
+        default=None,
+        description="ISO3.PILLAR.INDICATOR.FREQ.ADJUSTMENT, unique across every series",
+    )
+    pillar: str | None = Field(
+        default=None,
+        description="Macro pillar: GROWTH, INFLATION, LABOR, MONETARY, SURVEYS, CONSUMPTION, "
+        "TRADE or FISCAL; ENERGY, MARKETS and HOUSING are stored and shown, never scored",
+    )
+    country_iso3: str | None = Field(default=None, description="ISO 3166 alpha-3 of the country")
 
 
 class SeriesChange(ApiModel):
