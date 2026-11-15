@@ -115,7 +115,7 @@ ISO3_TO_ISO2: dict[str, str] = {
 # (December 2025), plus Malta, which loaded but failed the release check (latest June 2026, due
 # 30 Sept); and not published by the IMF at all: Andorra, the Faroe Islands, the Isle of
 # Man, Kosovo, Liechtenstein, Monaco, North Korea.
-_NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT", "CHL", "COL"})  # Chile, Colombia: not asked
+_NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})  # Chile, Colombia: added
 
 # Who publishes what, as live on 12 Nov 2026 (one request per area, 2000 onwards, no missing
 # months). Areas absent from a tuple were checked and are not available from that source.
