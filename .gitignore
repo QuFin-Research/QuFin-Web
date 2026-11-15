@@ -24,3 +24,7 @@ private/
 data/exports/
 *.db-journal
 ~$*
+
+# Local working files, never tracked
+Downloads of Data/
+QuFin_*.xlsx
