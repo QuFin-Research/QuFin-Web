@@ -396,7 +396,7 @@ These can be omitted if not needed:
 
 ## Example: Complete Theme
 
-See `src/styles/themes/claude.css` for a complete example with all tokens defined.
+See `src/styles/themes/qufin.css` for a complete example with all tokens defined.
 
 ## Example: Minimal Theme
 
@@ -587,7 +587,7 @@ export const fontVariables = cn(
 
 ## Reference Files
 
-- **Complete theme example**: `src/styles/themes/claude.css`
+- **Complete theme example**: `src/styles/themes/qufin.css`
 - **Theme aggregator**: `src/styles/theme.css`
 - **Theme selector component**: `src/components/themes/theme-selector.tsx`
 - **Theme provider**: `src/components/themes/active-theme.tsx`

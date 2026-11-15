@@ -1,18 +1,18 @@
 # Data licence register
 
 Every source QuFin uses or plans to use, with what we may do with it (backlog task P0-14, rule 7
-in `services/api/CLAUDE.md`). "Free to download" is not "free to show to paying customers": a
+in `RULEBOOK.md`). "Free to download" is not "free to show to paying customers": a
 source moves to **In use** only when its redistribution terms allow display in a paid product,
 or a licence is signed.
 
-**Status:** In use · Planned · Needs licence · Excluded. **Last reviewed:** 1 Nov 2026.
+**Status:** In use · Planned · Needs licence · Excluded. **Last reviewed:** 4 Nov 2026.
 Rows marked *to confirm* have not yet been checked against the publisher's terms page.
 
 ## In use
 
 | Source | Data | Redistribution in a paid product | Attribution | Cost | Notes |
 |---|---|---|---|---|---|
-| FRED / ALFRED API (St. Louis Fed) | 43 US series with vintages | Depends on each series' copyright; public-domain US government series are fine | "Source: Federal Reserve Bank of St. Louis, FRED" plus the original agency | Free (API key) | Check each series' notes: copyrighted series below |
+| FRED / ALFRED API (St. Louis Fed) **(owner to review: terms read 12 Nov 2026 from a summary of fred.stlouisfed.org/legal, not verbatim: general licence personal and non-commercial, commercial use needs written permission, caching or archiving FRED content and AI or ML training prohibited, third-party series need the owner's permission; QuFin stores FRED vintages and is commercial, so confirm with the Bank)** | 43 US series with vintages | Depends on each series' copyright; public-domain US government series are fine | "Source: Federal Reserve Bank of St. Louis, FRED" plus the original agency | Free (API key) | Check each series' notes: copyrighted series below |
 | US government agencies via FRED (BLS, BEA, Census, Fed Board, ETA, EIA) | Prices, jobs, output, rates, claims, gasoline | Public domain | Name the agency | Free | — |
 | University of Michigan Surveys of Consumers (via FRED, UMCSENT) | Consumer sentiment | **Not allowed** without a licence: free only for research or strictly internal use (CC-BY-NC-ND) | Copyright notice required | Licence on request (umsurvey@umich.edu) | In use under the owner's decision while the licence is checked; FRED shows it 1 month late |
 | Moody's via FRED (BAA10Y, Baa yield) | Credit spread | Proprietary, licensed to FRED: *to confirm* before commercial display | "Moody's" | Unknown | Spread calculated by FRED from Moody's Baa yield and H.15 |
@@ -20,17 +20,26 @@ Rows marked *to confirm* have not yet been checked against the publisher's terms
 | Lewis-Mertens-Stock Weekly Economic Index (WEI) | Weekly activity | *to confirm* | Authors and FRED | Free | Published as a growth rate |
 | Fed H.10 daily FX (via FRED: DEXUSEU, DEXUSUK, DEXJPUS, DEXUSAL, DEXUSNZ, DEXCAUS, DEXSZUS) | Daily reference FX rates, 7 pairs | Public domain | "Board of Governors of the Federal Reserve System" | Free | Noon buying rates in New York, published weekly; reference prices, not tradable quotes |
 | EIA spot prices (via FRED: DCOILWTICO, DCOILBRENTEU, DHHNGSP) | WTI, Brent, Henry Hub daily | Public domain | "U.S. Energy Information Administration" | Free | Spot reference prices |
-| CFTC Commitments of Traders (Public Reporting API) | Positioning, 11 contracts | Public domain | "Source: CFTC" | Free | — |
+| EIA API v2 (Weekly Petroleum Status Report) | 12 weekly oil series: crude, Cushing and SPR stocks, production, refinery use, product stocks, imports, exports, demand | Public domain (US government work) | "Source: U.S. Energy Information Administration" | Free (API key) | Not on FRED; EIA serves no vintages, so QuFin records revisions as it sees them |
+| ECB Data Portal (SDMX API) | Euro area: deposit facility rate, HICP headline and core (Eurostat), M3 | Reuse with attribution (ECB statistics reuse policy); *to confirm* commercial terms for Eurostat-produced HICP | "Source: ECB Data Portal" (and Eurostat for HICP) | Free, keyless | No vintages, so QuFin records revisions as it sees them; ECB reference FX rates not loaded (EUR/USD already from Fed H.10) |
+| Treasury Fiscal Data API (Bureau of the Fiscal Service) | Debt to the Penny (daily), average interest rates, interest expense on the public debt (monthly) | Public domain (US government work) | "Source: U.S. Treasury, Fiscal Data" | Free, keyless | Not on FRED at these frequencies; no vintages, so QuFin records revisions as it sees them |
+| OECD Data Explorer (SDMX API) | Composite leading indicators (7 countries), business confidence (13), consumer confidence (14) | OECD data is published under CC BY 4.0 (OECD terms since July 2024): *to confirm* for commercial display; confidence series are national surveys (e.g. GfK for the UK) republished by the OECD, so their producers' terms also apply: *to confirm* | "Source: OECD" plus the national producer | Free, keyless (rate-limited per hour) | US CLI taken from FRED (live with vintages); US confidence left out (ISM and Michigan inputs) |
+| IMF data (API and FRED's copies of IFS reserves) | Official reserves excluding gold, 21 economies | IMF copyright (FRED: "Copyright International Monetary Fund. Reprinted with permission"); the IMF's terms limit some commercial reuse: *to confirm* before display in a paid product | "Source: International Monetary Fund" | Free, keyless | Not scored; reserves of the US, China and Hong Kong not loaded |
+| CFTC Commitments of Traders (Public Reporting API) | Positioning, 15 contracts: Traders in Financial Futures (currencies, US Dollar Index, crypto) and legacy (commodities) | Public domain | "Source: CFTC" | Free | — |
 
 ## Planned (Phase 1 connectors)
 
 | Source | Data | Redistribution | Cost |
 |---|---|---|---|
-| BLS, BEA, Census, Treasury Fiscal Data | US primary releases, fiscal data | Public domain | Free (BLS, BEA keys) |
-| EIA API v2 | Energy inventories, production | Public domain | Free (key) |
-| ECB Data Portal, Eurostat | Euro-area macro, reference FX rates | Reuse with attribution | Free |
-| OECD Data Explorer | Leading indicators, BCI, CCI | Reuse with attribution, *to confirm* commercial terms | Free |
-| IMF, World Bank, BIS | Cross-country macro, policy rates, REER | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |
+| BLS, BEA, Census | US primary releases | Public domain | Free (BLS, BEA keys) |
+| Eurostat | Euro-area macro beyond the ECB's copies | Reuse with attribution | Free |
+| IMF, World Bank | Cross-country macro | Reuse with attribution, *to confirm* (IMF has commercial-use limits on some data) | Free |
+| BIS Data Portal (API and statistics) | Policy rates, effective exchange rates, credit-to-GDP, 24 economies | Use of the statistics is unrestricted if: the BIS is cited as the source; the use is not misleading or implying BIS endorsement; inclusion in a commercial product adds no charge for users; no investment advice is implied (https://data.bis.org/help/legal, read 12 Nov 2026). API: use the latest version; no reverse engineering; the BIS may limit access. **Condition for rule 7:** the BIS data must not be a separately priced item in a paid plan | "Source: Bank for International Settlements" | Free, keyless | Not scored |
+| UK Office for National Statistics (website time series) | Unemployment rate, real GDP, core CPI | Open Government Licence v3.0 for most content (Crown copyright); the terms page gives no attribution wording, so QuFin cites "Source: Office for National Statistics" (https://www.ons.gov.uk/help/termsandconditions, read 13 Nov 2026). Third-party content is exempt: none is used | "Source: Office for National Statistics" | Free, keyless | Not scored |
+| Eurostat statistics API | Industrial production, core HICP (euro area, Germany, France, Italy) | Statistical data may be reused commercially and non-commercially if the source is acknowledged; third-party data and data for countries outside the EU, EFTA and candidate countries are non-commercial only (copyright notice, read 13 Nov 2026). QuFin takes only euro area economies | "Source: Eurostat" with the dataset code | Free, keyless | Not scored |
+| World Bank Indicators API | Real GDP, unemployment, current account, trade balance for 50 economies | **To confirm before commercial use (rule 7).** The terms of use page read on 13 Nov 2026 allows non-commercial use, bars commercial use and derivative works, and requires attribution to "The World Bank Group"; it refers to dataset-specific terms it does not contain, and QuFin has not yet read the World Development Indicators licence (generally published as CC BY 4.0, not verified here) | "Source: The World Bank Group" with a link to its legal page | Free, keyless | Not scored |
+| Banco Central do Brasil SGS | Unemployment rate, goods trade balance for Brazil | **To confirm before commercial use (rule 7): terms not read.** Registered 13 Nov 2026 in `country_sources.py` | "Source: Banco Central do Brasil" | Free, keyless | Not scored |
+| SingStat Table Builder | Unemployment rate for Singapore | **To confirm before commercial use (rule 7): terms not read.** Registered 13 Nov 2026 in `country_sources.py` | "Source: Singapore Department of Statistics" | Free, keyless | Not scored |
 | Central banks and statistics offices (BoE, ONS, BoC, StatCan, RBA, ABS, RBNZ, Stats NZ, BoJ, SNB, …) | National macro | Most allow reuse with attribution; *to confirm* each | Free |
 | FRED H.10 daily FX, ECB reference rates | Daily FX reference prices | Public domain (H.10); ECB: reuse with attribution | Free |
 | Crypto exchange public APIs (via CCXT) | Crypto prices | Exchange terms apply to redistribution: *to confirm* | Free |

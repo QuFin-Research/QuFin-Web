@@ -125,7 +125,28 @@ class CountryScore(ApiModel):
     )
     overall_confidence: float | None = None
     as_of: date | None = None
+    mechanism: Literal["shown", "hidden"] = Field(
+        default="hidden",
+        description='"shown": indicator weights and sub-scores are included. "hidden": QuFin '
+        "keeps its scoring recipe private; data origin, confidence and pending releases remain",
+    )
     indicators: list[ScorecardIndicator] = Field(default_factory=list)
     pending: list[PendingRelease] = Field(
         default_factory=list, description="Releases still to come that may move the scores"
+    )
+
+
+class MethodologyDetails(ApiModel):
+    history_years: int
+    score_limit: float
+    momentum_weight: float
+    indicators: list[dict[str, str | float]]
+    notes: list[str]
+
+
+class Methodology(ApiModel):
+    mechanism: Literal["shown", "hidden"]
+    summary: dict[str, str | list[str]]
+    details: MethodologyDetails | None = Field(
+        default=None, description="Only present when QuFin has chosen to show the mechanism"
     )

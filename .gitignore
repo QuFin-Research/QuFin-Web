@@ -16,3 +16,15 @@ Thumbs.db
 
 # Local raw data zone
 data/raw/
+
+# QuFin proprietary material: never committed while the repository is public (rule 20)
+private/
+
+# Local exports and runtime lock files
+data/exports/
+*.db-journal
+~$*
+
+# Local working files, never tracked
+Downloads of Data/
+QuFin_*.xlsx

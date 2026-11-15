@@ -28,11 +28,13 @@ import {
   TableRow
 } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { changeUnit, yearOnYear, type ChartView } from '../lib/change-view';
 import { FRESHNESS_LABEL } from '@/lib/data-quality';
+import { LATE_WEIGHT, dataHealth, range } from '../lib/data-checks';
 import { cn } from '@/lib/utils';
 import { macroQueries } from '../api/queries';
 import { macroAvailable } from '../api/service';
-import type { BusinessCycle, MacroSeriesSummary, SeriesChange } from '../api/types';
+import type { BusinessCycle, MacroSeries, MacroSeriesSummary, SeriesChange } from '../api/types';
 
 type CycleFilter = BusinessCycle | 'all';
 
@@ -63,11 +65,11 @@ const chartConfig = {
 const fmt = (v: number | null | undefined) =>
   v === null || v === undefined ? '—' : v.toLocaleString('en-US', { maximumFractionDigits: 3 });
 
-/** Five years back from the series' last period keeps the chart readable. */
-function chartStart(series: MacroSeriesSummary) {
+/** Years back from the series' last period: five are shown, one more feeds the change view. */
+function yearsBack(series: MacroSeriesSummary, years: number) {
   if (!series.lastPeriod) return undefined;
   const d = new Date(`${series.lastPeriod}T00:00:00Z`);
-  d.setUTCFullYear(d.getUTCFullYear() - 5);
+  d.setUTCFullYear(d.getUTCFullYear() - years);
   return d.toISOString().slice(0, 10);
 }
 
@@ -99,6 +101,11 @@ function ChangeCell({ series }: { series: MacroSeriesSummary }) {
   );
 }
 
+/** For professionals: the source's official title, series code and publisher. */
+function officialTooltip(s: MacroSeries) {
+  return `${s.title}\nSource code: ${s.id}${s.sourceName ? `\nPublisher: ${s.sourceName}` : ''}`;
+}
+
 function StatusBadge({ series }: { series: MacroSeriesSummary }) {
   const f = series.freshness;
   return (
@@ -113,67 +120,167 @@ function StatusBadge({ series }: { series: MacroSeriesSummary }) {
   );
 }
 
+function Stat({
+  label,
+  value,
+  hint,
+  bad
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  bad?: boolean;
+}) {
+  return (
+    <div className='flex flex-col gap-0.5 rounded-lg border p-3'>
+      <span className='text-muted-foreground text-xs'>{label}</span>
+      <span className={cn('text-2xl font-semibold tabular-nums', bad && 'text-destructive')}>
+        {value}
+      </span>
+      <span className='text-muted-foreground text-xs'>{hint}</span>
+    </div>
+  );
+}
+
 /** Series that must not be used, and series that reach QuFin late (lower weight). */
 function DataChecks({ list }: { list: MacroSeriesSummary[] }) {
-  const unusable = list.filter((s) => !s.freshness.usable);
-  const delayed = list.filter((s) => s.freshness.usable && s.timeliness.fredDelayDays > 0);
-  const late = list
-    .filter((s) => s.freshness.usable && s.timeliness.weight < 0.75)
-    .toSorted((a, b) => a.timeliness.weight - b.timeliness.weight);
+  const health = dataHealth(list);
   return (
     <div className='flex flex-col gap-3'>
-      {unusable.length > 0 && (
+      {health.unusable.length > 0 && (
         <Alert variant='destructive'>
           <AlertTitle>
-            {unusable.length} series not usable: excluded from signals and scorecards
+            {health.unusable.length} series not usable: excluded from signals and scorecards
           </AlertTitle>
           <AlertDescription>
             <ul className='list-disc pl-4'>
-              {unusable.map((s) => (
+              {health.unusable.map((s) => (
                 <li key={s.id}>
-                  <span className='font-mono'>{s.id}</span> ({s.sourceName ?? 'unknown source'}):{' '}
-                  {s.freshness.reason}
+                  <span className='font-medium'>{s.name}</span> ({s.sourceName ?? 'unknown source'}
+                  ): {s.freshness.reason}
                 </li>
               ))}
             </ul>
           </AlertDescription>
         </Alert>
       )}
-      <Alert>
-        <AlertTitle>
-          {list.length - unusable.length} of {list.length} series are on their release schedule
-        </AlertTitle>
-        <AlertDescription>
-          <p>
+      <Card>
+        <CardHeader>
+          <CardTitle>Data health</CardTitle>
+          <CardDescription>
             Each series is checked against its frequency and usual release lag after every load.
             Data that reaches QuFin long after its period ended counts for less in scorecards: the
             weight halves for every 60 days.
-          </p>
-          {delayed.length > 0 && (
-            <ul className='mt-2 list-disc pl-4'>
-              {delayed.map((s) => (
-                <li key={s.id}>
-                  <span className='font-mono'>{s.id}</span> ({s.sourceName}) reaches FRED{' '}
-                  {s.timeliness.fredDelayDays} days after the source publishes it.{' '}
-                  {s.timeliness.delayNote} Weight {s.timeliness.weight.toFixed(2)}.
-                </li>
-              ))}
-            </ul>
-          )}
-          {late.length > 0 && (
-            <p className='mt-2'>
-              Lowest weights:{' '}
-              {late
-                .map(
-                  (s) =>
-                    `${s.id} ${s.timeliness.weight.toFixed(2)} (${s.timeliness.daysAfterPeriodEnd} days after its period ends)`
-                )
-                .join(', ')}
-              .
-            </p>
-          )}
-        </AlertDescription>
-      </Alert>
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='flex flex-col gap-4'>
+          <div className='grid grid-cols-2 gap-3 lg:grid-cols-4'>
+            <Stat
+              label='On release schedule'
+              value={`${health.usable} of ${health.total}`}
+              hint='Latest period fits its usual release lag'
+            />
+            <Stat
+              label='Not usable'
+              value={String(health.unusable.length)}
+              hint='Overdue or discontinued, left out of scores'
+              bad={health.unusable.length > 0}
+            />
+            <Stat
+              label='Arrive late'
+              value={String(health.lateCount)}
+              hint={`Weight under ${LATE_WEIGHT.toFixed(2)} in scorecards`}
+            />
+            <Stat
+              label='Delayed at FRED'
+              value={String(health.delayed.length)}
+              hint='FRED shows them after the source does'
+            />
+          </div>
+          <div className='grid grid-cols-1 gap-4 xl:grid-cols-2'>
+            {health.late.length > 0 && (
+              <div className='flex flex-col gap-2'>
+                <h3 className='text-sm font-medium'>Reach QuFin late (lowest weight first)</h3>
+                <div className='max-h-72 overflow-y-auto rounded-lg border'>
+                  <Table>
+                    <TableHeader className='bg-card sticky top-0'>
+                      <TableRow>
+                        <TableHead className='pl-3'>Indicator</TableHead>
+                        <TableHead className='text-right'>Series</TableHead>
+                        <TableHead className='text-right'>Weight</TableHead>
+                        <TableHead className='pr-3 text-right'>Days after period</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {health.late.map((g) => (
+                        <TableRow key={g.name}>
+                          <TableCell className='pl-3'>
+                            <span className='text-sm font-medium'>{g.name}</span>
+                            <span className='text-muted-foreground block text-xs'>
+                              {g.publishers.join(', ')}
+                            </span>
+                          </TableCell>
+                          <TableCell className='text-right font-mono text-xs tabular-nums'>
+                            {g.count}
+                          </TableCell>
+                          <TableCell className='text-right font-mono text-xs tabular-nums'>
+                            {range(g.minWeight, g.maxWeight)}
+                          </TableCell>
+                          <TableCell className='pr-3 text-right font-mono text-xs tabular-nums'>
+                            {range(g.minDays, g.maxDays, 0)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+            {health.delayed.length > 0 && (
+              <div className='flex flex-col gap-2'>
+                <h3 className='text-sm font-medium'>Delayed at FRED (licensing)</h3>
+                <div className='max-h-72 overflow-y-auto rounded-lg border'>
+                  <Table>
+                    <TableHeader className='bg-card sticky top-0'>
+                      <TableRow>
+                        <TableHead className='pl-3'>Series</TableHead>
+                        <TableHead className='text-right'>FRED delay</TableHead>
+                        <TableHead className='pr-3 text-right'>Weight</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {health.delayed.map((s) => (
+                        <TableRow key={s.id}>
+                          <TableCell className='pl-3'>
+                            <span className='text-sm font-medium'>{s.name}</span>
+                            <span className='text-muted-foreground block text-xs'>
+                              {s.sourceName}
+                            </span>
+                            {s.timeliness.delayNote && (
+                              <span
+                                className='text-muted-foreground/80 block max-w-md text-xs'
+                                title={s.timeliness.delayNote}
+                              >
+                                {s.timeliness.delayNote}
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className='text-right font-mono text-xs tabular-nums'>
+                            {s.timeliness.fredDelayDays} days
+                          </TableCell>
+                          <TableCell className='pr-3 text-right font-mono text-xs tabular-nums'>
+                            {s.timeliness.weight.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -207,10 +314,12 @@ export function MacroView() {
   const [cycle, setCycle] = useState<CycleFilter>('all');
   const [asOf, setAsOf] = useState('');
   const [period, setPeriod] = useState<string | null>(null);
+  const [view, setView] = useState<ChartView>('actual');
 
   const visible = cycle === 'all' ? list : list?.filter((s) => s.cycle === cycle);
   const selected = visible?.find((s) => s.id === selectedId) ?? visible?.[0] ?? list?.[0];
-  const start = selected ? chartStart(selected) : undefined;
+  const start = selected ? yearsBack(selected, 6) : undefined;
+  const shownFrom = selected ? yearsBack(selected, 5) : undefined;
 
   const latest = useQuery({
     ...macroQueries.series(selected?.id ?? '', { start }),
@@ -241,14 +350,23 @@ export function MacroView() {
   if (!list) return <Skeleton className='h-96 w-full rounded-xl' />;
   if (list.length === 0 || !selected) return <SetupHint />;
 
+  // Rule 22: percent change only where admissible; a series already published as a change has
+  // no change view. Both views are available wherever the change is admissible.
+  const canChange = !selected.publishedAsChange;
+  const showChange = canChange && view === 'change';
+  const asView = (points: { period: string; value: number | null }[]) =>
+    showChange ? yearOnYear(points, selected.changeKind) : points;
   const pastByPeriod = new Map(
-    (asOf ? past.data?.observations : [])?.map((o) => [o.period, o.value]) ?? []
+    asView(asOf ? (past.data?.observations ?? []) : []).map((o) => [o.period, o.value])
   );
-  const chartData = (latest.data?.observations ?? []).map((o) => ({
-    period: o.period,
-    latest: o.value,
-    asOf: pastByPeriod.get(o.period) ?? null
-  }));
+  const chartData = asView(latest.data?.observations ?? [])
+    .filter((o) => !shownFrom || o.period >= shownFrom)
+    .map((o) => ({
+      period: o.period,
+      latest: o.value,
+      asOf: pastByPeriod.get(o.period) ?? null
+    }));
+  const unit = changeUnit(selected.changeKind);
   const recent = (latest.data?.observations ?? []).slice(-12).toReversed();
 
   return (
@@ -298,10 +416,15 @@ export function MacroView() {
                   }}
                 >
                   <TableCell className='pl-4'>
-                    <button type='button' className='text-left' aria-pressed={s.id === selected.id}>
-                      <span className='font-mono text-sm font-medium'>{s.id}</span>
+                    <button
+                      type='button'
+                      className='text-left'
+                      aria-pressed={s.id === selected.id}
+                      title={officialTooltip(s)}
+                    >
+                      <span className='text-sm font-medium'>{s.name}</span>
                       <span className='text-muted-foreground block max-w-80 truncate text-xs'>
-                        {s.title}
+                        {s.explanation}
                       </span>
                       <span className='text-muted-foreground/80 block max-w-80 truncate text-xs'>
                         {s.sourceName}
@@ -347,7 +470,7 @@ export function MacroView() {
       <div className='grid grid-cols-1 gap-4 xl:grid-cols-3'>
         <Card className='xl:col-span-2'>
           <CardHeader>
-            <CardTitle>{selected.title}</CardTitle>
+            <CardTitle title={officialTooltip(selected)}>{selected.name}</CardTitle>
             <CardDescription>
               {selected.units} · {selected.frequency} · {selected.seasonalAdjustment}
               <span className='block'>
@@ -364,6 +487,20 @@ export function MacroView() {
           <CardContent className='flex flex-col gap-4'>
             <div className='flex flex-wrap items-end gap-3'>
               <div className='flex flex-col gap-1.5'>
+                <Label>Show</Label>
+                <Tabs
+                  value={showChange ? 'change' : 'actual'}
+                  onValueChange={(v) => setView(v as ChartView)}
+                >
+                  <TabsList>
+                    <TabsTrigger value='actual'>Actual</TabsTrigger>
+                    <TabsTrigger value='change' disabled={!canChange}>
+                      Change over a year
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+              <div className='flex flex-col gap-1.5'>
                 <Label htmlFor='macro-asof'>As published on</Label>
                 <Input
                   id='macro-asof'
@@ -378,6 +515,15 @@ export function MacroView() {
                   Clear
                 </Button>
               )}
+              <p className='text-muted-foreground w-full text-xs'>
+                {showChange
+                  ? selected.changeKind === 'pct'
+                    ? 'Percent change against the same date a year earlier.'
+                    : `Change in points (${selected.units}) against the same date a year earlier.`
+                  : `Actual values, ${selected.units}.`}
+                {!canChange &&
+                  ' This series is already published as a growth rate: no change view.'}
+              </p>
               <p className='text-muted-foreground max-w-md text-xs'>
                 Pick a date to overlay the data as it was published that day. Gaps and differences
                 are later releases and revisions a backtest must not see.
@@ -401,7 +547,9 @@ export function MacroView() {
                     axisLine={false}
                     width={56}
                     domain={['auto', 'auto']}
-                    tickFormatter={(v: number) => fmt(v)}
+                    tickFormatter={(v: number) =>
+                      showChange ? `${fmt(v)}${unit === '%' ? '%' : ''}` : fmt(v)
+                    }
                   />
                   <ChartTooltip content={<ChartTooltipContent indicator='line' />} />
                   {asOf && <ChartLegend content={<ChartLegendContent />} />}

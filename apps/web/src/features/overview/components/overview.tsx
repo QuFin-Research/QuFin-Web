@@ -226,6 +226,7 @@ function PendingList({ row }: { row: CountryScore }) {
 export function CountryScorecard() {
   const { data: rows } = useSuspenseQuery(marketQueries.countryScores());
   const live = rows.some((r) => r.data === 'live');
+  const mechanismShown = rows.some((r) => r.mechanism === 'shown');
   return (
     <Card>
       <CardHeader>
@@ -237,7 +238,9 @@ export function CountryScorecard() {
         </CardTitle>
         <CardDescription>
           {live
-            ? 'Each pillar −3 to +3: indicators scored against their own 10-year history as published at the time, averaged over the fresh, usable ones. The percentage is confidence, the share of evidence that is fresh; late data lowers it, never the score. Size positions by confidence. Other economies appear once their data sources are connected.'
+            ? mechanismShown
+              ? 'Each pillar −3 to +3: indicators scored against their own 10-year history as published at the time, averaged over the fresh, usable ones. The percentage is confidence, the share of evidence that is fresh; late data lowers it, never the score. Size positions by confidence. Other economies appear once their data sources are connected.'
+              : 'Each pillar −3 to +3, scored with the proprietary QuFin methodology from data as it was published at the time. The percentage is confidence, the share of evidence that is fresh; late data lowers it, never the score. Size positions by confidence. Other economies appear once their data sources are connected.'
             : 'Illustrative scores. Connect the QuFin API and load macro data for live scorecards.'}
         </CardDescription>
       </CardHeader>

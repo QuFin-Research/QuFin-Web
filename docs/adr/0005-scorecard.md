@@ -15,8 +15,9 @@ weighted economy score 0-100, pair score as base minus quote (section 04).
 - Pairs take the lower confidence of their two sides.
 
 ## Pending
-- **8 pillars** (growth, inflation, labour, monetary policy, fiscal, external and trade, surveys
-  and sentiment, financial conditions). Today there are 5: "sentiment" mixes surveys with
+- **8 pillars.** The list is now the one in ADR 0007 (growth, inflation, labour, monetary, surveys,
+  consumption, trade, fiscal), chosen by the owner on 12 Nov 2026; the earlier list (with financial
+  conditions) is superseded. Today there are 5: "sentiment" mixes surveys with
   financial conditions, and fiscal and external have no data yet (Treasury Fiscal Data, trade
   balance and current account are needed).
 - **0-100 display scale:** the score is computed on -3..+3; the display maps linearly

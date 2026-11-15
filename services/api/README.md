@@ -57,6 +57,11 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `GET` | `/v1/macro/series` | Macro series in the point-in-time store, with coverage |
 | `GET` | `/v1/macro/series/{id}?asOf=&start=&end=` | The series as published on `asOf` (latest when omitted) |
 | `GET` | `/v1/macro/series/{id}/revisions?period=` | Every published value of one period, first release first |
+| `GET` | `/v1/macro/countries` | Every country with blocs, series count and series per pillar |
+| `GET` | `/v1/macro/indicators` | Every indicator once, with the countries that have it |
+| `GET` | `/v1/macro/code/{ISO3.PILLAR.INDICATOR.FREQ.ADJ}?asOf=&start=&end=` | A series by canonical code: latest vintages, or as known at `asOf` (a timestamp sees vintages dated before its day; a day is inclusive) |
+| `GET` | `/v1/macro/pillar-scores/{iso3}?asOf=` | Pillar scores as known then; only the United States is scored |
+| `GET` | `/v1/macro/calendar?from=&to=&country=&pillar=` | Releases in a window: previous, first print, next due; consensus empty until licensed |
 | `GET` | `/v1/positioning?asOf=` | Latest CFTC speculative positioning for every asset |
 | `GET` | `/v1/positioning/{symbol}?weeks=&asOf=` | Weekly positioning history with the COT index |
 
@@ -121,7 +126,7 @@ point-in-time values there. So is the broad dollar index, which was reweighted i
 ### Release checks and timeliness
 
 Every data series must still be published on schedule before QuFin relies on it (see
-[CLAUDE.md](./CLAUDE.md) for the full rules).
+[RULEBOOK.md](../../RULEBOOK.md) for the full rules).
 
 ```bash
 uv run python -m app.cli check-data    # every macro series and CFTC contract
@@ -145,7 +150,7 @@ uv run python -m app.cli check-data    # every macro series and CFTC contract
 
 `GET /v1/scorecards/countries?asOf=` computes the live scorecard from the macro store (US
 today); without macro data it returns the sample scorecards, marked `data: "sample"`. The
-rules are in [CLAUDE.md](./CLAUDE.md) ("Scorecard correction mechanism"):
+rules are in [RULEBOOK.md](../../RULEBOOK.md) ("Scorecard correction mechanism"):
 
 - Each indicator in `app/data/scorecard_catalog.py` is scored against its own ten-year history
   as published at the time (z-score, clipped to -3..+3, flipped where higher means weaker), on

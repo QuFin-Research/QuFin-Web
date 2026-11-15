@@ -81,6 +81,7 @@ def _parse_value(value: str) -> float | None:
 
 class FredClient(HttpSource):
     source = "fred"
+    min_interval = 0.6  # rule 28: no published limit found; stay well below what its docs imply
     error = FredError
 
     def __init__(

@@ -10,21 +10,51 @@ from app.schemas.market import ScoreDimension
 
 class MacroSeries(ApiModel):
     id: str
+    name: str = Field(description="Human-readable name shown to users, shared across countries")
+    explanation: str = Field(description="One plain sentence on what the indicator measures")
+    concept: str = Field(description="Concept key matching the same indicator across countries")
+    acronym: str | None = Field(
+        description="The indicator's global acronym, e.g. CPI, whatever the country calls its own"
+    )
     source: str
-    title: str
+    title: str = Field(description="The source's official title (for the tooltip)")
     units: str
     frequency: str
     seasonal_adjustment: str
     country: str
-    dimension: ScoreDimension | Literal["markets"] = Field(
-        description='Scorecard pillar, or "markets" for reference prices (not scored)'
+    dimension: ScoreDimension | Literal["external", "fiscal", "energy", "markets", "housing"] = (
+        Field(
+            description='Scorecard pillar; "external" and "fiscal" are shown and scored once the '
+            'scorecard has eight pillars; "energy" is oil supply and demand and "markets" are '
+            'reference prices, never scored; "housing" is residential property prices, stored '
+            "and shown until the scorecard has a housing pillar"
+        )
     )
     cycle: Literal["leading", "coincident", "lagging"] | None = Field(
         description="When the series tends to turn relative to the business cycle"
     )
     last_updated: datetime | None = Field(description="When the source last revised the series")
+    unit_kind: str | None = Field(
+        description="amount_currency, count, index, rate_percent, ratio, price_per_unit or other "
+        "(rule 23: only series with the same kind, currency and unit share one scale)"
+    )
+    currency: str | None = Field(description="ISO currency of amounts and prices; null if none")
     source_name: str | None = Field(description="Who produces the data, e.g. the BLS")
+    publisher: str | None = Field(
+        default=None,
+        description="The publishing organisation under one spelling, for grouping and filtering",
+    )
     release_name: str | None = Field(description="The release the series is published in")
+    canonical_code: str | None = Field(
+        default=None,
+        description="ISO3.PILLAR.INDICATOR.FREQ.ADJUSTMENT, unique across every series",
+    )
+    pillar: str | None = Field(
+        default=None,
+        description="Macro pillar: GROWTH, INFLATION, LABOR, MONETARY, SURVEYS, CONSUMPTION, "
+        "TRADE or FISCAL; ENERGY, MARKETS and HOUSING are stored and shown, never scored",
+    )
+    country_iso3: str | None = Field(default=None, description="ISO 3166 alpha-3 of the country")
 
 
 class SeriesChange(ApiModel):

@@ -1,4 +1,4 @@
-"""No number reaches a user without its origin (rule in services/api/CLAUDE.md).
+"""No number reaches a user without its origin (rule 8 in RULEBOOK.md).
 
 Every data endpoint's response says where its numbers come from: a `data` field ("live" or
 "sample") or, for live sources checked against their release schedule, `freshness`. Adding an
@@ -14,8 +14,9 @@ from pydantic import BaseModel
 from app.main import create_app
 from tests.test_backtests_api import rule_body, strategy_body
 
-# Identity endpoints carry no market or economic numbers.
-NO_DATA_PREFIXES = ("/v1/auth/",)
+# Identity endpoints carry no market or economic numbers; nor does the scorecard methodology,
+# which describes the method and carries no data.
+NO_DATA_PREFIXES = ("/v1/auth/", "/v1/scorecards/methodology")
 
 
 def _models(annotation) -> list[type[BaseModel]]:

@@ -7,9 +7,10 @@ one. Asking "what was known on day D" is then a range filter, which keeps backte
 scorecards free of look-ahead from later revisions.
 """
 
-from collections.abc import Iterable, Sequence
+import logging
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import (
     Date,
@@ -27,7 +28,12 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, Session, mapped_column
 
+from app.data.publishers import canonical_publisher
+from app.data.taxonomy import TaxonomyError, canonical_code, pillar_for, scale_of
+from app.domain.units import classify
 from app.stores.db import Base, as_utc
+
+log = logging.getLogger(__name__)
 
 # ALFRED's marker for "still the current value".
 OPEN_END = date(9999, 12, 31)
@@ -48,15 +54,30 @@ class MacroSeriesRow(Base):
     cycle: Mapped[str | None] = mapped_column(String(16), nullable=True)
     # Who produces the data (e.g. "University of Michigan") and the release it comes in.
     source_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # The organisation behind source_name, one spelling each (app/data/publishers.py).
+    publisher: Mapped[str | None] = mapped_column(String(255), nullable=True)
     release_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     # FRED's note when it publishes later than the source, e.g. "delayed by 1 month".
     delay_notice: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Derived from `units` at every ingest (app/domain/units.py, rule 23).
+    unit_kind: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     last_updated: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     # Coverage, stored at ingest so listing series never aggregates the observations.
     first_period: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_period: Mapped[date | None] = mapped_column(Date, nullable=True)
     vintage_rows: Mapped[int] = mapped_column(Integer, default=0)
+    # Canonical taxonomy (app/data/taxonomy.py): ISO3.PILLAR.INDICATOR.FREQ.ADJ, the pillar it
+    # belongs to, and the multiplier in the units text (Millions of Dollars -> 1e6).
+    canonical_code: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    pillar: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    scale: Mapped[float] = mapped_column(Float, default=1.0, server_default="1")
+
+    __table_args__ = (
+        Index("ix_macro_series_canonical_code", "canonical_code", unique=True),
+        Index("ix_macro_series_pillar", "pillar"),
+    )
 
 
 class MacroObservationRow(Base):
@@ -99,6 +120,14 @@ class SeriesMeta:
     source_name: str | None = None
     release_name: str | None = None
     delay_notice: str | None = None
+    # Derived from `units` when stored; not set by ingest jobs (rule 23).
+    unit_kind: str | None = None
+    currency: str | None = None
+    # Derived from the catalog and the source's own frequency and adjustment when stored.
+    canonical_code: str | None = None
+    pillar: str | None = None
+    scale: float = 1.0
+    publisher: str | None = None
 
 
 @dataclass(frozen=True)
@@ -132,8 +161,14 @@ def _meta(row: MacroSeriesRow) -> SeriesMeta:
         dimension=row.dimension,
         cycle=row.cycle,
         source_name=row.source_name,
+        publisher=row.publisher,
         release_name=row.release_name,
         delay_notice=row.delay_notice,
+        unit_kind=row.unit_kind,
+        currency=row.currency,
+        canonical_code=row.canonical_code,
+        pillar=row.pillar,
+        scale=row.scale,
         last_updated=as_utc(row.last_updated) if row.last_updated else None,
     )
 
@@ -143,6 +178,16 @@ class MacroStore:
         self.session = session
 
     # --- writes (ingestion) ----------------------------------------------------------------
+
+    def delete_series(self, series_id: str) -> None:
+        """Remove a series and all its vintages (e.g. dropped from the catalog as redundant)."""
+        self.session.execute(
+            delete(MacroObservationRow).where(MacroObservationRow.series_id == series_id)
+        )
+        row = self.session.get(MacroSeriesRow, series_id)
+        if row is not None:
+            self.session.delete(row)
+        self.session.commit()
 
     def replace_series(self, meta: SeriesMeta, vintages: Iterable[Vintage]) -> int:
         """Store a series and its full vintage history, replacing what was there.
@@ -160,6 +205,83 @@ class MacroStore:
             )
             for v in vintages
         ]
+        series = self._upsert_meta(meta)
+        periods = [r.period for r in rows]
+        series.first_period = min(periods, default=None)
+        series.last_period = max(periods, default=None)
+        series.vintage_rows = len(rows)
+        self.session.flush()
+        self.session.execute(
+            delete(MacroObservationRow).where(MacroObservationRow.series_id == meta.id)
+        )
+        self.session.add_all(rows)
+        self.session.commit()
+        return len(rows)
+
+    def record_latest(
+        self,
+        meta: SeriesMeta,
+        observations: Iterable[tuple[date, float | None]],
+        release_of: Callable[[date], date],
+        today: date,
+    ) -> int:
+        """Store a source's current values when it serves no vintages (e.g. the EIA API).
+
+        A period seen for the first time is dated by its derived release date (never later
+        than today, when it is known to be public). A period whose value has changed since the
+        last load closes its old row yesterday and opens a new one today, so revisions become
+        vintages from the moment they are seen. Returns the number of rows written.
+        """
+        series = self._upsert_meta(meta)
+        self.session.flush()
+        current = {
+            r.period: r
+            for r in self.session.scalars(
+                select(MacroObservationRow).where(
+                    MacroObservationRow.series_id == meta.id,
+                    MacroObservationRow.realtime_end == OPEN_END,
+                )
+            )
+        }
+        written = 0
+        for period, value in observations:
+            row = current.get(period)
+            if row is None:
+                start = min(release_of(period), today)
+            elif row.value == value:
+                continue
+            elif row.realtime_start >= today:
+                # First seen today and revised again today: one row per period and day, so the
+                # value is corrected in place (a second row would repeat the primary key).
+                row.value = value
+                written += 1
+                continue
+            else:
+                row.realtime_end = today - timedelta(days=1)
+                start = today
+            self.session.add(
+                MacroObservationRow(
+                    series_id=meta.id,
+                    period=period,
+                    realtime_start=start,
+                    realtime_end=OPEN_END,
+                    value=value,
+                )
+            )
+            written += 1
+        self.session.flush()
+        first, last, count = self.session.execute(
+            select(
+                func.min(MacroObservationRow.period),
+                func.max(MacroObservationRow.period),
+                func.count(),
+            ).where(MacroObservationRow.series_id == meta.id)
+        ).one()
+        series.first_period, series.last_period, series.vintage_rows = first, last, count
+        self.session.commit()
+        return written
+
+    def _upsert_meta(self, meta: SeriesMeta) -> MacroSeriesRow:
         series = self.session.get(MacroSeriesRow, meta.id) or MacroSeriesRow(id=meta.id)
         series.source = meta.source
         series.title = meta.title
@@ -170,22 +292,24 @@ class MacroStore:
         series.dimension = meta.dimension
         series.cycle = meta.cycle
         series.source_name = meta.source_name
+        series.publisher = canonical_publisher(meta.source_name)
         series.release_name = meta.release_name
         series.delay_notice = meta.delay_notice
+        unit = classify(meta.units, meta.country, meta.source)
+        series.unit_kind, series.currency = unit.kind, unit.currency
+        try:
+            series.canonical_code = canonical_code(
+                meta.id, meta.country, meta.frequency, meta.seasonal_adjustment
+            )
+        except TaxonomyError as exc:  # a new source wording: load the data, flag the code
+            log.warning("%s has no canonical code: %s", meta.id, exc)
+            series.canonical_code = None
+        series.pillar = pillar_for(meta.country, meta.id)
+        series.scale = scale_of(meta.units)
         series.last_updated = meta.last_updated
         series.ingested_at = datetime.now(UTC)
-        periods = [r.period for r in rows]
-        series.first_period = min(periods, default=None)
-        series.last_period = max(periods, default=None)
-        series.vintage_rows = len(rows)
         self.session.add(series)
-        self.session.flush()
-        self.session.execute(
-            delete(MacroObservationRow).where(MacroObservationRow.series_id == meta.id)
-        )
-        self.session.add_all(rows)
-        self.session.commit()
-        return len(rows)
+        return series
 
     # --- reads -----------------------------------------------------------------------------
 

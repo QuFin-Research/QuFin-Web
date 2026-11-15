@@ -22,6 +22,10 @@ class Settings(BaseSettings):
 
     # FRED/ALFRED (St. Louis Fed). Free key: https://fred.stlouisfed.org/docs/api/api_key.html
     fred_api_key: SecretStr | None = None
+    # BLS (Bureau of Labor Statistics). Free key: https://data.bls.gov/registrationEngine/
+    bls_api_key: SecretStr | None = None
+    eia_api_key: SecretStr | None = None
+    eia_base_url: str = "https://api.eia.gov/v2"
     fred_base_url: str = "https://api.stlouisfed.org/fred"
     # Raw zone: every fetched payload kept as received. Unset disables it (tests).
     raw_dir: Path | None = None
@@ -34,10 +38,14 @@ class Settings(BaseSettings):
     # Set to the parent domain (e.g. "qufin.ai") when the web app and API are on subdomains.
     cookie_domain: str | None = None
     # Sign-in and sign-up attempts allowed per client IP and email in each window.
+    # QuFin decides whether users may see how the scorecard is built (rule 20). "hide" keeps the
+    # recipe private (the default); "show" discloses weights and method. Data origin, freshness,
+    # confidence and pending releases are always shown either way.
+    scorecard_mechanism: Literal["show", "hide"] = "hide"
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)
 
-    @field_validator("fred_api_key", mode="before")
+    @field_validator("fred_api_key", "bls_api_key", "eia_api_key", mode="before")
     @classmethod
     def blank_key_is_unset(cls, value: object) -> object:
         return None if isinstance(value, str) and not value.strip() else value

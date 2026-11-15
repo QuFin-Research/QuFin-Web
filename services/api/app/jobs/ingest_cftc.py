@@ -1,4 +1,4 @@
-"""Ingest CFTC Commitments of Traders reports for every QuFin asset."""
+"""Ingest CFTC Commitments of Traders reports for every QuFin asset, each from its own report."""
 
 import logging
 from collections.abc import Iterable
@@ -40,10 +40,11 @@ def ingest(
         if contract is None:
             results.append(CotIngestResult(symbol, None, "no CFTC contract mapped"))
             continue
-        latest = None if full else store.latest_report_date(contract.code)
+        latest = None if full else store.latest_report_date(contract.code, contract.report)
         since = max(start, latest - OVERLAP) if latest else start
         try:
-            rows = store.upsert(client.reports(contract.code, since))
+            fetch = client.financial_reports if contract.report == "tff" else client.reports
+            rows = store.upsert(fetch(contract.code, since))
         except CftcError as exc:
             session.rollback()
             log.warning("CFTC ingest of %s failed: %s", symbol, exc)

@@ -128,10 +128,12 @@ export function PositioningView() {
       )}
       <Card>
         <CardHeader>
-          <CardTitle>Large speculators</CardTitle>
+          <CardTitle>Speculative positioning</CardTitle>
           <CardDescription>
-            CFTC non-commercial net positions as of {reportDate}, released {releaseDate}. Shown in
-            each asset&apos;s direction (yen futures are flipped for USDJPY).
+            CFTC net positions as of {reportDate}, released {releaseDate}: leveraged funds for
+            financial futures (Traders in Financial Futures report), non-commercial traders for
+            commodities (legacy report). Shown in each asset&apos;s direction (yen futures are
+            flipped for USDJPY).
           </CardDescription>
         </CardHeader>
         <CardContent className='px-0'>
@@ -141,6 +143,7 @@ export function PositioningView() {
                 <TableHead className='pl-4'>Asset</TableHead>
                 <TableHead className='text-right'>Net contracts</TableHead>
                 <TableHead className='text-right'>Weekly change</TableHead>
+                <TableHead className='hidden text-right xl:table-cell'>Asset managers</TableHead>
                 <TableHead className='hidden text-right md:table-cell'>% of OI</TableHead>
                 <TableHead>COT index (3y)</TableHead>
                 <TableHead className='hidden pr-4 lg:table-cell'>Reading</TableHead>
@@ -165,8 +168,13 @@ export function PositioningView() {
                         <span className='text-muted-foreground block max-w-56 truncate text-xs'>
                           {s.marketName}
                         </span>
+                        <span className='text-muted-foreground block text-xs'>
+                          {s.report === 'tff' ? 'Leveraged funds' : 'Non-commercial'}
+                        </span>
                         {s.caveat && (
-                          <span className='text-bear block text-xs'>Partial view of the market</span>
+                          <span className='text-bear block text-xs'>
+                            Partial view of the market
+                          </span>
                         )}
                       </button>
                     </TableCell>
@@ -180,6 +188,9 @@ export function PositioningView() {
                     </TableCell>
                     <TableCell className='text-muted-foreground text-right font-mono text-xs tabular-nums'>
                       {s.weeklyChange === null ? '—' : signed(s.weeklyChange)}
+                    </TableCell>
+                    <TableCell className='text-muted-foreground hidden text-right font-mono text-xs tabular-nums xl:table-cell'>
+                      {s.latest.assetManagerNet === null ? '—' : signed(s.latest.assetManagerNet)}
                     </TableCell>
                     <TableCell className='hidden text-right font-mono text-xs tabular-nums md:table-cell'>
                       {s.latest.netPctOi.toFixed(1)}%
@@ -208,10 +219,9 @@ export function PositioningView() {
               positioning history
             </CardTitle>
             <CardDescription>
-              Each week&apos;s COT index uses only the reports published up to that week.
-              {selected.caveat && (
-                <span className='text-bear block pt-1'>{selected.caveat}</span>
-              )}
+              {selected.group}. Each week&apos;s COT index uses only the reports published up to
+              that week.
+              {selected.caveat && <span className='text-bear block pt-1'>{selected.caveat}</span>}
             </CardDescription>
           </div>
           <NativeSelect

@@ -1,6 +1,6 @@
 """Country scorecard: unbiased pillar scores, with confidence reported separately.
 
-QuFin rule (see services/api/CLAUDE.md). A late or missing indicator must make a score less
+QuFin rule (see RULEBOOK.md). A late or missing indicator must make a score less
 certain, never more bullish or bearish:
 
 - Each indicator is scored against its own history as published at the time, on two parts:

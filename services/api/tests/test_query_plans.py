@@ -1,4 +1,4 @@
-"""Every hot query must be served by an index (rule in services/api/CLAUDE.md).
+"""Every hot query must be served by an index (rule in RULEBOOK.md).
 
 The data tables grow with every country and series; a query that scans a whole table gets
 slower with each one added. Each read the pages and jobs rely on is captured here and run
@@ -11,10 +11,18 @@ import pytest
 from sqlalchemy import event, text
 
 from app.stores.macro import MacroStore
+from app.stores.point_in_time import PointInTime
 from app.stores.positioning import PositioningStore
+from app.stores.taxonomy import calendar_window
 from tests.test_macro_api import db_session, ingested  # noqa: F401  (fixtures)
 
-DATA_TABLES = ("macro_observations", "macro_series", "cot_reports")
+DATA_TABLES = (
+    "macro_observations",
+    "macro_series",
+    "cot_reports",
+    "cot_financial_reports",
+    "fact_economic_calendar",
+)
 
 HOT_READS = {
     "list series": lambda s: MacroStore(s).list_series(),
@@ -27,8 +35,19 @@ HOT_READS = {
     ),
     "series metadata": lambda s: MacroStore(s).get_series("UNRATE"),
     "last period": lambda s: MacroStore(s).last_period("UNRATE"),
+    "series by canonical code": lambda s: PointInTime(s).get_latest_series(
+        "USA.LABOR.UNEMPLOYMENT_RATE.M.SA"
+    ),
+    "calendar window": lambda s: calendar_window(s, date(2026, 9, 1), date(2026, 11, 30)),
+    "calendar window by pillar": lambda s: calendar_window(
+        s, date(2026, 9, 1), date(2026, 11, 30), pillar="LABOR"
+    ),
     "positioning history": lambda s: PositioningStore(s).history("088691", date(2026, 1, 1)),
     "latest positioning report": lambda s: PositioningStore(s).latest_report_date("088691"),
+    "financial positioning history": lambda s: PositioningStore(s).financial_history(
+        "099741", date(2026, 1, 1)
+    ),
+    "latest financial report": lambda s: PositioningStore(s).latest_report_date("099741", "tff"),
 }
 
 

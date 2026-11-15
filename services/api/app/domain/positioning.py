@@ -1,7 +1,8 @@
 """Speculative positioning metrics from COT reports.
 
-Non-commercial ("large speculator") net positioning is the classic sentiment gauge. The COT
-index puts the latest net position within its range over the trailing window:
+The net position of the contract's speculative group (app/data/positioning_catalog.py: leveraged
+funds for financial futures, non-commercial traders for commodities) is the classic sentiment
+gauge. The COT index puts the latest net position within its range over the trailing window:
 0 = the most bearish of the window, 100 = the most bullish. Readings near the extremes mark
 crowded trades, which tend to be contrarian signals rather than trend confirmations.
 """
@@ -11,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from app.data.positioning_catalog import CotContract
-from app.stores.positioning import CotReport
+from app.stores.positioning import Positions
 
 COT_INDEX_WEEKS = 156  # three years
 MIN_INDEX_WEEKS = 26
@@ -25,17 +26,25 @@ class PositioningPoint:
     net: int
     net_pct_oi: float
     cot_index: float | None
+    # Asset managers' net, in the asset's direction: financial futures only.
+    asset_manager_net: int | None
 
 
-def _net(report: CotReport, contract: CotContract) -> int:
-    return contract.sign * (report.noncomm_long - report.noncomm_short)
+def _net(p: Positions, contract: CotContract) -> int:
+    return contract.sign * (p.long - p.short)
 
 
-def series(contract: CotContract, reports: Sequence[CotReport]) -> list[PositioningPoint]:
-    """Metrics for every report, each computed only from reports up to that week."""
-    nets = [_net(r, contract) for r in reports]
+def _asset_manager_net(p: Positions, contract: CotContract) -> int | None:
+    if p.asset_mgr_long is None or p.asset_mgr_short is None:
+        return None
+    return contract.sign * (p.asset_mgr_long - p.asset_mgr_short)
+
+
+def series(contract: CotContract, weeks: Sequence[Positions]) -> list[PositioningPoint]:
+    """Metrics for every week, each computed only from weeks up to it."""
+    nets = [_net(p, contract) for p in weeks]
     points = []
-    for i, r in enumerate(reports):
+    for i, p in enumerate(weeks):
         window = nets[max(0, i + 1 - COT_INDEX_WEEKS) : i + 1]
         lo, hi = min(window), max(window)
         index = None
@@ -43,12 +52,13 @@ def series(contract: CotContract, reports: Sequence[CotReport]) -> list[Position
             index = 50.0 if hi == lo else round(100 * (nets[i] - lo) / (hi - lo), 1)
         points.append(
             PositioningPoint(
-                report_date=r.report_date,
-                release_date=r.release_date,
-                open_interest=r.open_interest,
+                report_date=p.report_date,
+                release_date=p.release_date,
+                open_interest=p.open_interest,
                 net=nets[i],
-                net_pct_oi=round(100 * nets[i] / r.open_interest, 2) if r.open_interest else 0.0,
+                net_pct_oi=round(100 * nets[i] / p.open_interest, 2) if p.open_interest else 0.0,
                 cot_index=index,
+                asset_manager_net=_asset_manager_net(p, contract),
             )
         )
     return points
