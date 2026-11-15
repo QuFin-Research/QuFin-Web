@@ -267,12 +267,13 @@ EUROSTAT_SERIES: tuple[EurostatSeries, ...] = (
 # Monthly unemployment (seasonally adjusted, percent of the labour force, ages 15 to 74 and over as
 # Eurostat defines it) for the EU members that had only the World Bank's annual figure (rule K):
 # probed live on 13 Nov 2026, current to September or October 2026. Greece is "EL" at Eurostat.
-# Bulgaria and Malta were probed fine but answered HTTP 307 (a redirect) when loaded, so they stay
-# on the World Bank's annual figure (one attempt, logged in the assumptions register).
+# Bulgaria and Malta answered HTTP 307 on 13 Nov, during Eurostat's announced maintenance window;
+# both answered 200 on 14 Nov, so they were loaded then.
 _UNE = {"freq": "M", "s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T"}
 _UNE_GEO: dict[str, str] = {
     "AT": "AT",
     "BE": "BE",
+    "BG": "BG",
     "HR": "HR",
     "CY": "CY",
     "EE": "EE",
@@ -282,6 +283,7 @@ _UNE_GEO: dict[str, str] = {
     "LV": "LV",
     "LT": "LT",
     "LU": "LU",
+    "MT": "MT",
     "NL": "NL",
     "PT": "PT",
     "RO": "RO",
