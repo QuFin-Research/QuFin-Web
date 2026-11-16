@@ -28,14 +28,23 @@ class BisClient(SdmxClient):
         super().__init__(base_url, **kwargs)
 
     def _data(self, flow: str, key: str, start: date | None) -> dict:
+        return self._fetch(flow, key, start, DATAFLOW_VERSION)
+
+    def _fetch(self, flow: str, key: str, start: date | None, version: str) -> dict:
         _check_identifier(flow, "_")
-        _check_identifier(key, "._+")
+        _check_identifier(key, "._+*")
+        _check_identifier(version, ".")
         params = {"startPeriod": start.isoformat()} if start is not None else {}
         # The key can hold dozens of areas: a short hash keeps the raw-zone file name usable.
-        name = f"{flow}-{hashlib.sha256(key.encode()).hexdigest()[:8]}"
-        path = f"/data/dataflow/BIS/{flow}/{DATAFLOW_VERSION}/{key}"
+        name = f"{flow}-{hashlib.sha256(f'{version}/{key}'.encode()).hexdigest()[:8]}"
+        path = f"/data/dataflow/BIS/{flow}/{version}/{key}"
         return self.get_json(path, params, name)
 
-    def many(self, flow: str, key: str, start: date | None = None) -> list[SdmxSeries]:
-        """Every series the key selects (one per economy), each with its dimensions."""
-        return parse_all(flow, key, self._data(flow, key, start))
+    def many(
+        self, flow: str, key: str, start: date | None = None, version: str = DATAFLOW_VERSION
+    ) -> list[SdmxSeries]:
+        """Every series the key selects (one per economy), each with its dimensions.
+
+        `version` is the dataflow's own: most are 1.0, total credit (`WS_TC`) is 2.0.
+        """
+        return parse_all(flow, key, self._fetch(flow, key, start, version))

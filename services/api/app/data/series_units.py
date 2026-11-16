@@ -283,6 +283,58 @@ SERIES_UNITS |= {e.id: (e.unit_kind, None) for e in EUROSTAT_SERIES}
 SERIES_UNITS |= {w.id: (w.indicator.unit_kind, w.indicator.currency) for w in WB_SERIES}
 SERIES_UNITS |= {b.id: (b.unit_kind, b.currency) for b in BCB_SERIES}
 SERIES_UNITS["SINGSTAT_UNE"] = ("rate_percent", None)  # Per Cent
+# Central bank total assets are amounts in the economy's own currency (BIS area -> ISO currency;
+# the euro area and its members hold euro, including Croatia, converted at the fixed parity).
+_BIS_CURRENCY: dict[str, str] = {
+    "AE": "AED",
+    "AR": "ARS",
+    "AT": "EUR",
+    "AU": "AUD",
+    "BE": "EUR",
+    "BR": "BRL",
+    "CA": "CAD",
+    "CH": "CHF",
+    "CL": "CLP",
+    "CN": "CNY",
+    "CZ": "CZK",
+    "DE": "EUR",
+    "DK": "DKK",
+    "EE": "EUR",
+    "ES": "EUR",
+    "FI": "EUR",
+    "FR": "EUR",
+    "GB": "GBP",
+    "GR": "EUR",
+    "HK": "HKD",
+    "HR": "EUR",
+    "HU": "HUF",
+    "ID": "IDR",
+    "IE": "EUR",
+    "IL": "ILS",
+    "IN": "INR",
+    "IT": "EUR",
+    "JP": "JPY",
+    "KR": "KRW",
+    "LT": "EUR",
+    "LU": "EUR",
+    "LV": "EUR",
+    "MK": "MKD",
+    "MX": "MXN",
+    "MY": "MYR",
+    "NL": "EUR",
+    "NO": "NOK",
+    "NZ": "NZD",
+    "PL": "PLN",
+    "PT": "EUR",
+    "SA": "SAR",
+    "SE": "SEK",
+    "SG": "SGD",
+    "SI": "EUR",
+    "SK": "EUR",
+    "TR": "TRY",
+    "XM": "EUR",
+    "ZA": "ZAR",
+}
 _BIS_UNITS = {
     "CBPOL": ("rate_percent", None),  # Percent per annum
     "NEER": ("index", None),  # Index, 2020=100
@@ -290,9 +342,24 @@ _BIS_UNITS = {
     "CREDIT": ("ratio", None),  # Percent of GDP
     "CREDGAP": ("ratio", None),  # Percent of GDP
     "SPP": ("index", None),  # Index, 2010=100
+    "TCHH": ("ratio", None),  # Percent of GDP
+    "TCGOV": ("ratio", None),  # Percent of GDP
+    "DSRP": ("ratio", None),  # Percent of income
+    "DSRH": ("ratio", None),  # Percent of income
+    "DSRN": ("ratio", None),  # Percent of income
+    "GLIUSD": ("amount_currency", "USD"),  # Millions of US dollars
+    "IDS": ("amount_currency", "USD"),  # Millions of US dollars
+    "DSSGOV": ("amount_currency", "USD"),  # Billions of US dollars
+    "DSSNFC": ("amount_currency", "USD"),  # Billions of US dollars
+    "DSSFIN": ("amount_currency", "USD"),  # Billions of US dollars
+    "CPP": ("index", None),  # Index (each country's own base)
+    "CPI": ("rate_percent", None),  # Percent, year-on-year
 }
 for _series_id, (_code, _area) in BIS_SERIES.items():
-    SERIES_UNITS.setdefault(_series_id, _BIS_UNITS[_code])
+    if _code == "CBTA":  # Billions of domestic currency: the economy's own currency
+        SERIES_UNITS.setdefault(_series_id, ("amount_currency", _BIS_CURRENCY[_area]))
+    else:
+        SERIES_UNITS.setdefault(_series_id, _BIS_UNITS[_code])
 for _series_id in (*IMF_RESERVES, *FRED_RESERVES):
     SERIES_UNITS.setdefault(
         _series_id, ("amount_currency", "USD")

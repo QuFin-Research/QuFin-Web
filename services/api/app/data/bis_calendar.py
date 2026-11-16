@@ -13,6 +13,18 @@ calendar:
   156 to 171 days after the quarter ends (2023 Q1 to 2026 Q1). Each quarter is dated the last
   weekday of the sixth month after it ends (a quarter ending 31 March, September 30), 183 days.
 
+- Central bank total assets (quarterly): the BIS lists a release in March, June, September and
+  December, 51 to 59 days after the quarter ends (checked 17 Nov 2026 in its calendar dataflow).
+  Each quarter is dated the last weekday of the second month after it ends, later than any
+  listed release (the BIS also loads months between those dates; a period QuFin sees first is
+  dated the day it is seen).
+- Consumer prices (monthly): released 19 to 31 days after the month ends in the same calendar, so
+  each month is dated the last weekday of the second month after it, which is never early.
+- Total credit, debt service ratios, debt securities and global liquidity (quarterly): 156 to 171
+  days after the quarter ends (global liquidity 119 to 123), so the credit rule above covers them;
+  commercial property prices and international debt securities have no calendar entry that
+  matches (their release months are not quarterly) and use the same, later, date.
+
 A period QuFin first sees before its derived date is dated the day it is seen (record_latest).
 """
 
@@ -41,3 +53,14 @@ def quarterly_release(period: date) -> date:
     """The last weekday of the sixth month after the quarter that starts on `period`."""
     # The quarter ends in month+2; six months later is month+8.
     return _last_weekday_before(_first_of_month(period.year, period.month + 9))
+
+
+def cbta_release(period: date) -> date:
+    """The last weekday of the second month after the quarter that holds `period` ends."""
+    quarter_end_month = (period.month + 2) // 3 * 3
+    return _last_weekday_before(_first_of_month(period.year, quarter_end_month + 3))
+
+
+def cpi_release(period: date) -> date:
+    """The last weekday of the second month after `period` (releases come 19 to 31 days later)."""
+    return _last_weekday_before(_first_of_month(period.year, period.month + 3))

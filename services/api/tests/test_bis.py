@@ -1,6 +1,5 @@
 """BIS: connector (API v2, many economies per request), series ids, release dates, ingest."""
 
-import json
 from datetime import date
 
 import httpx
@@ -8,11 +7,13 @@ import pytest
 
 from app.connectors.bis import BisClient
 from app.connectors.sdmx import SdmxError, SdmxSeries
-from app.data.bis_calendar import monthly_release, quarterly_release
-from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, KNOWN_GAPS, MEASURES
+from app.data.bis_calendar import cbta_release, cpi_release, monthly_release, quarterly_release
+from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, KNOWN_GAPS, MEASURES, NEW_CODES
 from app.data.indicator_concepts import SERIES_CONCEPTS, concept_for
 from app.data.macro_catalog import BY_ID
 from app.data.series_units import SERIES_UNITS
+from app.data.taxonomy import COUNTRY_BY_ISO2
+from app.domain.units import classify
 from app.jobs import ingest_bis
 from app.stores.macro import MacroStore
 from tests.test_macro_api import db_session  # noqa: F401  (fixture)
@@ -155,7 +156,9 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 
 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
-    assert len(BIS_SERIES) == 155  # 153 + the Chile and Colombia policy rates
+    # 155 policy rate, effective exchange rate, credit and property series, and 385 added on
+    # 17 Nov 2026 (each economy checked live for a current, complete series).
+    assert len(BIS_SERIES) == 540
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
@@ -291,7 +294,7 @@ class FakeBis:
     def __init__(self, series=None, error=None):
         self.series, self.error, self.calls = series or {}, error, []
 
-    def many(self, flow, key, start=None):
+    def many(self, flow, key, start=None, version="1.0"):
         self.calls.append((flow, key, start))
         if self.error:
             raise self.error
@@ -457,7 +460,7 @@ def test_an_economy_the_bis_did_not_return_is_reported(db_session):  # noqa: F81
 
 def test_a_failed_request_marks_every_series_of_that_measure_and_continues(db_session):  # noqa: F811
     class Flaky(FakeBis):
-        def many(self, flow, key, start=None):
+        def many(self, flow, key, start=None, version="1.0"):
             if flow == "WS_CBPOL":
                 raise SdmxError("boom")
             return [monthly("GB", (2026, 8), 2, attributes={"UNIT_MEASURE": "Index, 2020 = 100"})]
@@ -479,7 +482,7 @@ def test_a_failed_request_marks_every_series_of_that_measure_and_continues(db_se
 
 def test_a_refusal_stops_the_run_so_we_never_hammer_a_source_that_said_no(db_session):  # noqa: F811
     class Refusing(FakeBis):
-        def many(self, flow, key, start=None):
+        def many(self, flow, key, start=None, version="1.0"):
             self.calls.append(flow)
             raise SdmxError("bis returned 429: Too Many Requests")
 
@@ -546,9 +549,121 @@ def test_ingest_bis_command_is_registered():
 
 
 def test_every_measure_has_a_verified_flow_and_a_known_area_dimension():
-    assert json.dumps(sorted(MEASURES)) == json.dumps(
-        ["CBPOL", "CREDGAP", "CREDIT", "NEER", "REER", "SPP"]
-    )
+    assert sorted(MEASURES) == [
+        "CBPOL",
+        "CBTA",
+        "CPI",
+        "CPP",
+        "CREDGAP",
+        "CREDIT",
+        "DSRH",
+        "DSRN",
+        "DSRP",
+        "DSSFIN",
+        "DSSGOV",
+        "DSSNFC",
+        "GLIUSD",
+        "IDS",
+        "NEER",
+        "REER",
+        "SPP",
+        "TCGOV",
+        "TCHH",
+    ]
     for measure in MEASURES.values():
         assert "{areas}" in measure.key
-        assert measure.area_dimension in {"REF_AREA", "BORROWERS_CTY"}
+        assert measure.area_dimension in {"REF_AREA", "BORROWERS_CTY", "ISSUER_RES"}
+
+
+# --- measures added on 17 Nov 2026 ---------------------------------------------------------------
+
+
+def test_every_new_measure_area_is_in_the_taxonomy_and_never_russia_or_the_us():
+    for code in NEW_CODES:
+        for area in MEASURES[code].areas:
+            assert COUNTRY_BY_ISO2["EA" if area == "XM" else area], (code, area)
+            assert area != "RU"
+            assert area != "US", (code, area)
+
+
+def test_declared_units_are_what_the_unit_classifier_reads_from_the_units_text():
+    for series_id, (code, _area) in BIS_SERIES.items():
+        if code not in NEW_CODES:
+            continue
+        country = BIS_COUNTRIES[series_id]
+        info = classify(MEASURES[code].units, country, "bis")
+        assert (info.kind, info.currency) == SERIES_UNITS[series_id], series_id
+
+
+def test_central_bank_assets_are_in_each_economys_own_currency():
+    assert SERIES_UNITS["BIS_CBTA_JP"] == ("amount_currency", "JPY")
+    assert SERIES_UNITS["BIS_CBTA_DE"] == ("amount_currency", "EUR")  # euro member
+    assert SERIES_UNITS["BIS_CBTA_XM"] == ("amount_currency", "EUR")
+    assert concept_for("JP", "BIS_CBTA_JP").name == "Central Bank Balance Sheet"  # shared (rule 19)
+
+
+def test_consumer_prices_are_the_annual_rate_like_the_imf_series_they_stand_in_for():
+    entry = BY_ID["BIS_CPI_NZ"]
+    assert entry.published_as_change and entry.change == "diff"
+    assert concept_for("NZ", "BIS_CPI_NZ").name == concept_for("DE", "IMF_CPI_DEU").name
+
+
+def test_total_credit_is_version_2_and_the_others_are_version_1():
+    assert MEASURES["TCHH"].version == "2.0" and MEASURES["TCGOV"].version == "2.0"
+    assert {m.version for m in MEASURES.values()} == {"1.0", "2.0"}
+
+
+@pytest.mark.parametrize(
+    ("period", "expected"),
+    [
+        (date(2026, 7, 1), date(2026, 11, 30)),  # Q3 ends September, released by November
+        (date(2026, 4, 1), date(2026, 8, 31)),  # Q2 ends June; the BIS listed 57 days
+        (date(2026, 3, 1), date(2026, 5, 29)),
+    ],
+)
+def test_central_bank_assets_are_dated_by_the_quarterly_cadence(period, expected):
+    assert cbta_release(period) == expected
+    assert (cbta_release(period) - period).days >= 59  # the longest lag the calendar lists
+
+
+@pytest.mark.parametrize(
+    ("period", "expected"),
+    [(date(2026, 9, 1), date(2026, 11, 30)), (date(2026, 11, 1), date(2027, 1, 29))],
+)
+def test_consumer_prices_are_dated_two_months_on_never_early(period, expected):
+    assert cpi_release(period) == expected
+
+
+def test_commercial_property_takes_one_request_per_economy_the_rest_one_per_measure():
+    by_measure = {"CPP": ["BIS_CPP_DE", "BIS_CPP_ID"], "TCHH": ["BIS_TCHH_GB", "BIS_TCHH_FR"]}
+    requests = ingest_bis._requests(by_measure)
+    assert requests == [
+        ("CPP", ["BIS_CPP_DE"], "Q.DE.0.A.0.*.6.0"),
+        ("CPP", ["BIS_CPP_ID"], "Q.ID.4.A.0.*.6.0"),
+        ("TCHH", ["BIS_TCHH_GB", "BIS_TCHH_FR"], "Q.GB+FR.H.A.M.770.A"),
+    ]
+
+
+def test_two_series_for_one_economy_mean_the_key_is_too_loose():
+    measure = MEASURES["CBTA"]
+
+    def one(currency):
+        return SdmxSeries(
+            "WS_CBTA",
+            f"M.JP.B.XDC.{currency}.B",
+            "t",
+            {},
+            [],
+            {"REF_AREA": "JP", "CURRENCY": currency},
+        )
+
+    assert set(ingest_bis._by_area(measure, [one("JPY")])) == {"JP"}
+    with pytest.raises(SdmxError, match="too loose"):
+        ingest_bis._by_area(measure, [one("JPY"), one("USD")])
+
+
+def test_a_changed_unit_multiplier_fails_the_load():
+    measure = MEASURES["CBTA"]
+    fetched = SdmxSeries("WS_CBTA", "k", "t", {"UNIT_MULT": "Millions"}, [], {})
+    with pytest.raises(SdmxError, match="multiplier"):
+        ingest_bis._check_units("BIS_CBTA_JP", measure, fetched)

@@ -308,6 +308,50 @@ CONCEPTS: dict[str, Concept] = {
         "Trade Balance, Goods",
         "Exports minus imports of goods only, in US dollars; a deficit means buying more abroad.",
     ),
+    "household_credit_to_gdp": Concept(
+        "Household Debt to GDP",
+        "Credit to households as a share of the economy; high levels make spending fragile.",
+    ),
+    "government_credit_to_gdp": Concept(
+        "Government Debt to GDP",
+        "Credit to the general government as a share of the economy, at market value.",
+    ),
+    "debt_service_ratio": Concept(
+        "Debt Service Ratio, Private Sector",
+        "Share of income the private sector pays in interest and principal; rising means stress.",
+    ),
+    "household_debt_service_ratio": Concept(
+        "Debt Service Ratio, Households",
+        "Share of household income paid in interest and principal; rising means stress ahead.",
+    ),
+    "corporate_debt_service_ratio": Concept(
+        "Debt Service Ratio, Companies",
+        "Share of company income paid in interest and principal; rising means stress ahead.",
+    ),
+    "usd_credit_to_non_banks": Concept(
+        "US-Dollar Credit to Non-Banks",
+        "Dollar loans and bonds owed by borrowers in a country; it swells when dollars are easy.",
+    ),
+    "international_debt_securities": Concept(
+        "International Debt Securities",
+        "Bonds and notes a country's issuers have sold on international markets, outstanding.",
+    ),
+    "government_debt_securities": Concept(
+        "Government Bonds Outstanding",
+        "Debt securities issued by the general government and still outstanding, in US dollars.",
+    ),
+    "corporate_debt_securities": Concept(
+        "Corporate Bonds Outstanding",
+        "Debt securities issued by non-financial companies and still outstanding, in US dollars.",
+    ),
+    "financial_debt_securities": Concept(
+        "Financial-Sector Bonds Outstanding",
+        "Debt securities issued by banks and other financial firms, outstanding, in US dollars.",
+    ),
+    "commercial_property_prices": Concept(
+        "Commercial Property Prices",
+        "Price index of offices, shops or all commercial property; coverage varies by country.",
+    ),
     "residential_property_prices": Concept(
         "Residential Property Prices",
         "Nominal price index of homes (2010 = 100): housing is the most rate-sensitive spending.",
@@ -549,6 +593,10 @@ REDUNDANT: dict[str, str] = {
     "T10Y2Y": "10y minus 2y = (DFII10 + T10YIE) minus DGS2",
     "MPRIME": "Prime rate = fed funds + 3 points by banks' convention",
     "RSAFS": "Nominal retail sales = real retail sales (RRSFS) x CPI",
+    "BIS_TC_NFS": "Credit to the non-financial sector, ratio to GDP (BIS WS_TC, borrower C) = "
+    "private sector (BIS_CREDIT) + general government (BIS_TCGOV); checked 17 Nov 2026",
+    "BIS_TC_NFC": "Credit to non-financial corporations, ratio to GDP (BIS WS_TC, borrower N) = "
+    "private sector (BIS_CREDIT) - households (BIS_TCHH); checked 17 Nov 2026",
 }
 
 
@@ -575,6 +623,19 @@ _BIS_CONCEPT = {
     "CREDIT": "credit_to_gdp_ratio",
     "CREDGAP": "credit_to_gdp_gap",
     "SPP": "residential_property_prices",
+    "TCHH": "household_credit_to_gdp",
+    "TCGOV": "government_credit_to_gdp",
+    "DSRP": "debt_service_ratio",
+    "DSRH": "household_debt_service_ratio",
+    "DSRN": "corporate_debt_service_ratio",
+    "GLIUSD": "usd_credit_to_non_banks",
+    "CBTA": "central_bank_balance_sheet",
+    "IDS": "international_debt_securities",
+    "DSSGOV": "government_debt_securities",
+    "DSSNFC": "corporate_debt_securities",
+    "DSSFIN": "financial_debt_securities",
+    "CPP": "commercial_property_prices",
+    "CPI": "consumer_prices",
 }
 SERIES_CONCEPTS |= {
     (BIS_COUNTRIES[series_id], series_id): _BIS_CONCEPT[code]
@@ -621,6 +682,14 @@ COMPARED_AS: dict[str, str] = {
     "real_gdp": (
         "Year-on-year growth: each country's real GDP is an amount in its own currency and chained "
         "base year, and the US series is a seasonally adjusted annual rate"
+    ),
+    "central_bank_balance_sheet": (
+        "Year-on-year change: the US series is an amount in dollars, the BIS series of the other "
+        "economies are amounts in their own currencies"
+    ),
+    "commercial_property_prices": (
+        "Year-on-year change: each country's index has its own base year, property type "
+        "(all commercial, offices, retail) and coverage (whole country or its big cities)"
     ),
     "money_supply": (
         "Year-on-year change: the US amount is in dollars and the euro area's in euro"

@@ -13,7 +13,7 @@ from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal
 
-from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES
+from app.data.bis_ids import BIS_COUNTRIES, BIS_SERIES, MEASURES, NEW_CODES
 from app.data.cycle_classification import QUFIN_CYCLE
 from app.data.gap_ids import (
     BCB_COUNTRY,
@@ -307,6 +307,7 @@ def _bis(series_id: str) -> CatalogSeries:
         BIS_COUNTRIES[series_id],
         measure.dimension,
         change=measure.change,
+        published_as_change=measure.published_as_change,
         licence_note=_BIS_LICENCE,
     )
 
@@ -566,6 +567,7 @@ _DEEP_HISTORY: frozenset[str] = frozenset(
         sid
         for sid, (code, area) in BIS_SERIES.items()
         if code == "SPP"
+        or code in NEW_CODES
         or area in EURO_MEMBERS
         or (code == "CBPOL" and area in (KUWAIT_POLICY, *NEW_POLICY_AREAS))
     }
