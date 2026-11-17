@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
+import { ScorecardStatusBadge } from '@/features/admin/components/scorecard-status-badge';
 import { marketQueries } from '@/features/market/api/queries';
 import type { CountryScore, ScoreDimension } from '@/features/market/api/types';
 import {
@@ -235,6 +236,7 @@ export function CountryScorecard() {
           <Badge variant={live ? 'outline' : 'secondary'}>
             {live ? `Live · as of ${rows[0].asOf}` : 'Sample data'}
           </Badge>
+          <ScorecardStatusBadge />
         </CardTitle>
         <CardDescription>
           {live

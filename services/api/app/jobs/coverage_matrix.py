@@ -204,6 +204,24 @@ def summarize(cells: list[Cell]) -> Summary:
     )
 
 
+def country_gaps(cells: list[Cell]) -> list[tuple[str, str, int, int, int]]:
+    """Per country, over the global indicators only: (iso3, name, have, unusable, gap)."""
+    rows: dict[str, list[int]] = {}
+    names: dict[str, str] = {}
+    for c in cells:
+        names[c.iso3] = c.country
+        counts = rows.setdefault(c.iso3, [0, 0, 0])
+        if c.scope != "global":
+            continue
+        if c.status == "HAVE":
+            counts[0] += 1
+        elif c.status == "GAP":
+            counts[2] += 1
+        else:
+            counts[1] += 1
+    return [(iso3, names[iso3], v[0], v[1], v[2]) for iso3, v in rows.items()]
+
+
 def format_summary(summary: Summary, top: int = 12) -> str:
     countries = summary.cells // max(1, sum(summary.scopes.values()))
     lines = [

@@ -1,4 +1,5 @@
 import PageContainer from '@/components/layout/page-container';
+import { CoveragePanel } from '@/features/admin/components/coverage-panel';
 import { AdminHealth } from '@/features/macro/components/admin-health';
 
 export const metadata = {
@@ -9,9 +10,12 @@ export default function DataHealthPage() {
   return (
     <PageContainer
       pageTitle='Data health'
-      pageDescription='Release check per source, with seasonal adjustment coverage.'
+      pageDescription='Coverage by country and indicator, the data refresh, and the release check per source.'
     >
-      <AdminHealth />
+      <div className='space-y-4'>
+        <CoveragePanel />
+        <AdminHealth />
+      </div>
     </PageContainer>
   );
 }

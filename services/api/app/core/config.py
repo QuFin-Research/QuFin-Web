@@ -42,6 +42,15 @@ class Settings(BaseSettings):
     # recipe private (the default); "show" discloses weights and method. Data origin, freshness,
     # confidence and pending releases are always shown either way.
     scorecard_mechanism: Literal["show", "hide"] = "hide"
+    # Who may open the admin views and, for admins, start a data refresh. Comma-separated emails;
+    # roles are decided here, never by the sign-up form. Empty means nobody (the safe default).
+    admin_emails: Annotated[list[str], NoDecode] = []
+    data_scientist_emails: Annotated[list[str], NoDecode] = []
+    # A manual refresh starts at most this often, and a run older than the timeout is treated
+    # as interrupted. Each step (one source) is stopped after the step timeout.
+    refresh_min_interval_seconds: int = Field(default=600, ge=0)
+    refresh_run_timeout_seconds: int = Field(default=7200, ge=60)
+    refresh_step_timeout_seconds: int = Field(default=1800, ge=60)
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)
 
@@ -49,6 +58,15 @@ class Settings(BaseSettings):
     @classmethod
     def blank_key_is_unset(cls, value: object) -> object:
         return None if isinstance(value, str) and not value.strip() else value
+
+    @field_validator("admin_emails", "data_scientist_emails", mode="before")
+    @classmethod
+    def split_emails(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [e.strip().lower() for e in value.split(",") if e.strip()]
+        if isinstance(value, list):
+            return [str(e).strip().lower() for e in value if str(e).strip()]
+        return value
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.core.auth import AppSettings, CurrentUser, Users
+from app.core.auth import AppSettings, CurrentUser, Users, with_role
 from app.core.config import Settings
 from app.core.security import new_session_token
 from app.schemas.auth import SignIn, SignUp, User
@@ -54,7 +54,7 @@ def sign_up(
             status_code=409, detail="An account with this email already exists"
         ) from None
     _start_session(response, users, user, settings)
-    return user
+    return with_role(user, settings)
 
 
 @router.post("/sign-in", response_model=User)
@@ -69,7 +69,7 @@ def sign_in(
     if old := request.cookies.get(settings.session_cookie_name):
         users.end_session(old)
     _start_session(response, users, user, settings)
-    return user
+    return with_role(user, settings)
 
 
 @router.post("/sign-out", status_code=204)
