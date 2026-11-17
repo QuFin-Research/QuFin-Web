@@ -88,7 +88,9 @@ series, existing or new:
     `tests/test_indicator_concepts.py` fails otherwise. The release check (`check-data`) also
     compares every stored series with every other, from any source: two that carry the same
     values, or the same values in other units, both fail as "review" until one is removed.
-17. **FRED/ALFRED first, at least for the US.** Use an agency's own API (BLS, BEA, EIA, ...)
+17. **FRED/ALFRED first, at least for the US.** *[Superseded by rule P on 18 Nov 2026: the source is
+    chosen by earliest release and frequency, not by FRED first. Kept for the record.]*
+    Use an agency's own API (BLS, BEA, EIA, ...)
     only for a leading indicator FRED does not carry, or a lagging one that is mandatory to
     gauge an economy, currency, country or asset; record the reason in `NON_FRED_ALLOWED`. An
     agency API may also be used as a release-time fast lane for a FRED series, stored as a
@@ -240,10 +242,11 @@ S9. **Never mix live and sample scorecards** in one ranking; sample data is alwa
     - A connector is not merged until its row in `docs/data-connections.md` states the limits and how
       the code keeps within them, and tests show the identification and the stop on refusal.
 
-## Part 5. Frequency, adjustment, vintages, charting and coverage (Rules A-O)
+## Part 5. Frequency, adjustment, vintages, charting and coverage (Rules A-P)
 
 These rules extend, and never loosen, rules 1-28. Where one seems to overlap another, the stricter
-reading applies.
+reading applies. The one exception is rule P, which replaces the FRED-first order of rules 17, H, M
+and O with the earliest and most frequent source (owner instruction, 18 Nov 2026).
 
 A. **Earliest signal for leading indicators.** For a leading indicator (jobless claims, retail
    activity, financial conditions) the database ingests the earliest release frequency an
@@ -282,7 +285,8 @@ G. **The frequency filter shows only what is possible.** Both the user and admin
    The filter allows only frequencies shared by every selected series, and states in words why a
    frequency is unavailable.
 
-H. **FRED/ALFRED first, one source per series.** An indicator on FRED with `SA` values and
+H. **FRED/ALFRED first, one source per series.** *[The FRED-first order is superseded by rule P on
+   18 Nov 2026; one source per series stands. Kept for the record.]* An indicator on FRED with `SA` values and
    vintages comes from FRED only. A direct connector (BLS, IMF, OECD, ECB and so on) serves only
    indicators or countries FRED lacks, lacks in `SA`, or lacks vintages for. Duplicates are
    flagged and removed so each indicator and country resolves to one source id (rules 16 and 17).
@@ -323,7 +327,8 @@ L. **Release-calendar precision and a resilient retry policy.** Every ingested s
    a 429 that outlasts the retries stops requests to that supplier for the run, so the ladder can
    never become a way round a limit.
 
-M. **FRED first, authentic fallbacks, never two sources.** FRED/ALFRED is the sole canonical
+M. **FRED first, authentic fallbacks, never two sources.** *[The FRED-first order is superseded by
+   rule P on 18 Nov 2026; never two sources stands. Kept for the record.]* FRED/ALFRED is the sole canonical
    source whenever it provides seasonally adjusted (`SA`) values with vintage revisions (rule H).
    Where FRED lacks `SA` and vintages, or carries a frozen mirror (for example the `*PROINDMISMEI`
    and `*CPICORMINMEI` series), the series comes straight from an authentic international portal
@@ -341,7 +346,9 @@ N. **A self-running database health and integrity engine ("QuFin Doctor").** QuF
    that have frozen are quarantined or flagged. A repair never deletes data without a backup and a
    line in the report saying what was done.
 
-O. **National statistics office and central bank fallback hierarchy.** For every
+O. **National statistics office and central bank fallback hierarchy.** *[The order of the tiers is
+   superseded by rule P on 18 Nov 2026: the earliest and most frequent source wins, whichever tier it
+   is in. The registered portals and the no-silent-gaps requirement stand.]* For every
    `(country, indicator)` pair in the taxonomy the canonical source is resolved in this order:
    - **Tier 1, FRED/ALFRED:** whenever it provides `SA` values with vintage revisions (rule M).
    - **Tier 2, multilateral aggregators:** the BIS, IMF, OECD, Eurostat, ECB or World Bank,
@@ -353,6 +360,32 @@ O. **National statistics office and central bank fallback hierarchy.** For every
      statistical portals.
    A country-indicator pair may stay unpopulated only if all three tiers have no active, current
    feed, and each such pair is listed with the tiers checked and the date, so no gap is silent.
+
+P. **Earliest and most frequent source wins (supersedes FRED first).** For every economy and every
+   indicator, existing and to come, the source is chosen on two measures. No source is preferred for
+   what it is: FRED, the BIS, the IMF, the OECD, the ECB, Eurostat, the World Bank, the national
+   statistics offices and central banks, and the agencies are all candidates.
+   (a) *Earliest.* The source that makes each new observation available first is better. It is
+   measured on the same observation: the time from the end of the period to the moment QuFin can
+   first read it, from the source's own update timestamp where it gives one and from QuFin's first
+   sight of it otherwise, over at least one release cycle. A flash or provisional figure counts as
+   a release when the source flags it as such, and follows S5 until the final figure lands.
+   (b) *Frequency.* The more often the source releases the indicator, the better: daily (or finer)
+   over weekly, weekly over monthly, monthly over quarterly, quarterly over semi-annual,
+   semi-annual over annual (rule K).
+   The best source meets both: it is the earliest and it releases at least as often as every other
+   candidate. Where no source meets both, the earliest release wins, which is most likely the
+   original producer, the source that FRED or an aggregator republishes. If two are equal on both
+   measures, the original producer wins.
+   Rule P replaces the FRED-first order of rules 17, H and M and the order of the tiers in O. What
+   stays in force: one source per country-indicator pair (rules 16 and M), the licence (rule 7), the
+   supplier's policy (rule 28), meaning, unit and adjustment verified at the chosen source (rules
+   10 and 12), a live release schedule (rules 1 to 3), and reading as published (rules 6 and C): a
+   chosen source that keeps no vintages is read so that QuFin records every value as first seen, a
+   flash and its final separately, dated by the real release where it is known (rule 9).
+   Each choice is recorded in `docs/assumptions-register.md` with the candidates, the latest period,
+   update timestamp and frequency of each, and the date checked. It is checked again at least once
+   a quarter, and whenever the chosen source falls overdue or another one overtakes it.
 
 ## Change log
 
@@ -370,3 +403,4 @@ O. **National statistics office and central bank fallback hierarchy.** For every
 | 13 Nov 2026 | J-N | Added: 85-country and 169-indicator cross-matrix, highest frequency first, release-calendar precision with a retry ladder (rule 28 governs), FRED first with authentic fallbacks, and the QuFin Doctor health engine (owner instruction) |
 | 13 Nov 2026 | O | Added: three-tier source cascade (FRED, multilateral aggregators, official national portals) and no silent gaps (owner instruction) |
 | 13 Nov 2026 | J | The country universe is 87: the 85 of the QuFin Country List plus Chile and Colombia (owner instruction) |
+| 18 Nov 2026 | P (17, H, M, O) | Added: the earliest and most frequent source wins for every economy; supersedes the FRED-first order (owner instruction) |
