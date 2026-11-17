@@ -116,6 +116,11 @@ ISO3_TO_ISO2: dict[str, str] = {
 # 30 Sept); and not published by the IMF at all: Andorra, the Faroe Islands, the Isle of
 # Man, Kosovo, Liechtenstein, Monaco, North Korea.
 _NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})  # Chile, Colombia: added
+# Portugal's IMF series stopped at July 2026 while the IMF had September for most economies
+# (18 Nov 2026: the country had not reported). Its consumer prices come from FRED's copy of the
+# Eurostat HICP (CP0000PTM086NEST, to September 2026; see gap_ids.py): FRED first (rule H), one
+# source per pair (rule M).
+_FRED_INSTEAD = frozenset({"PRT"})
 
 # Who publishes what, as live on 12 Nov 2026 (one request per area, 2000 onwards, no missing
 # months). Areas absent from a tuple were checked and are not available from that source.
@@ -125,7 +130,9 @@ _NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})  # Chile, Colombia: added
 # began in late 2024, so it has 17 months. Kuwait loaded but the release check marked it overdue
 # (latest month June 2026, due 30 Sept): it joins when the IMF catches up.
 IMF_CPI_AREAS: tuple[str, ...] = tuple(
-    a for a in ISO3_TO_ISO2 if a not in {"NZL", "QAT", "ARE", "KWT"} and a not in _NOT_YET
+    a
+    for a in ISO3_TO_ISO2
+    if a not in {"NZL", "QAT", "ARE", "KWT"} and a not in _NOT_YET | _FRED_INSTEAD
 )
 # OECD unemployment (monthly, seasonally adjusted, ILO definition). Not available monthly for
 # Switzerland, New Zealand, Argentina, Indonesia, India, Brazil, China, South Africa, Russia, the

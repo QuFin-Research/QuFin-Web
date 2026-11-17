@@ -122,3 +122,19 @@ def test_every_country_maps_its_own_version_to_the_one_global_concept():
 def test_api_returns_the_global_acronym(client, ingested):  # noqa: F811
     [series] = client.get("/v1/macro/series").json()
     assert "acronym" in series
+
+
+def test_portugal_consumer_prices_come_from_fred_not_the_imf():
+    """The IMF stopped at July 2026 (the country was not reporting); FRED's Eurostat HICP is
+    current. One source per pair (rule M): the IMF series is not declared beside it."""
+    from app.data.macro_catalog import BY_ID
+    from app.data.macro_ids import IMF_CPI
+
+    assert "IMF_CPI_PRT" not in IMF_CPI and "IMF_CPI_PRT" not in BY_ID
+    entry = BY_ID["CP0000PTM086NEST"]
+    assert (entry.source, entry.country, entry.dimension) == ("fred", "PT", "inflation")
+    assert SERIES_CONCEPTS[("PT", "CP0000PTM086NEST")] == "consumer_prices"
+    portugal = [
+        sid for (c, sid), k in SERIES_CONCEPTS.items() if c == "PT" and k == "consumer_prices"
+    ]
+    assert portugal == ["CP0000PTM086NEST"]
