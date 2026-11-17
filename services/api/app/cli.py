@@ -20,6 +20,7 @@ uv run python -m app.cli sync-taxonomy               # canonical codes, pillars 
 uv run python -m app.cli build-calendar              # releases: previous, actual, next due
 uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC indicators
 uv run python -m app.cli doctor [--fix]           # database health check and safe repair
+uv run python -m app.cli coverage-matrix --out FILE  # every country against every indicator (CSV)
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
@@ -31,6 +32,7 @@ import argparse
 import logging
 import sys
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 from app.connectors.bcb import BcbClient
 from app.connectors.bis import BisClient
@@ -52,6 +54,7 @@ from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.jobs import (
     build_calendar,
+    coverage_matrix,
     doctor,
     ingest_bis,
     ingest_bls,
@@ -352,6 +355,17 @@ def _doctor(args: argparse.Namespace) -> int:
     return 0 if not report.errors else 1
 
 
+def _coverage_matrix(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        cells = coverage_matrix.build(session, _today())
+    print(coverage_matrix.format_summary(coverage_matrix.summarize(cells)))
+    if args.out:
+        coverage_matrix.write_csv(cells, Path(args.out))
+        print(f"coverage matrix: wrote {len(cells)} rows to {args.out}")
+    return 0
+
+
 def _check_data(_args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -560,6 +574,12 @@ def main(argv: list[str] | None = None) -> int:
         "--gaps", action="store_true", help="list unpopulated pairs with tier 3 portals"
     )
     doc.set_defaults(func=_doctor)
+
+    matrix = sub.add_parser(
+        "coverage-matrix", help="every country against every indicator, from the database"
+    )
+    matrix.add_argument("--out", help="write the full matrix to this CSV file")
+    matrix.set_defaults(func=_coverage_matrix)
 
     bls = sub.add_parser("ingest-bls", help="ingest BLS series (Employment Cost Index)")
     bls.add_argument("series", nargs="*", help="series ids (default: every BLS series)")

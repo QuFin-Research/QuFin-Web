@@ -130,6 +130,7 @@ Every data series must still be published on schedule before QuFin relies on it 
 
 ```bash
 uv run python -m app.cli check-data    # every macro series and CFTC contract
+uv run python -m app.cli coverage-matrix --out matrix.csv   # every country against every indicator
 ```
 
 - **Schedule.** A series is due one period after its latest observation plus its usual release

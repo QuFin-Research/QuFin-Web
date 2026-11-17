@@ -371,3 +371,20 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | CPMI payments and FMIs | Not requested | Annual, eight tables, not a market indicator; the owner declined it |
 | Release dates are derived from the BIS calendar dataflow | Verified | `BIS_REL_CAL`, with dates into 2027, gave the lags used; two new rules in `bis_calendar.py` (`cbta_release`, `cpi_release`), tested |
 | Eight older series and two oil series went overdue on 17 Nov | Open | The IMF reserves for Austria, Brunei, Ghana and Uzbekistan, the IMF consumer prices for India, Moldova and Portugal and ONS UK unemployment had no new release; the two FRED oil series (`DCOILWTICO`, `DCOILBRENTEU`) were a few days late and loaded on a refresh the same day |
+
+## 4o. Coverage matrix generated from the database (17 Nov 2026)
+
+`uv run python -m app.cli coverage-matrix --out FILE` replaces the hand-made seed CSV
+(`coverage_matrix_seed.csv`, 15 Nov 2026). The seed matched the database exactly on that day (629 of
+629 held cells) but could not be used to decide what to ingest next.
+
+| Judgement | Status | Basis |
+|---|---|---|
+| A gap is only counted where the indicator can exist for the country | Done | Each indicator has a scope from the catalog: `global` (declared for two or more countries), `country_specific` (one country: US jobless claims, JOLTS, Empire State), `commodity` (EIA weekly petroleum supply and demand), `market` (currency pairs, WTI, Brent, Henry Hub). 46 + 12 + 10 of the 99 indicators are not global; their cells for other countries are `NOT_APPLICABLE`. The seed marked 5,712 of its 6,851 gaps (83%) as gaps that are not |
+| Coverage is held over global indicators only | Done | 940 usable of 2,697 cells (35%) on 17 Nov 2026, against 8% of the whole grid |
+| Source, frequency, first and last period, pillar are per cell, read from the stored series | Done | The seed copied one value to every cell of a concept (Albania's unemployment read "bcb, eurostat, fred, oecd, ons, singstat, worldbank" and "Annual, Monthly, Quarterly"; it is World Bank, annual). Rule K needs the real frequency per cell |
+| `OVERDUE` and `NOT_LOADED` are separate from `GAP` | Done | Eight stored series are past their release (usable = false, rule 3); a series declared in the catalog and not stored is `NOT_LOADED` (none on 17 Nov). Both carry the tier 3 portal as `GAP` does |
+| `TARGET` is called `HAVE` | Done | The seed's `TARGET` meant "already held", which reads as "to acquire" |
+| All 87 taxonomy countries and all declared indicators | Done | The seed had 85 countries (no Isle of Man, Liechtenstein) and lacked the 11 BIS indicators added on 17 Nov |
+| "Global" means two or more countries, `doctor --gaps` means eight or more | Open | The doctor's `WIDELY_HELD = 8` hides money supply (2 countries), industrial production (5), core consumer prices (6) and commercial property (7), the four largest real gaps in the matrix. A test checks every pair the doctor lists is a `GAP` or `NOT_LOADED` here; the doctor's threshold was not changed |
+| Derived-not-stored indicators and removed series have no status | Open | The matrix reads the database and catalog only; a `DERIVED` or `REMOVED` status would need the reasons kept as data, not in this register |
