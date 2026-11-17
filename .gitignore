@@ -28,3 +28,4 @@ data/exports/
 # Local working files, never tracked
 Downloads of Data/
 QuFin_*.xlsx
+coverage_matrix*.csv
