@@ -13,6 +13,9 @@ Every badge and note follows the `data` origin the API returns (or the offline m
 | Overview: Decisions logged | Count of the user's journal entries | User input | None (not market data) |
 | Overview: Today's signals | Direction, probability, conviction, price, change | **Sample** | Badge on card |
 | Overview: Macro scorecard | Pillar scores, confidence, pending releases | **Live** (FRED/ALFRED, point in time) | "Live · as of" badge; falls back to labelled sample without macro data |
+| All dashboard pages, admins and data scientists only | Coverage headline, scorecard state, last refresh | **Live** (the QuFin database and job log) | Banner and one toast per session; nothing is shown to other users |
+| Admin: Data health, coverage and refresh | Countries and indicators missing, overdue series, refresh steps | **Live** (the QuFin database) | Counts the stored series against the catalog, never estimates; admin or data scientist only |
+| Overview: scorecard backend badge | Whether the scorecard's data is being kept current | **Live** (release check of the scored series) | `Backend: updated / partly updated / not updating`, with the reason on hover; admin or data scientist only |
 | Markets | Prices, signals, regimes, hit rates | **Sample** | Banner |
 | Asset page: chart | Daily prices, signal markers | **Sample** | Badge on card |
 | Asset page: signal and drivers | Probability, conviction, drivers | **Sample** | Badge on card |

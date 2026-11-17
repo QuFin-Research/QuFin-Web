@@ -12,3 +12,4 @@ new ADR that supersedes the old one (backlog task P0-08).
 | [0005](0005-scorecard.md) | Rescaled weighted scorecard with separate confidence; 5 → 8 pillars | Accepted, 8 pillars pending |
 | [0006](0006-cloud-region.md) | AWS region and data residency | Proposed, decision needed |
 | [0007](0007-canonical-taxonomy.md) | Canonical series codes, eight pillars, country dimension, point-in-time reads by code, economic calendar | Accepted |
+| [0008](0008-admin-operations-panel.md) | Roles from server settings; admin coverage and scorecard status; a Run button that starts the ingest commands | Accepted |

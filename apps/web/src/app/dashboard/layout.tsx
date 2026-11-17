@@ -5,6 +5,7 @@ import Header from '@/components/layout/header';
 import { InfoSidebar } from '@/components/layout/info-sidebar';
 import { InfobarProvider } from '@/components/ui/infobar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AdminStatusBanner } from '@/features/admin/components/admin-status-banner';
 import { RequireAuth } from '@/features/auth/components/require-auth';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
@@ -36,6 +37,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <SidebarInset id='main-content' tabIndex={-1} className='scroll-mt-16'>
             <Header />
             <SampleDataBanner />
+            <AdminStatusBanner />
             <InfobarProvider defaultOpen={false}>
               {children}
               <InfoSidebar side='right' />

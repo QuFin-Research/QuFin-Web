@@ -30,9 +30,12 @@ overdue or discontinued, so a scheduler surfaces it.
 
 import argparse
 import logging
+import os
 import sys
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
+
+from sqlalchemy.orm import Session
 
 from app.connectors.bcb import BcbClient
 from app.connectors.bis import BisClient
@@ -104,15 +107,13 @@ def _ingest_fred(args: argparse.Namespace) -> int:
     ):
         results = ingest(client, session, series_ids, args.start)
         removed = [] if args.series else prune(session)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} vintage rows" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<10} {status}")
     for series_id in removed:
         print(f"{series_id:<10} removed: no longer in the catalog")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -133,13 +134,11 @@ def _ingest_eia(args: argparse.Namespace) -> int:
         session_scope() as session,
     ):
         results = ingest_eia.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised weeks" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<22} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -148,13 +147,11 @@ def _ingest_ecb(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "ecb"]
     with EcbClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_ecb.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<36} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -163,13 +160,11 @@ def _ingest_treasury(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "treasury"]
     with TreasuryClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_treasury.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<26} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -178,13 +173,11 @@ def _ingest_oecd(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "oecd"]
     with OecdClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_oecd.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<20} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -193,13 +186,11 @@ def _ingest_imf(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "imf"]
     with ImfClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_imf.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<16} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -208,13 +199,11 @@ def _ingest_ons(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "ons"]
     with OnsClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_ons.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<16} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -223,13 +212,11 @@ def _ingest_eurostat(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "eurostat"]
     with EurostatClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_eurostat.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<18} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -238,13 +225,11 @@ def _ingest_worldbank(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "worldbank"]
     with WorldBankClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_worldbank.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised years" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<14} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -253,13 +238,11 @@ def _ingest_bcb(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "bcb"]
     with BcbClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_national.ingest_bcb(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<14} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -268,13 +251,11 @@ def _ingest_singstat(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "singstat"]
     with SingStatClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_national.ingest_singstat(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised quarters" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<14} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -283,13 +264,11 @@ def _ingest_bis(args: argparse.Namespace) -> int:
     series_ids = args.series or [s.id for s in CATALOG if s.source == "bis"]
     with BisClient(raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_bis.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<22} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -302,9 +281,7 @@ def _ingest_cftc(args: argparse.Namespace) -> int:
     for r in results:
         status = f"{r.rows} weekly reports" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.symbol:<8} {status}")
-    print()
-    print(format_report(checks))
-    _doctor_summary()
+    _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
@@ -323,14 +300,34 @@ def _ingest_bls(args: argparse.Namespace) -> int:
         )
     with BlsClient(api_key=api_key, raw=_raw_zone()) as client, session_scope() as session:
         results = ingest_bls.ingest(client, session, series_ids, args.start)
-        checks = check_macro(session, _today())
+        checks = _release_check(session)
     for r in results:
         status = f"{r.rows} new or revised periods" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<18} {status}")
+    _finish_report(checks)
+    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+DEFER_CHECKS_ENV = "QUFIN_DEFER_RELEASE_CHECK"
+
+
+def _deferred() -> bool:
+    """True when the data refresh job runs this command: it runs one release check at the end of
+    its run instead of one (about three minutes) after every source."""
+    return os.environ.get(DEFER_CHECKS_ENV) == "1"
+
+
+def _release_check(session: Session) -> list[DataCheck]:
+    return [] if _deferred() else check_macro(session, _today())
+
+
+def _finish_report(checks: list[DataCheck]) -> None:
+    """What every ingest ends with (rules 2 and N): the release report and the doctor line."""
+    if _deferred():
+        return
     print()
     print(format_report(checks))
     _doctor_summary()
-    return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
 
 
 def _doctor_summary() -> None:

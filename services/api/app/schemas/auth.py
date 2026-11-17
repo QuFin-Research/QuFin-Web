@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BeforeValidator, Field
 
@@ -34,7 +34,12 @@ class SignIn(ApiModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+Role = Literal["admin", "data_scientist", "user"]
+
+
 class User(ApiModel):
     id: str
     email: str
     created_at: datetime
+    # Decided by the server from its settings on every request, never stored or sent by a client.
+    role: Role = "user"

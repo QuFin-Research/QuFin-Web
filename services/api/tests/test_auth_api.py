@@ -14,7 +14,8 @@ def test_sign_up_signs_in_with_a_secure_cookie(client):
     assert res.status_code == 201
     user = res.json()
     assert user["email"] == "trader@example.com"
-    assert set(user) == {"id", "email", "createdAt"}
+    assert set(user) == {"id", "email", "createdAt", "role"}
+    assert user["role"] == "user"  # nobody is staff unless the server settings say so
 
     cookie = res.headers["set-cookie"]
     assert cookie.startswith(f"{COOKIE}=")

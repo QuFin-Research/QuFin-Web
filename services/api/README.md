@@ -49,7 +49,11 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `POST` | `/v1/auth/sign-up` | Create an account and sign in (`201`); `409` if the email is taken |
 | `POST` | `/v1/auth/sign-in` | Sign in; `401` with the same message for unknown email or wrong password |
 | `POST` | `/v1/auth/sign-out` | End the session (`204`) |
-| `GET` | `/v1/auth/me` | The signed-in user, or `401` |
+| `GET` | `/v1/auth/me` | The signed-in user with `role` (`admin`, `data_scientist`, `user`; set by `QUFIN_ADMIN_EMAILS` and `QUFIN_DATA_SCIENTIST_EMAILS`), or `401` |
+| `GET` | `/v1/admin/status` | Coverage headline, scorecard state (`updated`, `partial`, `stale`), last refresh run. Admin or data scientist; `403` otherwise |
+| `GET` | `/v1/admin/coverage` | Countries and indicators missing, by indicator and by country. Admin or data scientist |
+| `GET` | `/v1/admin/jobs`, `/v1/admin/jobs/{id}` | Recent refresh runs with their steps. Admin or data scientist |
+| `POST` | `/v1/admin/jobs/refresh` | Start a data refresh of the due series (`202`); `409` while one runs, `429` if started recently. Admin only; needs a JSON body |
 | `POST` | `/v1/backtests` | Strategy or decision-rule backtest (see below). Signed in |
 | `GET` | `/v1/decisions` | Your logged decisions, newest first. Signed in |
 | `POST` | `/v1/decisions` | Log a decision; returns it with `id` and `createdAt` (`201`). Signed in |
