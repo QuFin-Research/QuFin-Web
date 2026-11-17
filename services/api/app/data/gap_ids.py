@@ -27,7 +27,7 @@ HISTORY_START = date(1990, 1, 1)  # Rule I: the training horizon for every serie
 class FredAddition:
     id: str
     country: str  # ISO2
-    dimension: Literal["growth", "external", "labour"]
+    dimension: Literal["growth", "external", "labour", "inflation"]
     concept: str
     unit_kind: str
     currency: str | None
@@ -88,6 +88,24 @@ FRED_ADDITIONS = (
         "lagging",
         "Employers hire and fire after output has already turned.",
         "diff",
+    ),
+)
+FRED_ADDITIONS = (
+    *FRED_ADDITIONS,
+    # Portugal consumer prices: the IMF series stopped at July 2026 (the country was not reporting,
+    # 18 Nov 2026). FRED carries Eurostat's HICP, all items, index 2025 = 100, monthly, to
+    # September 2026 (updated 16 Oct). It is the harmonised index, not Portugal's national CPI. The
+    # OECD copies of the national CPI on FRED (PRTCPIALLMINMEI) ended in April 2025.
+    FredAddition(
+        "CP0000PTM086NEST",
+        "PT",
+        "inflation",
+        "consumer_prices",
+        "index",
+        None,
+        "lagging",
+        "Inflation follows the cycle; it confirms rather than predicts.",
+        "pct",
     ),
 )
 FRED_ADDITION_BY_ID = {a.id: a for a in FRED_ADDITIONS}
