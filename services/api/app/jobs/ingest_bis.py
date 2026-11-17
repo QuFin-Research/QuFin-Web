@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.connectors.bis import BisClient
 from app.connectors.sdmx import SdmxError, SdmxSeries
-from app.data.bis_calendar import monthly_release, quarterly_release
+from app.data.bis_calendar import cbta_release, cpi_release, monthly_release, quarterly_release
 from app.data.bis_ids import BIS_SERIES, KNOWN_GAPS, MEASURES, BisMeasure
 from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, start_for
 from app.jobs.ingest_fred import IngestResult
@@ -25,6 +25,20 @@ RELEASES = {
     "WS_EER": "BIS Effective exchange rates",
     "WS_CREDIT_GAP": "BIS Credit-to-GDP gaps",
     "WS_SPP": "BIS Residential property prices",
+    "WS_TC": "BIS Total credit",
+    "WS_DSR": "BIS Debt service ratios",
+    "WS_GLI": "BIS Global liquidity indicators",
+    "WS_CBTA": "BIS Central bank total assets",
+    "WS_DEBT_SEC2_PUB": "BIS International debt securities",
+    "WS_NA_SEC_DSS": "BIS Debt securities statistics",
+    "WS_CPP": "BIS Commercial property prices",
+    "WS_LONG_CPI": "BIS Consumer prices",
+}
+RELEASE_RULES = {
+    "monthly": monthly_release,
+    "quarterly": quarterly_release,
+    "cbta": cbta_release,
+    "cpi": cpi_release,
 }
 PAUSE_SECONDS = 1.0
 # The BIS refusing us (rate limit or block): stop for this run rather than retry into a ban.
@@ -55,6 +69,41 @@ def _check_units(series_id: str, measure: BisMeasure, fetched: SdmxSeries) -> No
     stated = fetched.attributes.get("UNIT_MEASURE")
     if measure.unit_measure and stated != measure.unit_measure:
         raise SdmxError(f"{series_id}: BIS units are {stated!r}, expected {measure.unit_measure!r}")
+    multiplier = fetched.attributes.get("UNIT_MULT")
+    if measure.unit_mult and multiplier != measure.unit_mult:
+        raise SdmxError(
+            f"{series_id}: BIS multiplier is {multiplier!r}, expected {measure.unit_mult!r}"
+        )
+
+
+def _requests(by_measure: dict[str, list[str]]) -> list[tuple[str, list[str], str]]:
+    """(measure, series ids, key) per request: all a measure's economies in one, unless each
+    economy has its own series shape (commercial property), which takes one request apiece."""
+    requests = []
+    for code, ids in by_measure.items():
+        measure = MEASURES[code]
+        if measure.parts:
+            parts = dict(measure.parts)
+            for sid in ids:
+                area = BIS_SERIES[sid][1]
+                requests.append((code, [sid], measure.key.format(areas=area, part=parts[area])))
+        else:
+            areas = "+".join(BIS_SERIES[sid][1] for sid in ids)
+            requests.append((code, ids, measure.key.format(areas=areas)))
+    return requests
+
+
+def _by_area(measure: BisMeasure, series: Sequence[SdmxSeries]) -> dict[str, SdmxSeries]:
+    """The response by economy; two series for one economy would be a key that is too loose."""
+    fetched: dict[str, SdmxSeries] = {}
+    for s in series:
+        area = s.dimensions.get(measure.area_dimension, "")
+        if area in fetched:
+            raise SdmxError(
+                f"{measure.flow}: more than one series for {area}: the key is too loose"
+            )
+        fetched[area] = s
+    return fetched
 
 
 def ingest(
@@ -79,7 +128,7 @@ def ingest(
             by_measure[BIS_SERIES[sid][0]].append(sid)
     store = MacroStore(session)
     refused = False
-    for i, (code, ids) in enumerate(by_measure.items()):
+    for i, (code, ids, key) in enumerate(_requests(by_measure)):
         measure = MEASURES[code]
         if refused:
             results.extend(
@@ -89,22 +138,21 @@ def ingest(
             continue
         if i:
             sleep(PAUSE_SECONDS)
-        areas = "+".join(BIS_SERIES[sid][1] for sid in ids)
         try:
-            fetched = {
-                s.dimensions.get(measure.area_dimension, ""): s
-                for s in client.many(
-                    measure.flow,
-                    measure.key.format(areas=areas),
-                    min(start_for(s, start) for s in ids),
-                )
-            }
+            fetched = _by_area(
+                measure,
+                client.many(
+                    measure.flow, key, min(start_for(s, start) for s in ids), measure.version
+                ),
+            )
         except SdmxError as exc:
             log.warning("BIS request for %s failed: %s", code, exc)
             results.extend(IngestResult(sid, None, str(exc)) for sid in ids)
             refused = bool(REFUSED.search(str(exc)))
             continue
-        release_of = monthly_release if measure.frequency == "Monthly" else quarterly_release
+        release_of = RELEASE_RULES[
+            measure.release or ("monthly" if measure.frequency == "Monthly" else "quarterly")
+        ]
         for series_id in ids:
             area = BIS_SERIES[series_id][1]
             try:
