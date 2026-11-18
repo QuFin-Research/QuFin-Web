@@ -57,6 +57,12 @@ pull request (rule 24). The numbers below live in the named file, which is their
   read only for as-of dates before the change (rule 16).
 - **Catalog version:** the state of the catalog declarations (source decision, change kind,
   adjustment, variant, unit) a value or score was computed with.
+- **Native source** of an economy: the source closest to where its data originates, in this order.
+  First the original producer (the national statistics office, central bank or agency). Then the
+  aggregator that belongs to the economy's own country or bloc: Eurostat for the European Union, the
+  euro area, the EFTA economies and the candidate economies it serves, and FRED for the United
+  States. Then a global aggregator: the IMF, the World Bank, the BIS or the OECD. It is used only
+  to break a tie (rule P).
 
 ## Part 1. Data integrity rules (non-negotiable)
 
@@ -407,7 +413,7 @@ N. **A self-running database health and integrity engine ("QuFin Doctor").** QuF
 
 O. **Candidate sources, and no silent gaps.** For every `(country, indicator)` pair in the taxonomy
    the candidates are all of these, with no ranking by tier (rule P alone chooses, and its
-   tie-break is the only place the original producer is preferred):
+   tie-break is the only place a native source, Part 0, is preferred):
    - FRED/ALFRED;
    - the multilateral aggregators: BIS, IMF, OECD, Eurostat, ECB and the World Bank;
    - the country's official statistics office, central bank, agency or government open-data
@@ -421,7 +427,8 @@ O. **Candidate sources, and no silent gaps.** For every `(country, indicator)` p
 
 P. **Earliest and most frequent source wins.** For every economy and every indicator, existing and
    to come, the source is chosen from the candidates of rule O, whatever the source is: an
-   aggregator, an agency or the original producer.
+   aggregator, an agency or the original producer. No source is preferred for what it is, except
+   in the tie-break below.
    *Eligibility first.* A candidate is eligible only if all of these hold; an ineligible source is
    never chosen, however early it is:
    - its licence allows QuFin's use (rule 7);
@@ -441,11 +448,19 @@ P. **Earliest and most frequent source wins.** For every economy and every indic
    different concept.
    The best source meets both: it is the earliest and it releases at least as often as every other
    candidate. Where no source meets both, the earliest release wins, which is most likely the
-   original producer, the source that FRED or an aggregator republishes. If two are equal on both
-   measures, the original producer wins. Where eligible candidates publish different adjustments,
-   a comparison shows rule B's notice.
+   original producer, the source that FRED or an aggregator republishes. Where eligible candidates
+   publish different adjustments, a comparison shows rule B's notice.
+   *Ties.* If two or more sources are equal on both measures, the most native source wins (Part 0):
+   the original producer, then the aggregator of the economy's own country or bloc, then a global
+   aggregator. For a European economy that is Eurostat rather than the IMF; for the United States
+   it is FRED rather than the IMF or the World Bank. Sources equally native stay as they are.
+   Nativeness only breaks a tie: it never outweighs eligibility, earliest or frequency. It also
+   keeps the sources of a bloc uniform, such as the European Union or the euro area: where sources
+   tie, its economies are served from the same native source, so a comparison across them rests
+   on one definition and one release pattern (rules 18 and 23).
    *New pairs.* "Earliest" needs one release cycle to measure, so a new pair is served at first
-   from the eligible candidate with the most recent period at the probe (frequency breaks a tie):
+   from the eligible candidate with the most recent period at the probe (frequency, then
+   nativeness, breaks a tie):
    a provisional source decision (Part 0), served and scored. The other eligible candidates are
    staged (Part 0) and timed for one release cycle. If the measured winner is the provisional
    source, the decision is confirmed; otherwise the winner replaces it as a source change, below.
@@ -455,8 +470,7 @@ P. **Earliest and most frequent source wins.** For every economy and every indic
    another one overtakes it. A change takes effect from a stated date and is a new source decision:
    from that date the new source serves the pair with its full history (rules I and 16); reads as
    of an earlier date use the retired series, so past scores and backtests do not change (rules 6
-   and 20). The chosen
-   source is read as published (rule 6).
+   and 20). The chosen source is read as published (rule 6).
 
 ## Retired numbers
 
@@ -496,3 +510,4 @@ requirement are kept in the new rule O. The UK ONS first fallback of old rule H 
 | 18 Nov 2026 | All | Consolidated into a master rule book: duplicate rules merged (5, 13, 14, 17, 19, A, C, E, H, K, M retired into S2, 22, P, 16, 18, 6), conflicts resolved (2, 4, 6, 9, B, I, J, N, O, S1, S5, S6), retired numbers listed; no rule's substance dropped except the FRED-first order |
 | 18 Nov 2026 | 0, 2, 6, 8, 10, 15, 16, 18, 20, 21, 22, 24, 28, B, J, L, O, P, S1, S2, S5, S7 | Cross-verification fixes: Part 0 definitions (due date, grace, status, usable, score scale, data table, hot query, source decision); P eligibility filter, provisional choice and dated source changes; public correction mechanism vs proprietary recipe; owner approval and versioning of scores; CPI variants; S2/S5 estimate exception; zero-denominator changes; `OTHER` adjustment; ingest failure semantics; duplicate-check pre-filter; two-layer retry; narrower 8 and 15; rule 24 scoped to tools, not data sources |
 | 18 Nov 2026 | 0, 2, 6, 16, 18, 20, 21, 22, 24, I, J, P | Second cross-verification: a new source loads from 1990 and only its own retired series is exempt from the duplicate check; recipe acknowledged as rule 24's one exception, versioned privately with hashes in `docs/scorecard-versions.md`; provisional decision, staging, retired series and catalog version defined; J serves the provisional choice and stages the rest; owner decides disclosure; equal weights allowed when weight cards show equal inputs; change-kind re-declaration versioned; naming tie-break; charts mark source changes; downstream jobs read usable series after a failed run; release-lag window stated |
+| 19 Nov 2026 | 0, O, P | Rule P tie-break: the most native source wins (the original producer, then the aggregator of the economy's own country or bloc, such as Eurostat for the European Union or FRED for the United States, then a global aggregator), which also keeps the sources of a bloc uniform; Part 0 defines native source (owner instruction) |

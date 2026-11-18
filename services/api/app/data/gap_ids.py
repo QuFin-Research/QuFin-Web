@@ -90,24 +90,8 @@ FRED_ADDITIONS = (
         "diff",
     ),
 )
-FRED_ADDITIONS = (
-    *FRED_ADDITIONS,
-    # Portugal consumer prices: the IMF series stopped at July 2026 (the country was not reporting,
-    # 18 Nov 2026). FRED carries Eurostat's HICP, all items, index 2025 = 100, monthly, to
-    # September 2026 (updated 16 Oct). It is the harmonised index, not Portugal's national CPI. The
-    # OECD copies of the national CPI on FRED (PRTCPIALLMINMEI) ended in April 2025.
-    FredAddition(
-        "CP0000PTM086NEST",
-        "PT",
-        "inflation",
-        "consumer_prices",
-        "index",
-        None,
-        "lagging",
-        "Inflation follows the cycle; it confirms rather than predicts.",
-        "pct",
-    ),
-)
+# Portugal's consumer prices were FRED's copy of Eurostat's HICP (CP0000PTM086NEST) from 18 Nov
+# 2026; from 19 Nov 2026 they come from Eurostat itself (HICP_GEO below, rule P).
 FRED_ADDITION_BY_ID = {a.id: a for a in FRED_ADDITIONS}
 
 
@@ -329,6 +313,46 @@ EUROSTAT_SERIES = (
             release="Eurostat Labour market",
         )
         for geo, iso2 in _UNE_GEO.items()
+    ),
+)
+# Rule P, 19 Nov 2026: consumer prices from Eurostat's HICP, all items, annual rate of change
+# (`prc_hicp_minr`), for every economy where Eurostat's latest month was ahead of the series then
+# serving the pair (October 2026 against September or August; Kosovo had none). For Albania,
+# Belgium, Switzerland, Estonia, Luxembourg and Slovenia the IMF series was level with it
+# (October too); the tie goes to the more native source, Eurostat (rule P, Part 0). Eurostat
+# publishes the final HICP about 15 to 18 days after the month and flags early figures `e`;
+# the licence covers EU, EFTA and candidate economies (Bosnia, Moldova and Ukraine are not
+# served). Greece is "EL" at Eurostat. See docs/assumptions-register.md section 4r.
+HICP_GEO: dict[str, str] = {
+    "AL": "AL", "AT": "AT", "BE": "BE", "BG": "BG", "CH": "CH", "CY": "CY", "CZ": "CZ",
+    "DE": "DE", "DK": "DK", "EE": "EE", "ES": "ES", "FI": "FI", "FR": "FR", "GR": "EL",
+    "HR": "HR", "HU": "HU", "IE": "IE", "IS": "IS", "IT": "IT", "LT": "LT", "LU": "LU",
+    "LV": "LV", "ME": "ME", "MK": "MK", "MT": "MT", "NL": "NL", "NO": "NO", "PL": "PL",
+    "PT": "PT", "RO": "RO", "RS": "RS", "SE": "SE", "SI": "SI", "SK": "SK", "TR": "TR",
+    "XK": "XK",
+}  # fmt: skip
+_HICP = {"freq": "M", "unit": "RCH_A", "coicop18": "TOTAL"}
+EUROSTAT_SERIES = (
+    *EUROSTAT_SERIES,
+    *(
+        EurostatSeries(
+            f"ESTAT_HICP_{geo}",
+            iso2,
+            "prc_hicp_minr",
+            {**_HICP, "geo": geo},
+            f"HICP, all items: annual rate of change, {geo}",
+            "Percentage change",
+            "Not Seasonally Adjusted",
+            "consumer_prices",
+            "inflation",
+            "rate_percent",
+            "lagging",
+            "Inflation follows the cycle; it confirms rather than predicts.",
+            "diff",
+            published_as_change=True,
+            release="Eurostat HICP",
+        )
+        for iso2, geo in HICP_GEO.items()
     ),
 )
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}

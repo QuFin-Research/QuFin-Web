@@ -533,7 +533,8 @@ _DSSFIN_AREAS = (
     "ZA",
 )
 
-_CPI_AREAS = ("MT", "NZ", "RS")
+# Malta and Serbia moved to Eurostat's HICP on 19 Nov 2026 (rule P, gap_ids.py).
+_CPI_AREAS = ("NZ",)
 
 # Commercial property: one series per economy, whole country where the BIS has it, the most general
 # property type it has (all commercial, else office and retail, office, retail), all vintages.

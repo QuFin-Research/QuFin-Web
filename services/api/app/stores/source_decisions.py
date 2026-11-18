@@ -177,10 +177,13 @@ class SourceStore:
         self.session.commit()
 
     def _lifecycle(self, series_id: str, lifecycle: str, retired_on: date | None) -> None:
+        values: dict[str, object] = {"lifecycle": lifecycle, "retired_on": retired_on}
+        if lifecycle == RETIRED:
+            # The canonical code names one live series per country and indicator (a unique
+            # index), and the series that replaces this one takes it.
+            values["canonical_code"] = None
         self.session.execute(
-            update(MacroSeriesRow)
-            .where(MacroSeriesRow.id == series_id)
-            .values(lifecycle=lifecycle, retired_on=retired_on)
+            update(MacroSeriesRow).where(MacroSeriesRow.id == series_id).values(**values)
         )
 
     def retired_pairs(self) -> set[frozenset[str]]:

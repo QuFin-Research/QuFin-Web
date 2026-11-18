@@ -110,7 +110,7 @@ def compared(app, db_session):
         "Index 1982-1984=100",
         [300 * 1.03 ** (i / 12) for i in range(26)],
     )
-    seed(db_session, "IMF_CPI_DEU", "DE", "Percentage change", [2.0 + 0.1 * i for i in range(26)])
+    seed(db_session, "ESTAT_HICP_DE", "DE", "Percentage change", [2.0 + 0.1 * i for i in range(26)])
     seed(db_session, "IMF_CPI_JPN", "JP", "Percentage change", [1.0] * 26)
     seed(
         db_session,
@@ -175,7 +175,8 @@ def test_cpi_series_name_their_definition_and_a_mix_carries_a_notice(compared, c
     body = client.get("/v1/macro/compare/consumer_prices").json()
     rows = {r["iso3"]: r for r in body["rows"]}
     assert rows["USA"]["variant"] == "CPI-U, all items"
-    assert rows["DEU"]["variant"] == "National CPI"
+    assert rows["DEU"]["variant"] == "HICP, all items"
+    assert rows["JPN"]["variant"] == "National CPI"
     assert any("different definitions" in n for n in body["notices"])
     # a concept with no variants has none and no notice
     unemployment = client.get("/v1/macro/compare/unemployment_rate").json()

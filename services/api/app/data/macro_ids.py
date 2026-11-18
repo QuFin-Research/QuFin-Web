@@ -27,6 +27,8 @@ Left out, and why:
 from dataclasses import dataclass
 from typing import Literal
 
+from app.data.gap_ids import HICP_GEO
+
 Indicator = Literal["UNE"]
 
 # OECD (and IMF) area code -> QuFin country code, for the countries this batch adds.
@@ -116,11 +118,10 @@ ISO3_TO_ISO2: dict[str, str] = {
 # 30 Sept); and not published by the IMF at all: Andorra, the Faroe Islands, the Isle of
 # Man, Kosovo, Liechtenstein, Monaco, North Korea.
 _NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})  # Chile, Colombia: added
-# Portugal's IMF series stopped at July 2026 while the IMF had September for most economies
-# (18 Nov 2026: the country had not reported). Its consumer prices come from FRED's copy of the
-# Eurostat HICP (CP0000PTM086NEST, to September 2026; see gap_ids.py): FRED first (rule H), one
-# source per pair (rule M).
-_FRED_INSTEAD = frozenset({"PRT"})
+# Consumer prices of the economies in HICP_GEO come from Eurostat (rule P, 19 Nov 2026, see
+# gap_ids.py), not from the IMF: one source per pair (rule 16). Portugal's IMF series had
+# already stopped at July 2026.
+_EUROSTAT_INSTEAD = frozenset(a for a, i in ISO3_TO_ISO2.items() if i in HICP_GEO)
 
 # Who publishes what, as live on 12 Nov 2026 (one request per area, 2000 onwards, no missing
 # months). Areas absent from a tuple were checked and are not available from that source.
@@ -132,7 +133,7 @@ _FRED_INSTEAD = frozenset({"PRT"})
 IMF_CPI_AREAS: tuple[str, ...] = tuple(
     a
     for a in ISO3_TO_ISO2
-    if a not in {"NZL", "QAT", "ARE", "KWT"} and a not in _NOT_YET | _FRED_INSTEAD
+    if a not in {"NZL", "QAT", "ARE", "KWT"} and a not in _NOT_YET | _EUROSTAT_INSTEAD
 )
 # OECD unemployment (monthly, seasonally adjusted, ILO definition). Not available monthly for
 # Switzerland, New Zealand, Argentina, Indonesia, India, Brazil, China, South Africa, Russia, the

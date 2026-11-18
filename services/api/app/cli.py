@@ -386,8 +386,20 @@ def _source_decision(args: argparse.Namespace) -> int:
         if args.baseline:
             applied = 0
             for b in BASELINE:
-                if sources.history(b.country, b.concept):
-                    continue
+                history = sources.history(b.country, b.concept)
+                if history and history[-1].effective_to is None:
+                    if history[-1].series_id == b.series_id:
+                        continue
+                elif not history and b.predecessor is not None:
+                    p = b.predecessor
+                    sources.decide(
+                        b.country,
+                        b.concept,
+                        p.series_id,
+                        p.source,
+                        p.effective_from,
+                        reason=p.reason,
+                    )
                 sources.decide(
                     b.country,
                     b.concept,
