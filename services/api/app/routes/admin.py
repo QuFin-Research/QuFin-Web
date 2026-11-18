@@ -99,13 +99,21 @@ def start_refresh(
     jobs.set_steps(run.id, refresh.summarize_steps(steps))
     factory = sessionmaker(session.get_bind(), expire_on_commit=False)
     executor = getattr(request.app.state, "refresh_executor", refresh.subprocess_executor)
-    args = (run.id, factory, steps, executor, settings.refresh_step_timeout_seconds)
-    options = {
-        "sleep": getattr(request.app.state, "refresh_sleep", time.sleep),
-        "budget_seconds": settings.refresh_run_timeout_seconds * 0.9,
-    }
+    sleep = getattr(request.app.state, "refresh_sleep", time.sleep)
+
+    def work() -> None:
+        refresh.execute(
+            run.id,
+            factory,
+            steps,
+            executor,
+            step_timeout=settings.refresh_step_timeout_seconds,
+            sleep=sleep,
+            budget_seconds=settings.refresh_run_timeout_seconds * 0.9,
+        )
+
     if getattr(request.app.state, "refresh_inline", False):
-        refresh.execute(*args, **options)  # tests: run in the request, no thread
+        work()  # tests: run in the request, no thread
     else:
-        threading.Thread(target=refresh.execute, args=args, kwargs=options, daemon=True).start()
+        threading.Thread(target=work, daemon=True).start()
     return jobs.get(run.id) or run
