@@ -125,6 +125,15 @@ class CountryScore(ApiModel):
     )
     overall_confidence: float | None = None
     as_of: date | None = None
+    scorecard_version: str | None = Field(
+        default=None,
+        description="The recipe version this score was computed with (rule 20); never hidden",
+    )
+    catalog_version: str | None = Field(
+        default=None,
+        description="What the catalog declared (sources, change kinds, variants, source "
+        "decisions, provisional ones included) when this score was computed (rule 20)",
+    )
     mechanism: Literal["shown", "hidden"] = Field(
         default="hidden",
         description='"shown": indicator weights and sub-scores are included. "hidden": QuFin '

@@ -44,6 +44,8 @@ LIVE_ONLY = {
     "confidence",
     "overall_confidence",
     "as_of",
+    "scorecard_version",
+    "catalog_version",
     "indicators",
     "pending",
     "mechanism",  # set per request from QuFin's disclosure setting, not data

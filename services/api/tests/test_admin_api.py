@@ -59,6 +59,7 @@ def factory_and_app():
     application.dependency_overrides[today_dependency] = lambda: TODAY
     application.state.refresh_inline = True
     application.state.refresh_executor = Recorder()
+    application.state.refresh_sleep = lambda _seconds: None  # rule L: no real waiting in tests
     return factory, application
 
 
@@ -301,6 +302,92 @@ def test_executing_a_run_records_progress_even_if_the_executor_raises(factory_an
     with factory() as session:
         done = JobStore(session).get(run.id)
     assert done.status == "failed" and "boom" in (done.error or "")
+
+
+# --- rule L: the retry ladder -----------------------------------------------------------------
+
+
+class Scripted:
+    """An executor that answers each call from a list, then repeats the last answer."""
+
+    def __init__(self, *answers):
+        self.answers, self.calls = list(answers), 0
+
+    def __call__(self, step, _timeout):
+        self.calls += 1
+        return self.answers[min(self.calls - 1, len(self.answers) - 1)]
+
+
+def _run(factory, app, executor, **kwargs):
+    with factory() as session:
+        steps = refresh.plan(session, app.state.settings, TODAY)
+        run = JobStore(session).start("refresh", "x@example.com")
+    waits: list[float] = []
+    refresh.execute(run.id, factory, steps, executor, sleep=waits.append, **kwargs)
+    with factory() as session:
+        return JobStore(session).get(run.id), waits
+
+
+def test_the_ladder_waits_15s_60s_5m_15m_1h_with_up_to_20_percent_jitter():
+    import random
+
+    rng = random.Random(7)  # noqa: S311  (reproducible test data)
+    for rung, base in enumerate(refresh.RETRY_LADDER):
+        waits = [refresh.ladder_wait(rung, rng) for _ in range(200)]
+        assert min(waits) >= base * 0.8 and max(waits) <= base * 1.2
+        assert max(waits) - min(waits) > base * 0.2  # it does vary
+    assert refresh.RETRY_LADDER == (15, 60, 300, 900, 3600)
+
+
+def test_a_transient_failure_is_retried_on_the_ladder_and_can_recover(factory_and_app):
+    factory, app = factory_and_app
+    store_series(factory)
+    down = refresh.StepResult("failed", "fred returned 503: unavailable")
+    ok = refresh.StepResult("ok", "1 of 1 series loaded")
+    executor = Scripted(down, down, ok, refresh.StepResult("ok", "all on schedule"))
+    run, waits = _run(factory, app, executor)
+    assert run.status == "succeeded"
+    assert len(waits) == 2 and 12 <= waits[0] <= 18 and 48 <= waits[1] <= 72
+    assert [s.status for s in run.steps] == ["ok", "ok"]
+
+
+def test_a_feed_that_never_recovers_is_degraded_after_the_last_rung(factory_and_app):
+    factory, app = factory_and_app
+    store_series(factory)
+    down = refresh.StepResult("failed", "fred request failed: ConnectError")
+    run, waits = _run(factory, app, Scripted(down))
+    assert len(waits) == 5
+    assert run.steps[0].status == "degraded" and "still failing" in run.steps[0].detail
+    assert run.status == "failed"
+    assert run.steps[-1].command == "check-data"  # the release check still ran, last
+
+
+def test_a_supplier_that_refuses_is_never_asked_again(factory_and_app):
+    factory, app = factory_and_app
+    store_series(factory)
+    refused = refresh.StepResult("failed", "fred returned 429: too many requests")
+    executor = Scripted(refused)
+    run, waits = _run(factory, app, executor)
+    assert waits == [] and executor.calls == 2  # the ingest once, then only the release check
+    assert run.steps[0].status == "failed"
+
+
+def test_the_ladder_stops_when_the_run_has_no_time_left(factory_and_app):
+    factory, app = factory_and_app
+    store_series(factory)
+    down = refresh.StepResult("failed", "fred returned 502: bad gateway")
+    run, waits = _run(factory, app, Scripted(down), budget_seconds=1)
+    assert waits == [] and run.steps[0].status == "degraded"
+
+
+def test_classifying_a_failure():
+    result = refresh.StepResult
+    assert refresh.transient(result("failed", "timed out after 1800 s"))
+    assert refresh.transient(result("failed", "imf returned 504: gateway timeout"))
+    assert not refresh.transient(result("failed", "imf returned 403: forbidden"))
+    assert refresh.refused(result("failed", "bis refused an earlier request; not asking again"))
+    assert not refresh.transient(result("failed", "no such series"))
+    assert not refresh.transient(result("ok", "returned 503"))
 
 
 # --- the commands a refresh runs --------------------------------------------------------------

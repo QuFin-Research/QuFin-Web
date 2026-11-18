@@ -8,7 +8,7 @@ from pydantic import Field
 from app.schemas.base import ORIGIN_DESCRIPTION, ApiModel, DataOrigin
 
 JobStatus = Literal["running", "succeeded", "failed", "interrupted"]
-StepStatus = Literal["pending", "running", "ok", "overdue", "failed", "skipped"]
+StepStatus = Literal["pending", "running", "ok", "overdue", "failed", "degraded", "skipped"]
 ScorecardState = Literal["updated", "partial", "stale"]
 
 

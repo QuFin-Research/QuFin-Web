@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import Annotated
 
@@ -8,6 +9,7 @@ from app.core.clock import Today
 from app.data.repository import MarketRepository, get_market_repository
 from app.domain import methodology
 from app.domain.market import asset_detail, list_snapshots
+from app.domain.versioning import SCORECARD_VERSION, catalog_version
 from app.jobs.scorecard import to_country_score, us_scorecard
 from app.schemas.market import (
     AssetDetail,
@@ -16,7 +18,9 @@ from app.schemas.market import (
     Methodology,
     MethodologyDetails,
 )
+from app.stores.score_snapshots import SnapshotStore
 
+log = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1", tags=["market"])
 
 Repo = Annotated[MarketRepository, Depends(get_market_repository)]
@@ -60,8 +64,27 @@ def get_country_scores(
     """
     shown = settings.scorecard_mechanism == "show"
     live = us_scorecard(session, as_of or today)
-    cards = repo.get_country_scores() if live is None else [to_country_score(live)]
+    if live is None:
+        cards = repo.get_country_scores()
+    else:
+        versions = {
+            "scorecard_version": SCORECARD_VERSION,
+            "catalog_version": catalog_version(session),
+        }
+        cards = [to_country_score(live).model_copy(update=versions)]
+        _keep_as_shown(session, cards)
     return [_disclose(card, shown) for card in cards]
+
+
+def _keep_as_shown(session, cards: list[CountryScore]) -> None:
+    """Rule 20: keep each distinct live score users are shown. Never blocks serving it."""
+    try:
+        store = SnapshotStore(session)
+        for card in cards:
+            store.record(card)
+    except Exception:
+        session.rollback()
+        log.exception("could not keep the score as shown")
 
 
 def _disclose(card: CountryScore, shown: bool) -> CountryScore:

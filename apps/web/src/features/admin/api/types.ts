@@ -37,7 +37,14 @@ export type CoverageSummary = {
   overdueSeries: string[];
 };
 
-export type StepStatus = 'pending' | 'running' | 'ok' | 'overdue' | 'failed' | 'skipped';
+export type StepStatus =
+  | 'pending'
+  | 'running'
+  | 'ok'
+  | 'overdue'
+  | 'failed'
+  | 'degraded'
+  | 'skipped';
 
 export type JobStep = {
   command: string;

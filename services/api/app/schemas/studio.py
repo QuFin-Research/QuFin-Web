@@ -33,6 +33,10 @@ class StudioSeries(ApiModel):
     metric_note: str | None = Field(description="How the change was taken, when metric is poc")
     axis: int = Field(description="Series sharing an axis share a unit; overlay charts use it")
     publisher: str | None
+    variant: str | None = Field(
+        default=None,
+        description="The definition behind a shared name, e.g. HICP or CPI-U (rule 18)",
+    )
     last_vintage: date | None = Field(
         description="Date the latest published value of any period was released (Rule C)"
     )
@@ -72,6 +76,7 @@ class StudioCatalogSeries(ApiModel):
     units: str
     source: str
     publisher: str | None
+    variant: str | None = None
     last_period: date | None
     last_updated: date | None = Field(description="When the source last updated the series")
 

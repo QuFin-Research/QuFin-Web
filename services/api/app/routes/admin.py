@@ -7,6 +7,7 @@ per `refresh_min_interval_seconds`.
 """
 
 import threading
+import time
 from datetime import UTC, datetime, timedelta
 from typing import Annotated
 
@@ -99,8 +100,12 @@ def start_refresh(
     factory = sessionmaker(session.get_bind(), expire_on_commit=False)
     executor = getattr(request.app.state, "refresh_executor", refresh.subprocess_executor)
     args = (run.id, factory, steps, executor, settings.refresh_step_timeout_seconds)
+    options = {
+        "sleep": getattr(request.app.state, "refresh_sleep", time.sleep),
+        "budget_seconds": settings.refresh_run_timeout_seconds * 0.9,
+    }
     if getattr(request.app.state, "refresh_inline", False):
-        refresh.execute(*args)  # tests: run in the request, no thread
+        refresh.execute(*args, **options)  # tests: run in the request, no thread
     else:
-        threading.Thread(target=refresh.execute, args=args, daemon=True).start()
+        threading.Thread(target=refresh.execute, args=args, kwargs=options, daemon=True).start()
     return jobs.get(run.id) or run

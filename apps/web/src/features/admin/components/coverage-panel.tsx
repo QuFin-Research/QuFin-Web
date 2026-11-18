@@ -37,6 +37,7 @@ const STEP_TONE: Record<StepStatus, 'secondary' | 'outline' | 'destructive'> = {
   ok: 'secondary',
   overdue: 'outline',
   failed: 'destructive',
+  degraded: 'destructive',
   skipped: 'outline'
 };
 

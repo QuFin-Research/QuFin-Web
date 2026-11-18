@@ -7,6 +7,12 @@ the order FRED first (rule H), then the agencies and aggregators. Each command i
 command a person would run, in its own process, so a crash or a slow source cannot take the API
 down, and each ends with the release check as always (rule 2).
 
+A step that fails for a transient reason (a timeout, a network error, a 5xx) is retried on the
+capped ladder of rule L, after the other sources have had their turn: about 15 s, 60 s, 5 min,
+15 min and 1 h later, each wait varied by up to 20% so retries do not arrive in step. A step still
+failing after the last rung is marked degraded. A supplier that refuses (403, 429) is never
+retried or asked again in the run (rule 28). The release check runs last.
+
 A run is recorded in `job_runs` step by step, so the panel can show progress and what failed.
 
 Each ingest command normally ends with the release check and the doctor, about three minutes
@@ -15,8 +21,11 @@ finishes with one `check-data` step, so the run still ends with the release chec
 """
 
 import os
+import random
+import re
 import subprocess
 import sys
+import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
@@ -58,7 +67,13 @@ SOURCE_COMMAND: dict[str, str] = {
 # Sources that need a free API key, and the setting that holds it.
 KEY_SETTING = {"fred": "fred_api_key", "bls": "bls_api_key", "eia": "eia_api_key"}
 
-StepOutcome = Literal["ok", "overdue", "failed"]
+StepOutcome = Literal["ok", "overdue", "failed", "degraded"]
+
+# Rule L: the waits before each retry of a failing feed, in seconds, and the random variation.
+RETRY_LADDER = (15, 60, 300, 900, 3600)
+RETRY_JITTER = 0.2
+_REFUSED = re.compile(r"returned (403|429)|refused an earlier request")
+_TRANSIENT = re.compile(r"timed out|returned (408|5\d\d)|request failed|kept failing")
 
 
 @dataclass(frozen=True)
@@ -150,31 +165,94 @@ def summarize_steps(steps: Sequence[Step]) -> list[JobStep]:
     ]
 
 
+def refused(result: StepResult) -> bool:
+    """The supplier said no (403 or 429): asking again risks a ban (rule 28)."""
+    return result.status == "failed" and bool(_REFUSED.search(result.detail))
+
+
+def transient(result: StepResult) -> bool:
+    """A failure that may pass: worth a retry on the ladder (rule L)."""
+    return (
+        result.status == "failed" and not refused(result) and bool(_TRANSIENT.search(result.detail))
+    )
+
+
+def ladder_wait(rung: int, rng: random.Random) -> float:
+    """Seconds before retry number `rung` (0-based): the ladder step, varied by the jitter."""
+    return RETRY_LADDER[rung] * (1 + rng.uniform(-RETRY_JITTER, RETRY_JITTER))
+
+
 def execute(
     run_id: str,
     factory: sessionmaker[Session],
     steps: Sequence[Step],
     executor: Executor = subprocess_executor,
     step_timeout: int = 1800,
+    *,
+    sleep: Callable[[float], None] = time.sleep,
+    rng: random.Random | None = None,
+    budget_seconds: float | None = None,
 ) -> None:
-    """Run the steps in order, saving progress after each. Never raises: a run that cannot
-    finish is recorded as failed."""
+    """Run the steps in order, saving progress after each; retry transient failures on the ladder
+    of rule L; run the release check last. Never raises: a run that cannot finish is recorded as
+    failed. `budget_seconds` caps the time the ladder may take."""
     progress = summarize_steps(steps)
+    rng = rng or random.Random()  # noqa: S311 - jitter, not security
+    started = time.monotonic()
     try:
         with factory() as session:
             jobs = JobStore(session)
+
+            def put(i: int, status: str, detail: str | None = None) -> None:
+                update = {"status": status} | ({} if detail is None else {"detail": detail})
+                progress[i] = progress[i].model_copy(update=update)
+                jobs.set_steps(run_id, progress)
+
+            def attempt(i: int) -> StepResult:
+                put(i, "running")
+                result = executor(steps[i], step_timeout)
+                put(i, result.status, result.detail)
+                return result
+
+            ingest = [i for i, s in enumerate(steps) if s.command != CHECK_COMMAND]
+            checks = [i for i, s in enumerate(steps) if s.command == CHECK_COMMAND]
             failed = 0
-            for i, step in enumerate(steps):
+            retry: list[int] = []
+            blocked: set[str] = set()  # sources that refused: not asked again this run
+            for i in ingest:
+                step = steps[i]
                 if step.skip_reason:
                     continue
-                progress[i] = progress[i].model_copy(update={"status": "running"})
-                jobs.set_steps(run_id, progress)
-                result = executor(step, step_timeout)
-                failed += result.status == "failed"
-                progress[i] = progress[i].model_copy(
-                    update={"status": result.status, "detail": result.detail}
-                )
-                jobs.set_steps(run_id, progress)
+                if step.source in blocked:
+                    put(i, "failed", "the supplier refused earlier in this run; not asking again")
+                    failed += 1
+                    continue
+                result = attempt(i)
+                if refused(result):
+                    blocked.add(step.source)
+                if transient(result):
+                    retry.append(i)
+                else:
+                    failed += result.status == "failed"
+            for rung in range(len(RETRY_LADDER)):
+                if not retry:
+                    break
+                wait = ladder_wait(rung, rng)
+                if (
+                    budget_seconds is not None
+                    and time.monotonic() - started + wait > budget_seconds
+                ):
+                    break
+                for i in retry:
+                    put(i, "running", f"retry {rung + 1} of {len(RETRY_LADDER)} in {wait:.0f} s")
+                sleep(wait)
+                retry = [i for i in retry if transient(attempt(i))]
+            for i in retry:  # still failing after the last rung, or out of time
+                put(i, "degraded", f"still failing after the retries; {progress[i].detail}")
+                failed += 1
+            for i in checks:
+                if not steps[i].skip_reason:
+                    failed += attempt(i).status == "failed"
             jobs.finish(
                 run_id,
                 FAILED if failed else SUCCEEDED,

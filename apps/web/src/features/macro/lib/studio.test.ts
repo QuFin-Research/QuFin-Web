@@ -16,6 +16,7 @@ const base: Omit<StudioSeries, 'seriesId' | 'label' | 'points'> = {
   metricNote: null,
   axis: 0,
   publisher: null,
+  variant: null,
   lastVintage: '2026-10-02',
   usable: true,
   statusNote: ''
