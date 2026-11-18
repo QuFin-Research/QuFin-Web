@@ -14,6 +14,11 @@ not checked country by country (assumptions register, section 4q).
 from app.data.indicator_concepts import SERIES_CONCEPTS
 
 NATIONAL_CPI = "National CPI"
+HICP = "HICP, all items"
+# Eurostat says the HICP of these candidate economies may be less comparable: it has not fully
+# evaluated their conformity with the HICP rules.
+HICP_CANDIDATE = "HICP, all items (candidate economy: comparability not fully evaluated)"
+_CANDIDATES = frozenset({"ME", "MK", "RS", "TR", "XK"})
 NATIONAL_CORE_CPI = "National core CPI"
 
 VARIANT_CONCEPTS = frozenset({"consumer_prices", "core_consumer_prices"})
@@ -22,7 +27,6 @@ VARIANT_CONCEPTS = frozenset({"consumer_prices", "core_consumer_prices"})
 _KNOWN: dict[str, str] = {
     "CPIAUCSL": "CPI-U, all items",  # BLS, all urban consumers
     "CPILFESL": "CPI-U, excluding food and energy",
-    "CP0000PTM086NEST": "HICP, all items",  # FRED's copy of Eurostat's HICP
     "HICP.M.U2.N.000000.4D0.ANR": "HICP, all items",  # ECB, euro area
     "HICP.M.U2.N.XEF000.4D0.ANR": "HICP, excluding energy, food, alcohol and tobacco",
     "ESTAT_CORE_DE": "HICP, excluding energy, food, alcohol and tobacco",
@@ -39,6 +43,9 @@ def variant_of(series_id: str, country: str) -> str | None:
         return None
     if series_id in _KNOWN:
         return _KNOWN[series_id]
+    if series_id.startswith("ESTAT_HICP_"):
+        geo = series_id.removeprefix("ESTAT_HICP_")
+        return HICP_CANDIDATE if geo in _CANDIDATES else HICP
     if series_id.startswith(("IMF_CPI_", "BIS_CPI_")):
         return NATIONAL_CPI
     return None

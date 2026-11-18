@@ -6,7 +6,10 @@ month. The API serves no release dates per period, so each is dated by a rule th
 (rule 9):
 
 - industrial production (`sts_inpr_m`): the last weekday of the second month after the month;
-- HICP (`prc_hicp_minr`): the last weekday of the month after.
+- HICP (`prc_hicp_minr`): the last weekday of the month after. Eurostat publishes the final HICP
+  15 to 18 days after the month and early figures (flag `e`) before that; a period first read
+  earlier than this date is dated by that first read (`record_latest`, rule 9), and the final
+  figure arrives as a revision, so the flash and the final are kept as separate vintages.
 """
 
 from collections.abc import Callable

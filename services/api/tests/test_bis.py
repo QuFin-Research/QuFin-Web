@@ -158,7 +158,7 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
     # 155 policy rate, effective exchange rate, credit and property series, and 385 added on
     # 17 Nov 2026 (each economy checked live for a current, complete series).
-    assert len(BIS_SERIES) == 540
+    assert len(BIS_SERIES) == 538  # 540 until Malta and Serbia consumer prices moved to Eurostat
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
@@ -605,7 +605,7 @@ def test_central_bank_assets_are_in_each_economys_own_currency():
 def test_consumer_prices_are_the_annual_rate_like_the_imf_series_they_stand_in_for():
     entry = BY_ID["BIS_CPI_NZ"]
     assert entry.published_as_change and entry.change == "diff"
-    assert concept_for("NZ", "BIS_CPI_NZ").name == concept_for("DE", "IMF_CPI_DEU").name
+    assert concept_for("NZ", "BIS_CPI_NZ").name == concept_for("JP", "IMF_CPI_JPN").name
 
 
 def test_total_credit_is_version_2_and_the_others_are_version_1():

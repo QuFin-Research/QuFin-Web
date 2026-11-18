@@ -276,18 +276,10 @@ def test_sample_scores_and_scores_without_versions_are_not_kept(db_session):
     assert SnapshotStore(db_session).record(sample) is False
 
 
-def test_the_baseline_records_portugal_once_and_every_series_in_it_exists(
-    db_session, monkeypatch, capsys
-):
+def _cli_on(db_session, monkeypatch):
     from contextlib import contextmanager
 
     from app import cli
-    from app.data.macro_catalog import BY_ID
-    from app.data.source_baseline import BASELINE
-
-    for b in BASELINE:
-        assert b.series_id in BY_ID and BY_ID[b.series_id].source == b.source
-        assert SERIES_CONCEPTS[(b.country, b.series_id)] == b.concept
 
     monkeypatch.setattr(cli, "upgrade_to_head", lambda _engine: None)
     monkeypatch.setattr(cli, "get_engine", lambda: None)
@@ -297,10 +289,86 @@ def test_the_baseline_records_portugal_once_and_every_series_in_it_exists(
         yield db_session
 
     monkeypatch.setattr(cli, "session_scope", scope)
+    return cli
+
+
+def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series(
+    db_session, monkeypatch, capsys
+):
+    from app.data.macro_catalog import BY_ID
+    from app.data.source_baseline import BASELINE, PREDECESSORS
+
+    for b in BASELINE:
+        assert b.series_id in BY_ID and BY_ID[b.series_id].source == b.source
+        assert SERIES_CONCEPTS[(b.country, b.series_id)] == b.concept
+        if b.predecessor:
+            assert b.predecessor.series_id not in BY_ID  # no longer declared beside it
+    assert len(BASELINE) == 30 and len(PREDECESSORS) == 29  # Kosovo had no series before
+
+    put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
+    put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
+    cli = _cli_on(db_session, monkeypatch)
     assert cli.main(["source-decision", "--baseline"]) == 0
     assert cli.main(["source-decision", "--baseline"]) == 0
     out = capsys.readouterr().out
-    assert "baseline: 1 decisions recorded, 0 already there" in out
-    assert "baseline: 0 decisions recorded, 1 already there" in out
-    [d] = SourceStore(db_session).history("PT", "consumer_prices")
-    assert d.series_id == "CP0000PTM086NEST" and d.status == PROVISIONAL
+    assert "baseline: 30 decisions recorded, 0 already there" in out
+    assert "baseline: 0 decisions recorded, 30 already there" in out
+
+    old, new = SourceStore(db_session).history("DE", "consumer_prices")
+    assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
+    assert new.series_id == "ESTAT_HICP_DE" and new.status == PROVISIONAL
+    sources = SourceStore(db_session)
+    assert sources.in_force("DE", "consumer_prices", date(2026, 11, 18)).series_id == "IMF_CPI_DEU"
+    assert (
+        sources.in_force("DE", "consumer_prices", date(2026, 11, 19)).series_id == "ESTAT_HICP_DE"
+    )
+    served = {s.meta.id for s in MacroStore(db_session).list_series()}
+    assert "ESTAT_HICP_DE" in served and "IMF_CPI_DEU" not in served  # retired, not served
+    assert MacroStore(db_session).as_of("IMF_CPI_DEU")  # but its history is still there
+
+
+def test_a_pair_already_switched_once_is_closed_and_switched_again(db_session, monkeypatch):
+    """Portugal was FRED's copy of HICP from 18 Nov 2026; the baseline moves it to Eurostat."""
+    SourceStore(db_session).decide(
+        "PT",
+        "consumer_prices",
+        "CP0000PTM086NEST",
+        "fred",
+        date(2026, 11, 18),
+        reason="FRED first",
+        status=PROVISIONAL,
+    )
+    assert _cli_on(db_session, monkeypatch).main(["source-decision", "--baseline"]) == 0
+    first, second = SourceStore(db_session).history("PT", "consumer_prices")
+    assert first.series_id == "CP0000PTM086NEST" and first.effective_to == date(2026, 11, 19)
+    assert second.series_id == "ESTAT_HICP_PT"
+
+
+def test_the_pruning_keeps_the_series_a_switch_retires_and_still_removes_other_strays(db_session):
+    from app.jobs.ingest_fred import prune
+
+    put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 30), source="imf")
+    put(db_session, "STRAYSERIES", months(date(2020, 1, 1), 30))
+    assert prune(db_session) == ["STRAYSERIES"]
+    assert MacroStore(db_session).get_series("IMF_CPI_DEU") is not None
+
+
+def test_a_retired_series_gives_up_its_canonical_code_to_the_series_that_replaces_it(db_session):
+    """The canonical code is unique per live series, so the new series can be loaded."""
+    from sqlalchemy import select
+
+    from app.stores.macro import MacroSeriesRow
+
+    put(db_session, OLD, months(date(2020, 1, 1), 40))
+    row = db_session.get(MacroSeriesRow, OLD)
+    row.canonical_code = "USA.INF.CPI.M.NSA"
+    db_session.commit()
+    sources = SourceStore(db_session)
+    sources.decide("US", "consumer_prices", OLD, "fred", date(2020, 1, 1), reason="first")
+    sources.decide("US", "consumer_prices", NEW, "eurostat", CHANGE, reason="earlier")
+    db_session.expire_all()
+    assert db_session.get(MacroSeriesRow, OLD).canonical_code is None
+    put(db_session, NEW, months(date(2020, 1, 1), 40))
+    new = db_session.scalars(select(MacroSeriesRow).where(MacroSeriesRow.id == NEW)).one()
+    new.canonical_code = "USA.INF.CPI.M.NSA"
+    db_session.commit()  # no unique violation

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.connectors.fred import FredClient, FredError
 from app.data.macro_catalog import BY_ID, DEFAULT_OBSERVATION_START, CatalogSeries, start_for
+from app.data.source_baseline import PREDECESSORS
 from app.stores.macro import MacroStore, SeriesMeta, Vintage
 
 log = logging.getLogger(__name__)
@@ -105,10 +106,20 @@ def not_before_period(vintages: Sequence[Vintage]) -> list[Vintage]:
     return result
 
 
+def stale_series(store: MacroStore) -> list[str]:
+    """Served series the catalog no longer lists. The predecessors of a source switch are
+    kept: their history stays readable as of dates before the switch (rule 16)."""
+    return [
+        s.meta.id
+        for s in store.list_series()
+        if s.meta.id not in BY_ID and s.meta.id not in PREDECESSORS
+    ]
+
+
 def prune(session: Session) -> list[str]:
     """Delete stored series that are no longer in the catalog; returns their ids."""
     store = MacroStore(session)
-    removed = [s.meta.id for s in store.list_series() if s.meta.id not in BY_ID]
+    removed = stale_series(store)
     for series_id in removed:
         store.delete_series(series_id)
         log.info("Removed %s: no longer in the catalog", series_id)

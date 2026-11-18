@@ -3,7 +3,8 @@
 One request returns one series (every dimension pinned, one `geo`), so the response is a flat
 list of monthly values. The reuse policy (copyright notice, read 13 Nov 2026) allows commercial
 use of statistical data with the source acknowledged, except data for countries outside the EU,
-EFTA and candidate countries: QuFin takes only euro area economies from it. The guidance pages
+EFTA and candidate countries: QuFin takes only EU, EFTA and candidate economies from it (never
+Bosnia, Moldova or Ukraine, which it does not serve). The guidance pages
 state no request rate limit, no key and no User-Agent rule; large extractions return an
 asynchronous 413, which one series never reaches. This client asks for one series every two
 seconds, names itself, and stops for the run after a 403 or 429 (rule 28).

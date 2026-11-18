@@ -31,7 +31,7 @@ from app.data.macro_catalog import BY_ID
 from app.data.taxonomy import COUNTRIES, COUNTRY_BY_ISO2, TaxonomyError, canonical_code
 from app.domain.harmonize import adjustment_tag
 from app.jobs.check_data import LAG_WINDOW, macro_status
-from app.jobs.ingest_fred import prune
+from app.jobs.ingest_fred import prune, stale_series
 from app.stores.macro import MacroStore
 
 EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule J) plus Chile and Colombia
@@ -266,8 +266,9 @@ class _Run:
                 self.add("duplicate indicator", "error", f"{country} {concept}", sources)
 
     def catalog(self) -> None:
-        stored = {s.meta.id for s in MacroStore(self.session).list_series()}
-        extra = sorted(stored - set(BY_ID))
+        store = MacroStore(self.session)
+        stored = {s.meta.id for s in store.list_series()}
+        extra = sorted(stale_series(store))
         if extra:
             if self.fix:
                 self._backup_once()
