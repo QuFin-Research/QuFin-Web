@@ -12,14 +12,13 @@ to users is kept with both versions in `score_snapshots`.
 
 | Version | Date | What changed (no recipe) | Private methodology commit | S7 bias gate | Owner approval |
 |---|---|---|---|---|---|
-| 2026.11.1 | 19 Nov 2026 | First versioned recipe: the five-pillar US scorecard as it stood | `ec2d0ba` (local repository in `private/`, no remote yet) | Passed 19 Nov 2026: 175 months, 2012-01 to 2026-07, every mean difference within ±0.03 (limit ±0.25) | Not recorded |
+| 2026.11.1 | 19 Nov 2026 | First versioned recipe: the five-pillar US scorecard as it stood | `ec2d0ba` (private repository QuFin-Research/QuFin_Private, folder `private/`) | Passed 19 Nov 2026: 175 months, 2012-01 to 2026-07, every mean difference within ±0.03 (limit ±0.25) | Not recorded |
 
 The S7 gate is the point-in-time backtest of the scorecard against complete information
 (`scorecard-bias`); no separate strategy backtest was run for this baseline.
 
-Open, for the owner: put `private/` on a private remote so the history is not on one machine, and
-write the approval for each version in the last column. Until then the row is a baseline, not an
-approval.
+Open, for the owner: write the approval for each version in the last column. Until then the row
+is a baseline, not an approval.
 
 Source changes do not change the scorecard version. They change the catalog version, are recorded as
 source decisions (`uv run python -m app.cli source-history`), and never alter a past score: as of an
