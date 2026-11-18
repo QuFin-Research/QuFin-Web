@@ -14,6 +14,7 @@ from app.core.auth import DbSession
 from app.core.clock import Today
 from app.data.indicator_concepts import CONCEPTS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID
+from app.data.series_variants import variant_notice, variant_of
 from app.data.taxonomy import COUNTRY_BY_ISO2, COUNTRY_BY_ISO3
 from app.domain.comparability import concept_scales
 from app.domain.harmonize import (
@@ -124,6 +125,14 @@ def _render(
             + ", ".join(sorted(tags))
             + "): seasonal adjustment differs between lines. Compare levels with care."
         )
+    for concept in {s.concept for s in selected if s.concept}:
+        variants = {
+            v
+            for s in selected
+            if s.concept == concept and (v := variant_of(s.summary.meta.id, s.summary.meta.country))
+        }
+        if notice := variant_notice(CONCEPTS[concept].name, variants):
+            notices.append(notice)
     units = [
         classify(s.summary.meta.units, s.summary.meta.country, s.summary.meta.source)
         for s in selected
@@ -180,6 +189,7 @@ def _render(
                 metric_note=note,
                 axis=axis if group_axes else 0,
                 publisher=meta.publisher,
+                variant=variant_of(meta.id, meta.country),
                 last_vintage=item.last_vintage,
                 usable=status.freshness.usable,
                 status_note=status.freshness.reason,
@@ -224,6 +234,7 @@ def catalog(session: DbSession) -> StudioCatalog:
                 units=s.meta.units,
                 source=s.meta.source,
                 publisher=s.meta.publisher,
+                variant=variant_of(s.meta.id, s.meta.country),
                 last_period=s.last_period,
                 last_updated=s.meta.last_updated.date() if s.meta.last_updated else None,
             )

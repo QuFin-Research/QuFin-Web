@@ -124,7 +124,9 @@ function CompareTable({ data }: { data: Comparison }) {
               )}
             </TableCell>
             <TableCell>
-              <div title={`${r.canonicalCode ?? r.seriesId}\nStored as: ${r.storedAs}`}>
+              <div
+                title={`${r.canonicalCode ?? r.seriesId}\nStored as: ${r.storedAs}${r.variant ? `\nDefinition: ${r.variant}` : ''}`}
+              >
                 {r.publisher ?? r.sourceName ?? '—'}
               </div>
               {r.converted && (
@@ -164,7 +166,7 @@ function Basis({ data }: { data: Comparison }) {
             : 'each country’s rate is the unemployed as a share of its own labour force (International Labour Organization definition, seasonally adjusted), so a large country and a small one can be ranked together.'}
         </p>
         <p>
-          Method here: {data.method}. Moves are in percentage points, not percent. Rate of change
+          {data.notices.join(' ')} Method here: {data.method}. Moves are in percentage points, not percent. Rate of change
           and unemployment rates are shown as the source defines them; national definitions can
           still differ at the margin.
         </p>

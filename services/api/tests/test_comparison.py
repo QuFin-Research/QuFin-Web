@@ -169,3 +169,14 @@ def test_an_indicator_without_a_comparison_basis_is_refused(client):
     res = client.get("/v1/macro/compare/policy_rate")
     assert res.status_code == 404 and "consumer_prices" in res.json()["detail"]
     assert client.get("/v1/macro/compare/Not-A-Concept").status_code == 422
+
+
+def test_cpi_series_name_their_definition_and_a_mix_carries_a_notice(compared, client):
+    body = client.get("/v1/macro/compare/consumer_prices").json()
+    rows = {r["iso3"]: r for r in body["rows"]}
+    assert rows["USA"]["variant"] == "CPI-U, all items"
+    assert rows["DEU"]["variant"] == "National CPI"
+    assert any("different definitions" in n for n in body["notices"])
+    # a concept with no variants has none and no notice
+    unemployment = client.get("/v1/macro/compare/unemployment_rate").json()
+    assert unemployment["notices"] == [] and all(r["variant"] is None for r in unemployment["rows"])

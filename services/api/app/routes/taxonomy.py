@@ -11,6 +11,7 @@ from app.core.auth import DbSession
 from app.core.clock import Today
 from app.data.indicator_concepts import COMPARED_AS, CONCEPTS, SERIES_CONCEPTS
 from app.data.macro_catalog import BY_ID
+from app.data.series_variants import variant_notice, variant_of
 from app.data.taxonomy import COUNTRY_BY_ISO2, COUNTRY_BY_ISO3, PILLARS, pillar_for
 from app.domain.comparability import concept_scales
 from app.domain.comparison import BASES, Point, on_basis, points_ago
@@ -182,6 +183,7 @@ def compare_countries(
                 canonical_code=s.meta.canonical_code,
                 publisher=s.meta.publisher,
                 source_name=s.meta.source_name,
+                variant=variant_of(s.meta.id, s.meta.country),
                 period=latest.period,
                 value=round(latest.value, 2),
                 change_3m=round(latest.value - before_3.value, 2) if before_3 else None,
@@ -197,6 +199,7 @@ def compare_countries(
             )
         )
     rows.sort(key=lambda r: (not r.usable, -r.value))
+    notice = variant_notice(CONCEPTS[concept].name, {r.variant for r in rows if r.variant})
     return Comparison(
         concept=concept,
         name=CONCEPTS[concept].name,
@@ -205,6 +208,7 @@ def compare_countries(
         unit=basis.unit,
         method="; ".join(sorted(methods)) if methods else "no series stored",
         higher_is=basis.higher_is,
+        notices=[notice] if notice else [],
         rows=rows,
         missing=sorted(
             (

@@ -18,9 +18,12 @@ from app.domain.freshness import Freshness, Timeliness, assess, timeliness
 from app.domain.units import UnitInfo, classify
 from app.stores.macro import MacroStore, SeriesMeta
 from app.stores.positioning import PositioningStore, Positions
+from app.stores.source_decisions import SourceStore
 
 # Release lags are measured over recent periods, so a changed release calendar shows up.
 LAG_WINDOW = timedelta(days=3 * 365)
+# The duplicate check (rule 16) fails, never skips, if it runs past this.
+DUPLICATE_BUDGET_SECONDS = 600.0
 COT_FREQUENCY = "Weekly"
 
 
@@ -160,8 +163,13 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
     summaries = {s.meta.id: s for s in store.list_series()}
     releases = store.first_releases(today - LAG_WINDOW)
     # Rule 16: the same data stored twice, under any id or source, fails the check.
+    # Retired series are compared too, but not with the later series of their own pair, which
+    # they are expected to match; staged series are left out (rule 16).
+    compared = [s.meta.id for s in store.list_series(("live", "retired"))]
     duplicates = find_duplicates(
-        {sid: {v.period: v.value for v in store.as_of(sid)} for sid in summaries}
+        {sid: {v.period: v.value for v in store.as_of(sid)} for sid in compared},
+        exempt=SourceStore(session).retired_pairs(),
+        budget_seconds=DUPLICATE_BUDGET_SECONDS,
     )
     mixed = comparability_reasons({sid: s.meta for sid, s in summaries.items()})
     checks = []

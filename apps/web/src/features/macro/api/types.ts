@@ -126,6 +126,8 @@ export type ComparisonRow = {
   canonicalCode: string | null;
   publisher: string | null;
   sourceName: string | null;
+  /** The definition behind the shared name, e.g. HICP or CPI-U (rule 18) */
+  variant: string | null;
   /** Latest period, on the comparison basis */
   period: string;
   value: number;
@@ -153,6 +155,8 @@ export type Comparison = {
   /** How each country's stored series was brought to the basis */
   method: string;
   higherIs: 'worse' | 'better';
+  /** Anything the reader must know, e.g. that the definitions differ */
+  notices: string[];
   /** Ranked, highest first; unusable series last */
   rows: ComparisonRow[];
   /** Countries in the taxonomy with no series yet */
@@ -188,6 +192,8 @@ export type StudioSeries = {
   /** Series sharing an axis share a unit (overlay charts) */
   axis: number;
   publisher: string | null;
+  /** The definition behind the shared name, e.g. HICP or CPI-U (rule 18) */
+  variant: string | null;
   /** Release date of the latest published value */
   lastVintage: string | null;
   usable: boolean;
@@ -220,6 +226,7 @@ export type StudioCatalogSeries = {
   units: string;
   source: string;
   publisher: string | null;
+  variant: string | null;
   lastPeriod: string | null;
   lastUpdated: string | null;
 };

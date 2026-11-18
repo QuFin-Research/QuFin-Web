@@ -29,6 +29,7 @@ from app.schemas.market import (
 )
 from app.schemas.market import PendingRelease as PendingReleaseOut
 from app.stores.macro import MacroStore, SeriesMeta
+from app.stores.source_decisions import SourceStore
 
 # Ten years of z-score history plus a year for the year-over-year change.
 LOOKBACK = timedelta(days=366 * 11 + 31)
@@ -92,9 +93,13 @@ def indicator_statuses(
     for the bias backtest's complete-information baseline.
     """
     result = []
+    sources = SourceStore(store.session)
     for series_id, spec in SCORED.items():
         entry = BY_ID[series_id]
-        meta = store.get_series(series_id)
+        # A source change never alters a past score: as of an earlier date the series that served
+        # the pair then is read (rules 16 and P).
+        served = sources.series_in_force(series_id, entry.country, as_of)
+        meta = store.get_series(served)
         if meta is None:
             empty = IndicatorScore(
                 series_id, entry.dimension, None, None, None, spec.importance, 0.0
@@ -104,12 +109,12 @@ def indicator_statuses(
                 IndicatorStatus(empty, None, concept.name if concept else series_id, None)
             )
             continue
-        observations = store.as_of(series_id, as_of, start=as_of - LOOKBACK, end=period_end)
+        observations = store.as_of(served, as_of, start=as_of - LOOKBACK, end=period_end)
         points = [(o.period, o.value) for o in observations]
         releases = {
             period: released
-            for period, released in store.first_releases(as_of - LAG_WINDOW, series_id)
-            .get(series_id, {})
+            for period, released in store.first_releases(as_of - LAG_WINDOW, served)
+            .get(served, {})
             .items()
             if released <= as_of
         }

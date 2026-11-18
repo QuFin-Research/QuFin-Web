@@ -114,6 +114,9 @@ class ComparisonRow(ApiModel):
     canonical_code: str | None
     publisher: str | None
     source_name: str | None
+    variant: str | None = Field(
+        default=None, description="The definition behind the shared name, e.g. HICP (rule 18)"
+    )
     period: date = Field(description="The latest period, on the comparison basis")
     value: float = Field(description="The latest value on the comparison basis")
     change_3m: float | None = Field(description="Points against three months earlier")
@@ -142,6 +145,7 @@ class Comparison(ApiModel):
     unit: str
     method: str = Field(description="How each country's stored series was brought to the basis")
     higher_is: str
+    notices: list[str] = Field(default_factory=list, description="Anything the reader must know")
     rows: list[ComparisonRow] = Field(description="Ranked, highest value first; unusable last")
     missing: list[MissingCountry] = Field(
         description="Countries in the taxonomy with no series yet"

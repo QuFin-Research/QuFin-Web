@@ -138,3 +138,15 @@ def test_portugal_consumer_prices_come_from_fred_not_the_imf():
         sid for (c, sid), k in SERIES_CONCEPTS.items() if c == "PT" and k == "consumer_prices"
     ]
     assert portugal == ["CP0000PTM086NEST"]
+
+
+def test_every_series_of_a_concept_with_variants_names_its_definition():
+    """Rule 18: one global name does not make two definitions the same."""
+    from app.data.series_variants import VARIANT_CONCEPTS, variant_notice, variant_of
+
+    for (country, series_id), concept in SERIES_CONCEPTS.items():
+        if concept in VARIANT_CONCEPTS:
+            assert variant_of(series_id, country), series_id
+    assert variant_notice("CPI", {"HICP, all items"}) is None
+    notice = variant_notice("CPI", {"HICP, all items", "CPI-U, all items"})
+    assert notice and "HICP" in notice and "CPI-U" in notice

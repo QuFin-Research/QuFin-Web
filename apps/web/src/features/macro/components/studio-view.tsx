@@ -289,7 +289,7 @@ function SeriesTable({ result }: { result: StudioResult }) {
                   style={{ background: SERIES_COLORS[i] }}
                   aria-hidden
                 />
-                {s.label}
+                <span title={s.variant ? `Definition: ${s.variant}` : undefined}>{s.label}</span>
                 {!s.usable && (
                   <Badge variant='destructive' className='ml-2' title={s.statusNote}>
                     Overdue

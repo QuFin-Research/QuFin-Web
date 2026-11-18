@@ -22,6 +22,9 @@ uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC 
 uv run python -m app.cli doctor [--fix]           # database health check and safe repair
 uv run python -m app.cli coverage-matrix --out FILE  # every country against every indicator (CSV)
 uv run python -m app.cli check-data                  # release-schedule check of every source
+uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule P)
+uv run python -m app.cli source-history [--country]  # which source served each pair, and when
+uv run python -m app.cli catalog-version             # scorecard and catalog versions (rule 20)
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
 
 Ingest commands finish with the release-schedule check and exit non-zero when any series is
@@ -55,6 +58,8 @@ from app.core.config import get_settings
 from app.data.benchmarks import BENCHMARK_SERIES
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
+from app.data.source_baseline import BASELINE
+from app.domain.versioning import SCORECARD_VERSION, catalog_version
 from app.jobs import (
     build_calendar,
     coverage_matrix,
@@ -80,6 +85,7 @@ from app.stores.db import get_engine, session_scope
 from app.stores.macro import MacroStore
 from app.stores.migrate import upgrade_to_head
 from app.stores.raw_zone import RawZone
+from app.stores.source_decisions import CONFIRMED, PROVISIONAL, SourceStore
 
 
 def _migrate(_args: argparse.Namespace) -> int:
@@ -371,6 +377,84 @@ def _check_data(_args: argparse.Namespace) -> int:
     return 0 if _all_usable(checks) else 1
 
 
+def _source_decision(args: argparse.Namespace) -> int:
+    """Rule P: record that a series serves a pair from a date, confirm a provisional decision,
+    or stage a candidate. A change retires the previous series (rule 16)."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        sources = SourceStore(session)
+        if args.baseline:
+            applied = 0
+            for b in BASELINE:
+                if sources.history(b.country, b.concept):
+                    continue
+                sources.decide(
+                    b.country,
+                    b.concept,
+                    b.series_id,
+                    b.source,
+                    b.effective_from,
+                    reason=b.reason,
+                    status=b.status,
+                )
+                applied += 1
+            print(
+                f"baseline: {applied} decisions recorded, {len(BASELINE) - applied} already there"
+            )
+            return 0
+        if args.stage:
+            sources.stage(args.stage)
+            print(f"staged {args.stage}: loaded and timed, never served or scored")
+            return 0
+        if args.confirm:
+            sources.confirm(args.country, args.concept)
+            print(f"confirmed the source of {args.country} {args.concept}")
+            return 0
+        if not (args.series and args.source and args.reason):
+            print("a decision needs --series, --source and --reason")
+            return 2
+        try:
+            decision = sources.decide(
+                args.country,
+                args.concept,
+                args.series,
+                args.source,
+                args.effective_from or _today(),
+                reason=args.reason,
+                status=PROVISIONAL if args.provisional else CONFIRMED,
+            )
+        except ValueError as exc:
+            print(f"refused: {exc}")
+            return 2
+        print(f"{decision.country} {decision.concept}: {decision.series_id} ({decision.status})")
+        print(f"from {decision.effective_from}; catalog version {catalog_version(session)}")
+    return 0
+
+
+def _source_history(args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        decisions = [
+            d for d in SourceStore(session).all() if not args.country or d.country == args.country
+        ]
+    for d in decisions:
+        until = d.effective_to.isoformat() if d.effective_to else "now"
+        print(
+            f"{d.country} {d.concept}: {d.series_id} [{d.source}] "
+            f"{d.effective_from} -> {until} ({d.status}) {d.reason}"
+        )
+    if not decisions:
+        print("no source decisions: every pair is served by its catalog series")
+    return 0
+
+
+def _catalog_version(_args: argparse.Namespace) -> int:
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        print(f"scorecard {SCORECARD_VERSION}, catalog {catalog_version(session)}")
+    return 0
+
+
 def _scorecard_bias(args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -593,6 +677,28 @@ def main(argv: list[str] | None = None) -> int:
     )
     check.set_defaults(func=_check_data)
 
+    decide = sub.add_parser(
+        "source-decision", help="record, confirm or stage the source of a country-indicator pair"
+    )
+    decide.add_argument("--country", help="ISO 3166 alpha-2 of the pair, e.g. PT")
+    decide.add_argument("--concept", help="the indicator concept key, e.g. consumer_prices")
+    decide.add_argument("--series", help="the series that serves the pair from the date")
+    decide.add_argument("--source", help="the source of that series, e.g. eurostat")
+    decide.add_argument("--reason", help="why: the candidates measured, per rule P")
+    decide.add_argument("--from", dest="effective_from", type=date.fromisoformat)
+    decide.add_argument("--provisional", action="store_true", help="first choice for a new pair")
+    decide.add_argument("--confirm", action="store_true", help="confirm the provisional decision")
+    decide.add_argument(
+        "--baseline", action="store_true", help="record the decisions made before the store"
+    )
+    decide.add_argument("--stage", metavar="SERIES", help="mark a candidate series as staged")
+    decide.set_defaults(func=_source_decision)
+    history = sub.add_parser("source-history", help="which source served each pair, and when")
+    history.add_argument("--country")
+    history.set_defaults(func=_source_history)
+    sub.add_parser(
+        "catalog-version", help="the scorecard and catalog versions scores are computed with"
+    ).set_defaults(func=_catalog_version)
     sub.add_parser(
         "sync-taxonomy", help="set every series' canonical code and pillar; refresh countries"
     ).set_defaults(func=_sync_taxonomy)

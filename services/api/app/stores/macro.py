@@ -8,7 +8,7 @@ scorecards free of look-ahead from later revisions.
 """
 
 import logging
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Collection, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 
@@ -73,6 +73,10 @@ class MacroSeriesRow(Base):
     canonical_code: Mapped[str | None] = mapped_column(String(96), nullable=True)
     pillar: Mapped[str | None] = mapped_column(String(16), nullable=True)
     scale: Mapped[float] = mapped_column(Float, default=1.0, server_default="1")
+    # live: served. retired: a pair's previous source, read only for as-of dates before the change
+    # (rule 16). staged: a candidate being timed, never served or scored (rule P).
+    lifecycle: Mapped[str] = mapped_column(String(8), default="live", server_default="live")
+    retired_on: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     __table_args__ = (
         Index("ix_macro_series_canonical_code", "canonical_code", unique=True),
@@ -313,11 +317,12 @@ class MacroStore:
 
     # --- reads -----------------------------------------------------------------------------
 
-    def list_series(self) -> list[SeriesSummary]:
+    def list_series(self, lifecycles: Collection[str] = ("live",)) -> list[SeriesSummary]:
+        """The series being served. Retired and staged ones are listed only when asked for."""
         rows = self.session.scalars(
-            select(MacroSeriesRow).order_by(
-                MacroSeriesRow.country, MacroSeriesRow.dimension, MacroSeriesRow.id
-            )
+            select(MacroSeriesRow)
+            .where(MacroSeriesRow.lifecycle.in_(tuple(lifecycles)))
+            .order_by(MacroSeriesRow.country, MacroSeriesRow.dimension, MacroSeriesRow.id)
         )
         return [
             SeriesSummary(
