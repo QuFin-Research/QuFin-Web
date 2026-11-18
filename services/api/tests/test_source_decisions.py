@@ -303,7 +303,7 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
         assert SERIES_CONCEPTS[(b.country, b.series_id)] == b.concept
         if b.predecessor:
             assert b.predecessor.series_id not in BY_ID  # no longer declared beside it
-    assert len(BASELINE) == 30 and len(PREDECESSORS) == 29  # Kosovo had no series before
+    assert len(BASELINE) == 36 and len(PREDECESSORS) == 35  # Kosovo had no series before
 
     put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
     put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
@@ -311,8 +311,8 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
     assert cli.main(["source-decision", "--baseline"]) == 0
     assert cli.main(["source-decision", "--baseline"]) == 0
     out = capsys.readouterr().out
-    assert "baseline: 30 decisions recorded, 0 already there" in out
-    assert "baseline: 0 decisions recorded, 30 already there" in out
+    assert "baseline: 36 decisions recorded, 0 already there" in out
+    assert "baseline: 0 decisions recorded, 36 already there" in out
 
     old, new = SourceStore(db_session).history("DE", "consumer_prices")
     assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
@@ -372,3 +372,14 @@ def test_a_retired_series_gives_up_its_canonical_code_to_the_series_that_replace
     new = db_session.scalars(select(MacroSeriesRow).where(MacroSeriesRow.id == NEW)).one()
     new.canonical_code = "USA.INF.CPI.M.NSA"
     db_session.commit()  # no unique violation
+
+
+def test_the_six_economies_level_with_eurostat_went_to_it_by_the_native_tie_break():
+    from app.data.source_baseline import BASELINE
+
+    tied = {b.country: b for b in BASELINE if b.reason.startswith("Tie at the 19 Nov 2026 probe")}
+    assert set(tied) == {"AL", "BE", "CH", "EE", "LU", "SI"}
+    assert all("more native source" in b.reason for b in tied.values())
+    assert all(
+        b.predecessor and b.predecessor.series_id.startswith("IMF_CPI_") for b in tied.values()
+    )

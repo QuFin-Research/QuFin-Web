@@ -18,7 +18,7 @@ HICP = "HICP, all items"
 # Eurostat says the HICP of these candidate economies may be less comparable: it has not fully
 # evaluated their conformity with the HICP rules.
 HICP_CANDIDATE = "HICP, all items (candidate economy: comparability not fully evaluated)"
-_CANDIDATES = frozenset({"ME", "MK", "RS", "TR", "XK"})
+_CANDIDATES = frozenset({"AL", "ME", "MK", "RS", "TR", "XK"})
 NATIONAL_CORE_CPI = "National core CPI"
 
 VARIANT_CONCEPTS = frozenset({"consumer_prices", "core_consumer_prices"})

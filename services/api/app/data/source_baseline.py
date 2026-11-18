@@ -52,6 +52,9 @@ _LAST_BEFORE: dict[str, str] = {
     "NL": "2026-09", "NO": "2026-09", "PL": "2026-09", "PT": "2026-09", "RO": "2026-08",
     "RS": "2026-09", "SE": "2026-09", "SK": "2026-09", "TR": "2026-09",
 }  # fmt: skip
+# Level with Eurostat at the probe: the IMF had October too. The tie goes to the more native
+# source, Eurostat (rule P, Part 0).
+_TIED: frozenset[str] = frozenset({"AL", "BE", "CH", "EE", "LU", "SI"})
 _ISO3 = {iso2: iso3 for iso3, iso2 in ISO3_TO_ISO2.items()}
 
 
@@ -61,7 +64,7 @@ def _predecessor(iso2: str) -> tuple[str, str, date] | None:
         return "CP0000PTM086NEST", "fred", date(2026, 11, 18)
     if iso2 in ("MT", "RS"):
         return f"BIS_CPI_{iso2}", "bis", FIRST_DATE
-    if iso2 in _LAST_BEFORE:
+    if iso2 in _LAST_BEFORE or iso2 in _TIED:
         return f"IMF_CPI_{_ISO3[iso2]}", "imf", FIRST_DATE
     return None  # Kosovo: no series before
 
@@ -77,12 +80,21 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
             iso2, CONCEPT, f"ESTAT_HICP_{geo}", "eurostat", SWITCH_DATE, "provisional", reason
         )
     old_id, old_source, old_from = before
-    reason = (
-        f"Eurostat held October 2026 at the 19 Nov 2026 probe (dataset updated 18 Nov); {old_id} "
-        f"({old_source}) stopped at {_LAST_BEFORE[iso2]}. Provisional until a release cycle is "
-        "measured (rule P). Eurostat's series starts later than the one it replaces; the earlier "
-        "history stays in the retired series."
-    )
+    if iso2 in _TIED:
+        reason = (
+            f"Tie at the 19 Nov 2026 probe: {old_id} (imf) and Eurostat both held October 2026. "
+            "Equal on earliest and frequency, so the more native source wins (rule P, Part 0): "
+            "Eurostat for a European economy, which also keeps the bloc on one source. "
+            "Provisional until a release cycle is measured. Eurostat's series may start later "
+            "than the one it replaces; the earlier history stays in the retired series."
+        )
+    else:
+        reason = (
+            f"Eurostat held October 2026 at the 19 Nov 2026 probe (dataset updated 18 Nov); "
+            f"{old_id} ({old_source}) stopped at {_LAST_BEFORE[iso2]}. Provisional until a "
+            "release cycle is measured (rule P). Eurostat's series starts later than the one "
+            "it replaces; the earlier history stays in the retired series."
+        )
     return BaselineDecision(
         iso2,
         CONCEPT,

@@ -317,18 +317,19 @@ EUROSTAT_SERIES = (
 )
 # Rule P, 19 Nov 2026: consumer prices from Eurostat's HICP, all items, annual rate of change
 # (`prc_hicp_minr`), for every economy where Eurostat's latest month was ahead of the series then
-# serving the pair (October 2026 against September or August; Kosovo had none). Economies where
-# the series serving the pair was level with Eurostat (Albania, Belgium, Switzerland, Estonia,
-# Luxembourg, Slovenia: October from the IMF too) keep it and are re-measured next cycle. Eurostat
+# serving the pair (October 2026 against September or August; Kosovo had none). For Albania,
+# Belgium, Switzerland, Estonia, Luxembourg and Slovenia the IMF series was level with it
+# (October too); the tie goes to the more native source, Eurostat (rule P, Part 0). Eurostat
 # publishes the final HICP about 15 to 18 days after the month and flags early figures `e`;
 # the licence covers EU, EFTA and candidate economies (Bosnia, Moldova and Ukraine are not
 # served). Greece is "EL" at Eurostat. See docs/assumptions-register.md section 4r.
 HICP_GEO: dict[str, str] = {
-    "AT": "AT", "BG": "BG", "CY": "CY", "CZ": "CZ", "DE": "DE", "DK": "DK", "ES": "ES",
-    "FI": "FI", "FR": "FR", "GR": "EL", "HR": "HR", "HU": "HU", "IE": "IE", "IS": "IS",
-    "IT": "IT", "LT": "LT", "LV": "LV", "ME": "ME", "MK": "MK", "MT": "MT", "NL": "NL",
-    "NO": "NO", "PL": "PL", "PT": "PT", "RO": "RO", "RS": "RS", "SE": "SE", "SK": "SK",
-    "TR": "TR", "XK": "XK",
+    "AL": "AL", "AT": "AT", "BE": "BE", "BG": "BG", "CH": "CH", "CY": "CY", "CZ": "CZ",
+    "DE": "DE", "DK": "DK", "EE": "EE", "ES": "ES", "FI": "FI", "FR": "FR", "GR": "EL",
+    "HR": "HR", "HU": "HU", "IE": "IE", "IS": "IS", "IT": "IT", "LT": "LT", "LU": "LU",
+    "LV": "LV", "ME": "ME", "MK": "MK", "MT": "MT", "NL": "NL", "NO": "NO", "PL": "PL",
+    "PT": "PT", "RO": "RO", "RS": "RS", "SE": "SE", "SI": "SI", "SK": "SK", "TR": "TR",
+    "XK": "XK",
 }  # fmt: skip
 _HICP = {"freq": "M", "unit": "RCH_A", "coicop18": "TOTAL"}
 EUROSTAT_SERIES = (

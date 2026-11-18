@@ -130,7 +130,7 @@ def test_consumer_prices_of_the_eurostat_economies_come_from_eurostat_alone():
     from app.data.gap_ids import HICP_GEO
     from app.data.macro_catalog import BY_ID
 
-    assert len(HICP_GEO) == 30
+    assert len(HICP_GEO) == 36
     for iso2, geo in HICP_GEO.items():
         series = [
             sid for (c, sid), k in SERIES_CONCEPTS.items() if c == iso2 and k == "consumer_prices"
@@ -139,7 +139,14 @@ def test_consumer_prices_of_the_eurostat_economies_come_from_eurostat_alone():
         entry = BY_ID[f"ESTAT_HICP_{geo}"]
         assert (entry.source, entry.dimension) == ("eurostat", "inflation")
         assert entry.published_as_change and entry.change == "diff"
-    for gone in ("IMF_CPI_PRT", "CP0000PTM086NEST", "IMF_CPI_DEU", "BIS_CPI_MT", "BIS_CPI_RS"):
+    for gone in (
+        "IMF_CPI_PRT",
+        "CP0000PTM086NEST",
+        "IMF_CPI_DEU",
+        "BIS_CPI_MT",
+        "IMF_CPI_BEL",
+        "IMF_CPI_CHE",
+    ):
         assert gone not in BY_ID
 
 
