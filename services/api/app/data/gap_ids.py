@@ -2,7 +2,8 @@
 
 Checked live on 13 Nov 2026. What was added, and what was left out and why:
 
-- FRED/ALFRED (Rule H): real GDP for Germany, France, Italy, Japan and Canada, and the goods trade
+- FRED/ALFRED (old rule H, not re-measured under rule P): real GDP for Germany, France, Italy,
+  Japan and Canada, and the goods trade
   balance of five economies (the UK is left out: its series fell overdue on 13 Nov 2026, because
   FRED posts the OECD's UK figures every second month), all seasonally adjusted with vintages.
   Left out because FRED's copy is frozen: industrial production (`*PROINDMISMEI`, last March
@@ -10,7 +11,8 @@ Checked live on 13 Nov 2026. What was added, and what was left out and why:
   last March 2025 or June 2021), the OECD's MEI series that FRED no longer updates; the UK real GDP
   series `CLVMNACSCAB1GQUK` (marked DISCONTINUED, last July 2020); and the Brazilian and South
   African unemployment series (`LRHUTTTT{BR,ZA}M156S` do not exist on FRED).
-- ONS (Rule H, UK fallback): unemployment rate, real GDP and core CPI, where FRED has no current
+- ONS (the original producer, rule P; old rule H, UK fallback): unemployment rate, real GDP and
+  core CPI, where FRED has no current
   seasonally adjusted series with vintages. The ONS publishes the latest values only, so each period
   is dated by its usual release lag, erring late (rule 9).
 - Every series here starts in 1990 where the source goes back that far (Rule I).

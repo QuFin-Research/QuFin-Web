@@ -5,7 +5,8 @@ current observation for its measure (latest month September or October 2026, lat
 2026 Q1). Left out, and why:
 
 - the United States, except for property prices: FRED carries the US dollar indexes and credit
-  series with vintages (rule 17), and the Fed's own policy rate is stored from FRED, but
+  series with vintages (old rule 17, not re-measured), and the Fed's own policy rate is stored
+  from FRED, but
   FRED's copy of the BIS property price index (not seasonally adjusted, with vintages) was a
   quarter behind the BIS API on 13 Nov 2026 (FRED to 2026 Q1, BIS to Q2), so the BIS is read;
 - the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16), so
@@ -28,7 +29,8 @@ commercial property prices, and consumer prices for the economies no other sourc
 out, and why:
 
 - the United States, again: credit, central bank total assets (WALCL), debt securities and
-  debt service are read from FRED where it has them (rule 17), and the BIS global liquidity
+  debt service are read from FRED where it has them (old rule 17, not re-measured), and the BIS
+  global liquidity
   series measure credit to borrowers outside the US. The BIS US commercial property index was
   added on 19 Nov 2026 under rule P: it holds Q2 2026 while FRED's IMF copy stops at Q1
   (docs/assumptions-register.md, section 4s);

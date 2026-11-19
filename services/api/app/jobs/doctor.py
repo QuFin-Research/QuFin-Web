@@ -8,7 +8,7 @@
 
 A destructive repair first copies the database to `<name>.doctor-<timestamp>.db` and the report
 says what was done. Everything else is only flagged, because choosing the right series, the right
-source or the right date is a decision for a person: duplicate country-indicator pairs (Rule M),
+source or the right date is a decision for a person: duplicate country-indicator pairs (rule 16),
 overlapping or reversed vintage dates, series missing or frozen upstream (quarantine means taking
 it out of the catalog, with the reason recorded), and countries that have no data yet.
 """

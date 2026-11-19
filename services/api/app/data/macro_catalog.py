@@ -196,7 +196,7 @@ def _treasury(id: str) -> CatalogSeries:
 
 
 def _bls(id: str) -> CatalogSeries:
-    """A BLS series (Bureau of Labor Statistics), not on FRED (rule 17)."""
+    """A BLS series (Bureau of Labor Statistics), not on FRED (rule P: where it is the earliest)."""
     return CatalogSeries(id, "bls", "US", "external", change="diff" if id in DIFF_SERIES else "pct")
 
 
@@ -209,7 +209,7 @@ def _bls(id: str) -> CatalogSeries:
 # Hungary and Korea was verified live on 7 Nov 2026. US business and consumer confidence are
 # left out: the OECD builds them from ISM and Michigan data (licence limits), and Michigan
 # sentiment is already stored (rule 16). The US leading indicator comes from FRED, which
-# carries it live with vintages (rule 17).
+# carries it live with vintages (old rule 17, not re-measured under rule P).
 _OECD_ISO2 = {
     "DEU": "DE",
     "FRA": "FR",
@@ -432,7 +432,8 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
     _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
     # --- Employment Cost Index (P1-12): FRED carries it SA with vintages, so it is the single
-    # source (rule 17, Rule H); the BLS copy CIS1010000000000I was removed as a duplicate. ---
+    # source (old rules 17 and H, not re-measured under rule P); the BLS copy CIS1010000000000I
+    # was removed as a duplicate. ---
     _us("ECIALLCIV", "labour"),  # ECI, total compensation, civilian workers
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
     _eia("WCESTUS1"),  # Crude oil stocks excluding SPR
@@ -463,7 +464,7 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     # --- Consumer prices and unemployment for the comparison view (P1-23), not scored -----
     *(_imf_cpi(series_id) for series_id in IMF_CPI),
     *(_oecd_unemployment(series_id) for series_id in OECD_MACRO),
-    # --- Coverage gaps (Sprints 1-4): FRED for other economies, ONS for the UK (Rule H), each
+    # --- Coverage gaps (Sprints 1-4): FRED for other economies, ONS for the UK (old rule H), each
     # loaded from 1990 where the source goes back that far (Rule I) --------------------------
     *(
         CatalogSeries(

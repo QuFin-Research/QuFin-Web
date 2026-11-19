@@ -3,7 +3,8 @@
 The admin panel's "Run refresh" button and a scheduler both start this. It does not reload the
 whole catalog (hundreds of requests to sources that ask us to be gentle, rule 28): it asks only
 for series whose next release has arrived or that are overdue, one ingest command per source, in
-the order FRED first (rule H), then the agencies and aggregators. Each command is the same CLI
+a fixed order that is only a run order, not a source preference (rule P): FRED first because most
+series come from it, then the agencies and aggregators. Each command is the same CLI
 command a person would run, in its own process, so a crash or a slow source cannot take the API
 down, and each ends with the release check as always (rule 2).
 

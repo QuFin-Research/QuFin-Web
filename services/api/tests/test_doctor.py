@@ -113,7 +113,7 @@ def test_two_series_for_one_country_and_indicator_are_a_duplicate(db_session, mo
     monkeypatch.setitem(SERIES_CONCEPTS, ("US", "ICSA"), SERIES_CONCEPTS[("US", "UNRATE")])
     dup = found(doctor.run(db_session, TODAY), "duplicate indicator")
     assert len(dup) == 1 and "UNRATE (fred)" in dup[0].detail and "ICSA (fred)" in dup[0].detail
-    assert not dup[0].fixed  # which one to keep is a person's decision (Rule M)
+    assert not dup[0].fixed  # which one to keep is a person's decision (rule 16)
 
 
 def test_a_series_without_an_adjustment_tag_is_an_error(db_session):

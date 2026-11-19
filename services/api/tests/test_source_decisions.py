@@ -335,7 +335,7 @@ def test_a_pair_already_switched_once_is_closed_and_switched_again(db_session, m
         "CP0000PTM086NEST",
         "fred",
         date(2026, 11, 18),
-        reason="FRED first",
+        reason="FRED copy of the HICP, chosen when FRED was first",
         status=PROVISIONAL,
     )
     assert _cli_on(db_session, monkeypatch).main(["source-decision", "--baseline"]) == 0

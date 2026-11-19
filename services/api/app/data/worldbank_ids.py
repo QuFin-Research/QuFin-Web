@@ -10,7 +10,7 @@ different thing from what the monthly sources already give these countries (rule
 - trade balance, goods and services, current US dollars.
 
 Unemployment is not taken for the 19 EU members that Eurostat publishes monthly (rule K), so
-each pair has one source (rule M); see `gap_ids.py`.
+each pair has one source (rule 16); see `gap_ids.py`.
 
 Not taken: consumer prices (the IMF has them monthly for most of these countries, rule K, and a
 second copy would be a duplicate), and total reserves (the World Bank's include gold, the IMF's

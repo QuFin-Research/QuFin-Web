@@ -439,3 +439,13 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | No vintages | Judgement | The BIS API serves current values only; QuFin records each value as first seen and a revision as a new vintage (rule 6) |
 | Recorded as a provisional decision | Done | `source-decision --baseline` records `BIS_CPP_US` for the pair (US, commercial property prices) from 19 Nov 2026; there is no predecessor series, because FRED's was never stored. It is re-measured after the next quarterly release (rule P) |
 | Code that still said FRED first | Done | `NON_FRED_ALLOWED` now records the rule P reason for `BIS_CPP_US`; the tests that kept the US out of the BIS accept commercial property and residential property (`BIS_SPP_US`), as measured |
+
+## 4t. The FRED-first checks retired (19 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The code no longer requires US series to come from FRED | Done | `NON_FRED_ALLOWED` became `SOURCE_REASONS`, a record of why a source was chosen, and the two tests that failed any unlisted non-FRED US series are replaced by consistency tests (each reason names a real series, and a BIS series for the US must say why). The wording of old rules 17, H and M in code and docs now points to rule P or rule 16 |
+| US sources chosen under the retired rule 17 are not re-measured | Open | FRED is still the source of most US series, the Employment Cost Index, FRED's copies of IMF reserves and a few European series (real GDP and trade balance of five economies, and others). They were chosen because FRED was first, not because they were measured earliest. Rule P says to re-measure them at least once a quarter; none has been |
+| A general check that a native source was considered cannot be written yet | Gap | A test of "every series not from its native source has a reason" would flag 450 European series today: BIS 299, World Bank 80, OECD 34, IMF 28, FRED 9. Most have no Eurostat candidate at all (credit, property prices, annual indicators), so the BIS or the World Bank is the only source. Telling those from real misses needs a table of the candidates that publish each pair (rule O); it does not exist, so the check stays a record |
+| The refresh order still starts with FRED | Design choice | `SOURCE_COMMAND` runs FRED first because most series come from it. It is a run order, not a source preference |
+

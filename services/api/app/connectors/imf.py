@@ -1,7 +1,7 @@
 """IMF data connector (SDMX 2.1, keyless): https://data.imf.org
 
-Used only for what FRED does not carry live (rule 17): FRED republishes many IMF series with
-vintages, and those are loaded from FRED instead.
+Used where it is the earliest eligible source (rule P). FRED's copies of some IMF series were chosen
+under old rule 17 (FRED first) and have not been re-measured.
 """
 
 from typing import Any

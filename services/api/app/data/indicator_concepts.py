@@ -558,9 +558,12 @@ SERIES_CONCEPTS: dict[tuple[str, str], str] = {
 
 _EIA_REASON = "EIA Weekly Petroleum Status Report series are not on FRED (checked 4 Nov 2026)"
 
-# US series from a source other than FRED, with the reason it was chosen (rule P: the earliest
-# eligible source wins; FRED is not preferred for being FRED).
-NON_FRED_ALLOWED: dict[str, str] = {
+# Series whose source was chosen for a recorded reason, not by default. Under rule P the earliest
+# eligible source wins and FRED is not preferred for being FRED; the older entries were made under
+# the retired rule 17 (FRED first) and have not been re-measured. This is a record, not a gate:
+# whether a native source (Part 0) was a candidate for a pair needs a table of candidates per pair
+# that does not exist yet (docs/assumptions-register.md, section 4t).
+SOURCE_REASONS: dict[str, str] = {
     series_id: _EIA_REASON
     for series_id in (
         "WCESTUS1",
@@ -582,7 +585,7 @@ NON_FRED_ALLOWED: dict[str, str] = {
     "BIS_CPP_US": "The BIS index (CoStar repeat sales) held 2026 Q2 on 19 Nov 2026; FRED's "
     "COMREPUSQ159N (the IMF's financial soundness indicator, annual change) stopped at "
     "2026 Q1 and reached FRED in batches, the latest on 1 Oct 2026 (rule P)",
-    # Mandatory lagging fiscal gauges of a currency (rule 17); FRED carries debt only quarterly.
+    # Mandatory lagging fiscal gauges of a currency (old rule 17); FRED carries debt only quarterly.
     "TREAS_DEBT_TOTAL": "Daily Debt to the Penny is not on FRED, which has quarterly debt only "
     "(checked 5 Nov 2026)",
     "TREAS_AVG_RATE_MARKETABLE": "Treasury average interest rates are not on FRED "

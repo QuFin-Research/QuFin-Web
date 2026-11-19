@@ -1,7 +1,7 @@
 """BLS API v2 connector (Bureau of Labor Statistics), keyless for limited use.
 
-Used only for what FRED does not carry (rule 17): the Employment Cost Index and other
-BLS series FRED lacks. API docs: https://www.bls.gov/developers/
+Used where FRED does not carry the series or is later (rule P; the Employment Cost Index is on FRED
+because old rule 17 chose it, not re-measured). API docs: https://www.bls.gov/developers/
 
 The API is a JSON POST; a registration key raises the daily limit but is not required
 for a small number of series. Without a key, requests are rate-limited by BLS.

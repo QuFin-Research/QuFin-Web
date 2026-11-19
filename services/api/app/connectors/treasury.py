@@ -1,6 +1,7 @@
 """Treasury Fiscal Data connector (Bureau of the Fiscal Service), keyless.
 
-Used only for what FRED does not carry (rule 17): the daily Debt to the Penny, the monthly
+Used for what FRED does not carry, from the original producer (rule P): the daily Debt to the
+Penny, the monthly
 average interest rates on Treasury securities and the monthly interest expense on the public
 debt. The API serves current values only, with no vintages.
 https://fiscaldata.treasury.gov/api-documentation/

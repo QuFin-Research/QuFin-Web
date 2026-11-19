@@ -56,9 +56,9 @@ Total: 629 macro series and 15 positioning contracts (644 sources), each checked
 
 Not connected yet: World Bank and central-bank batch 1 (backlog P1-23 and P1-24).
 A BEA key exists in the local `.env` but has no connector: FRED carries those series
-(rule 17). The BLS connector currently loads no series: the Employment Cost Index (`ECIALLCIV`) and JOLTS job
+(old rule 17, FRED first, replaced by rule P on 18 Nov 2026). The BLS connector currently loads no series: the Employment Cost Index (`ECIALLCIV`) and JOLTS job
 openings (`JTSJOL`) both come from FRED, because the same series from BLS would be a duplicate
-(rules 16 and 17, Rule H). The licence status of every source is in `docs/licence-register.md`.
+(rule 16, and old rules 17 and H). The licence status of every source is in `docs/licence-register.md`.
 
 The ECB, OECD and every later SDMX source share one parser, `app/connectors/sdmx.py`: it reads
 SDMX-JSON, turns periods (day, month `2026-10` or the IMF's `2026-M10`, quarter, year) into dates, and returns each series with its

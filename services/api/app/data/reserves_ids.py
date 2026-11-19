@@ -1,6 +1,7 @@
 """Official reserves excluding gold, in US dollars (P1-21): which economies, from which source.
 
-FRED's copies of the IMF series where FRED carries them live with vintages (rule 17); the IMF
+FRED's copies of the IMF series where FRED carries them live with vintages (old rule 17, not
+re-measured under rule P); the IMF
 API for the rest. Checked 7 Nov 2026. Left out: China (last June 2026 on FRED and the IMF:
 behind schedule), Hong Kong (last February 2024), the US (its own reserves do not gauge the
 dollar) and the euro area (members report separately; the ECB's euro area reserves are a later

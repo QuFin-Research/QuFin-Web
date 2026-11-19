@@ -1,6 +1,7 @@
 """EIA API v2 connector for the Weekly Petroleum Status Report (oil inventories, supply, demand).
 
-Used only for what FRED does not carry (rule 17): the weekly petroleum series. Prices stay on FRED
+Used for what FRED does not carry (the weekly petroleum series), from the original producer
+(rule P). Prices stay on FRED
 (DCOILWTICO, DCOILBRENTEU), which republishes the same EIA spot prices with vintages.
 
 The `/v2/seriesid/` endpoint returns a series' full history newest first and ignores sort and
