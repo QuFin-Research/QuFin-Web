@@ -112,7 +112,25 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
     )
 
 
-BASELINE: tuple[BaselineDecision, ...] = tuple(_decision(i, g) for i, g in HICP_GEO.items())
+# The United States' commercial property prices: a new pair, decided on 19 Nov 2026 (rule P).
+_US_COMMERCIAL_PROPERTY = BaselineDecision(
+    "US",
+    "commercial_property_prices",
+    "BIS_CPP_US",
+    "bis",
+    SWITCH_DATE,
+    "provisional",
+    "BIS index (CoStar repeat sales since 1996, Federal Reserve Financial Accounts source) held "
+    "Q2 2026 on 19 Nov 2026; FRED's COMREPUSQ159N (the IMF's financial soundness indicator, "
+    "annual change) stopped at Q1 2026 and reached FRED in batches, the latest on 1 Oct 2026. "
+    "The BIS is earlier at the same frequency. Provisional until a release cycle is measured "
+    "(rule P).",
+)
+
+BASELINE: tuple[BaselineDecision, ...] = (
+    *(_decision(i, g) for i, g in HICP_GEO.items()),
+    _US_COMMERCIAL_PROPERTY,
+)
 
 # Series kept although they are no longer in the catalog: the pair's history stays readable as of
 # dates before the switch (rule 16). The doctor and the pruning never delete them.

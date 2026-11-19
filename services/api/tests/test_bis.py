@@ -158,7 +158,7 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
     # 155 policy rate, effective exchange rate, credit and property series, and 385 added on
     # 17 Nov 2026 (each economy checked live for a current, complete series).
-    assert len(BIS_SERIES) == 538  # 540 until Malta and Serbia consumer prices moved to Eurostat
+    assert len(BIS_SERIES) == 539  # 540 until Malta and Serbia moved to Eurostat, then US property
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
@@ -172,9 +172,9 @@ def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
 
 def test_economies_left_out_stay_out():
     ids = set(BIS_SERIES)
-    # The US is carried by FRED with vintages, except property prices: FRED's copy of the BIS index
-    # (not seasonally adjusted, with vintages) ran a quarter behind the BIS on 13 Nov 2026.
-    assert not {i for i in ids if i.endswith("_US") and not i.startswith("BIS_SPP_")}
+    # The US is carried by FRED with vintages, except property prices, where the BIS was a
+    # quarter ahead of FRED on 13 and 19 Nov 2026 (rule P): residential and commercial.
+    assert not {i for i in ids if i.endswith("_US") and not i.startswith(("BIS_SPP_", "BIS_CPP_"))}
     assert not {i for i in ids if i.endswith("_RU")}
     assert "BIS_CBPOL_DE" not in ids and "BIS_CBPOL_FR" not in ids  # the ECB rate, rule 16
     assert "BIS_CBPOL_KW" in ids and "BIS_CBPOL_QA" not in ids
@@ -583,7 +583,7 @@ def test_every_new_measure_area_is_in_the_taxonomy_and_never_russia_or_the_us():
         for area in MEASURES[code].areas:
             assert COUNTRY_BY_ISO2["EA" if area == "XM" else area], (code, area)
             assert area != "RU"
-            assert area != "US", (code, area)
+            assert area != "US" or code == "CPP", (code, area)  # the BIS was earlier (rule P)
 
 
 def test_declared_units_are_what_the_unit_classifier_reads_from_the_units_text():

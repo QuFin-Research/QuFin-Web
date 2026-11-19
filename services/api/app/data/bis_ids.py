@@ -29,9 +29,9 @@ out, and why:
 
 - the United States, again: credit, central bank total assets (WALCL), debt securities and
   debt service are read from FRED where it has them (rule 17), and the BIS global liquidity
-  series measure credit to borrowers outside the US. The BIS has a US commercial property index
-  (1990 to 2026 Q2); whether FRED carries one could not be checked on 17 Nov 2026 (the FRED key in
-  the environment was rejected), so it stays out until it is (docs/assumptions-register.md);
+  series measure credit to borrowers outside the US. The BIS US commercial property index was
+  added on 19 Nov 2026 under rule P: it holds Q2 2026 while FRED's IMF copy stops at Q1
+  (docs/assumptions-register.md, section 4s);
 - Russia, as before, and Thailand, Peru, the Philippines and Morocco, which are not in the
   taxonomy;
 - any economy whose series is stale (latest period before the usual release) or has missing
@@ -542,6 +542,7 @@ _CPI_AREAS = ("NZ",)
 # index), adjustment (not seasonally adjusted).
 _CPP_PARTS = (
     ("DE", "0.A.0.*.6.0"),
+    ("US", "0.A.0.*.6.0"),  # CoStar repeat sales since 1996, NREI before (rule P, 19 Nov 2026)
     ("ES", "0.A.0.*.6.0"),
     ("ID", "4.A.0.*.6.0"),  # big cities: the BIS has no whole-country series
     ("NL", "0.B.0.*.6.0"),  # offices
