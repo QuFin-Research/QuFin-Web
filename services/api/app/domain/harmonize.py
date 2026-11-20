@@ -1,4 +1,4 @@
-"""Put series of different release frequencies on one frequency, then measure change (Rules D, E).
+"""Put series of different release frequencies on one frequency, then measure change (Rules 30, 22).
 
 Series are compared at the lowest frequency they share: weekly is aggregated to monthly when one
 selected series is monthly, and nothing is ever up-sampled. A period is only formed from a
@@ -81,7 +81,7 @@ def native_frequency(text: str) -> Frequency:
 
 
 def adjustment_tag(text: str) -> Literal["SA", "NSA", "OTHER"]:
-    """`SA` or `NSA` as the source states it (Rule B). Other treatments (for example the OECD's
+    """`SA` or `NSA` as the source states it (Rule 29). Other treatments (for example the OECD's
     amplitude adjustment) are not called seasonal adjustment: they stay `OTHER`, with the text."""
     lowered = text.lower()
     if lowered.startswith("not seasonally") or lowered.startswith("not adjusted"):
@@ -108,7 +108,7 @@ class Allowed:
 
 
 def allowed_frequencies(natives: Sequence[tuple[str, Frequency]]) -> Allowed:
-    """Frequencies every series can be shown at: its own and anything slower (Rule G).
+    """Frequencies every series can be shown at: its own and anything slower (Rule 32).
 
     `natives` pairs a label (for the notice) with the series' own frequency.
     """

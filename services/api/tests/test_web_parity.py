@@ -43,6 +43,7 @@ LIVE_ONLY = {
     "data",
     "confidence",
     "overall_confidence",
+    "size_factor",
     "as_of",
     "scorecard_version",
     "catalog_version",

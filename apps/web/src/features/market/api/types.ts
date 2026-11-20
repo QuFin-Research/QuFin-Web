@@ -107,6 +107,8 @@ export type CountryScore = {
   /** Share of each pillar's full evidence that is fresh and usable; never changes the score */
   confidence?: Record<ScoreDimension, number> | null;
   overallConfidence?: number | null;
+  /** Share of a normal position a trade idea based on this score may take (S4); never changes the score */
+  sizeFactor?: number | null;
   asOf?: string | null;
   indicators?: ScorecardIndicator[];
   /** QuFin's choice: 'hidden' keeps the scoring recipe private (no indicator weights or sub-scores) */

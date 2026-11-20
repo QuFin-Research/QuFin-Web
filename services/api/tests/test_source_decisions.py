@@ -1,4 +1,4 @@
-"""Source history and score versioning (rules 16, P and 20).
+"""Source history and score versioning (rules 16, 38 and 20).
 
 A country-indicator pair is served by one source at a time. A change is a dated source decision:
 the old series is retired and kept for as-of reads, the new one serves from the change date, and
@@ -54,7 +54,7 @@ def decide_change(session):
     sources = SourceStore(session)
     sources.decide("US", "consumer_prices", OLD, "fred", date(2020, 1, 1), reason="first")
     return sources.decide(
-        "US", "consumer_prices", NEW, "eurostat", CHANGE, reason="earlier release (rule P)"
+        "US", "consumer_prices", NEW, "eurostat", CHANGE, reason="earlier release (rule 38)"
     )
 
 
@@ -303,7 +303,7 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
         assert SERIES_CONCEPTS[(b.country, b.series_id)] == b.concept
         if b.predecessor:
             assert b.predecessor.series_id not in BY_ID  # no longer declared beside it
-    assert len(BASELINE) == 36 and len(PREDECESSORS) == 35  # Kosovo had no series before
+    assert len(BASELINE) == 37 and len(PREDECESSORS) == 35  # Kosovo and US property: no predecessor
 
     put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
     put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
@@ -311,8 +311,8 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
     assert cli.main(["source-decision", "--baseline"]) == 0
     assert cli.main(["source-decision", "--baseline"]) == 0
     out = capsys.readouterr().out
-    assert "baseline: 36 decisions recorded, 0 already there" in out
-    assert "baseline: 0 decisions recorded, 36 already there" in out
+    assert "baseline: 37 decisions recorded, 0 already there" in out
+    assert "baseline: 0 decisions recorded, 37 already there" in out
 
     old, new = SourceStore(db_session).history("DE", "consumer_prices")
     assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
@@ -335,7 +335,7 @@ def test_a_pair_already_switched_once_is_closed_and_switched_again(db_session, m
         "CP0000PTM086NEST",
         "fred",
         date(2026, 11, 18),
-        reason="FRED first",
+        reason="FRED copy of the HICP, chosen when FRED was first",
         status=PROVISIONAL,
     )
     assert _cli_on(db_session, monkeypatch).main(["source-decision", "--baseline"]) == 0

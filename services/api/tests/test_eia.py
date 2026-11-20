@@ -7,7 +7,7 @@ import pytest
 
 from app.connectors.eia import EiaClient, EiaError
 from app.data.eia_calendar import wpsr_release_date
-from app.data.indicator_concepts import NON_FRED_ALLOWED
+from app.data.indicator_concepts import SOURCE_REASONS
 from app.data.macro_catalog import CATALOG
 from app.jobs import ingest_eia
 from app.stores.macro import MacroStore, SeriesMeta
@@ -158,9 +158,9 @@ def test_ingest_job_loads_catalog_eia_series_only(db_session):  # noqa: F811
     assert meta.release_name == "Weekly Petroleum Status Report"
 
 
-def test_every_non_fred_us_series_has_a_recorded_reason_and_no_stale_exemptions():
-    non_fred = {e.id for e in CATALOG if e.country == "US" and e.source != "fred"}
-    assert non_fred == set(NON_FRED_ALLOWED)
+def test_every_eia_series_has_a_recorded_source_reason():
+    eia = {e.id for e in CATALOG if e.country == "US" and e.source == "eia"}
+    assert eia and eia <= set(SOURCE_REASONS)
 
 
 def test_release_check_names_eia_as_the_source(db_session):  # noqa: F811

@@ -1,4 +1,4 @@
-"""The tier 3 registry (Rule O): the 23 national portals, the supranational ones, honest dates."""
+"""The tier 3 registry (Rule 37): the 23 national portals, the supranational ones, honest dates."""
 
 from datetime import date
 

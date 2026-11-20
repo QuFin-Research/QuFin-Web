@@ -25,7 +25,7 @@ Each cell has one status:
 - `GAP`: the indicator is global and the country has no series.
 - `NOT_APPLICABLE`: the indicator is not global and the country is not its owner.
 
-Coverage is `HAVE` over every cell of a global indicator (rule J), not over the whole grid.
+Coverage is `HAVE` over every cell of a global indicator (rule 34), not over the whole grid.
 """
 
 import csv

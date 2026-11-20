@@ -28,20 +28,24 @@ from collections.abc import Collection, Mapping
 from datetime import date
 from itertools import combinations, pairwise
 
-# Enough shared periods that a match is not chance, and enough distinct values that a flat
-# stretch (a policy rate held at zero) does not look like a match.
-MIN_SHARED_PERIODS = 20
-MIN_DISTINCT_VALUES = 5
+# Part 0, section 0.2 (rule 16). Enough shared periods that a match is not chance, and enough
+# distinct values that a flat stretch (a policy rate held at zero) does not look like a match.
+DUPLICATE_MIN_SHARED_PERIODS = 20
+DUPLICATE_MIN_DISTINCT_VALUES = 5
 # Share of shared periods that must match; below 1 so that one side's late revision does not
 # hide a duplicate.
-MATCH_SHARE = 0.95
-TOLERANCE = 1e-6
+DUPLICATE_MATCH_SHARE = 0.95
+DUPLICATE_FINGERPRINT_TOLERANCE = 1e-6
+# Pre-filter: a pair becomes a candidate when its consecutive-period ratios match in at least
+# min(DUPLICATE_MIN_FINGERPRINTS, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, periods - 1)) periods,
+# where periods is the number of usable observations of the shorter of the two series. A series
+# with fewer than the floor is compared with every other series.
+DUPLICATE_MIN_FINGERPRINTS = 12
+DUPLICATE_MIN_FINGERPRINTS_FLOOR = 4
 
-# Pre-filter. Buckets are far wider than TOLERANCE, so a match is always in the same or an
-# adjacent bucket.
+# Buckets are far wider than the tolerance, so a match is always in the same or an adjacent bucket.
 BUCKET_WIDTH = 1e-4
-MIN_SHARED_SHAPES = 3
-MIN_SHARED_VALUES = int(MIN_SHARED_PERIODS * MATCH_SHARE)
+MIN_SHARED_VALUES = int(DUPLICATE_MIN_SHARED_PERIODS * DUPLICATE_MATCH_SHARE)
 # A series needs this share of its consecutive pairs usable as shape keys, else it is compared
 # with every other series.
 MIN_KEYABLE_SHARE = 0.6
@@ -56,7 +60,7 @@ class DuplicateCheckTimeoutError(RuntimeError):
 
 def _close(a: float, b: float) -> bool:
     # Relative only: an absolute floor would make every pair of tiny ratios look equal.
-    return abs(a - b) <= TOLERANCE * max(abs(a), abs(b)) or a == b
+    return abs(a - b) <= DUPLICATE_FINGERPRINT_TOLERANCE * max(abs(a), abs(b)) or a == b
 
 
 def _relation(a: Values, b: Values) -> str | None:
@@ -65,9 +69,12 @@ def _relation(a: Values, b: Values) -> str | None:
         x, y = a[period], b[period]
         if x is not None and y is not None:
             shared.append((x, y))
-    if len(shared) < MIN_SHARED_PERIODS or len({x for x, _ in shared}) < MIN_DISTINCT_VALUES:
+    if (
+        len(shared) < DUPLICATE_MIN_SHARED_PERIODS
+        or len({x for x, _ in shared}) < DUPLICATE_MIN_DISTINCT_VALUES
+    ):
         return None
-    needed = MATCH_SHARE * len(shared)
+    needed = DUPLICATE_MATCH_SHARE * len(shared)
     if sum(_close(x, y) for x, y in shared) >= needed:
         return "the same values"
     ratios = sorted(x / y for x, y in shared if y)
@@ -104,8 +111,11 @@ def candidate_pairs(values: Mapping[str, Values]) -> set[Pair]:
     usable = {
         sid: pts
         for sid, pts in points.items()
-        if len(pts) >= MIN_SHARED_PERIODS and len({v for _, v in pts}) >= MIN_DISTINCT_VALUES - 1
+        if len(pts) >= DUPLICATE_MIN_FINGERPRINTS_FLOOR
+        and len({v for _, v in pts}) >= DUPLICATE_MIN_DISTINCT_VALUES - 1
     }
+    # Too few observations to fingerprint: compared with every other series (rule 16).
+    sparse = {sid for sid, pts in points.items() if 0 < len(pts) < DUPLICATE_MIN_FINGERPRINTS_FLOOR}
     shape_index: dict[tuple, list[str]] = defaultdict(list)
     value_index: dict[tuple, list[str]] = defaultdict(list)
     everywhere: set[str] = set()
@@ -132,10 +142,14 @@ def candidate_pairs(values: Mapping[str, Values]) -> set[Pair]:
             for x in members:
                 same_values[frozenset((x, y))] += 1
 
-    found = {pair for pair, n in shapes.items() if n >= MIN_SHARED_SHAPES}
+    def needed(pair: Pair) -> int:
+        shorter = min(len(points[sid]) for sid in pair)
+        return min(DUPLICATE_MIN_FINGERPRINTS, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, shorter - 1))
+
+    found = {pair for pair, n in shapes.items() if n >= needed(pair)}
     found |= {pair for pair, n in same_values.items() if n >= MIN_SHARED_VALUES}
-    for sid in everywhere:
-        found |= {frozenset((sid, other)) for other in usable if other != sid}
+    for sid in everywhere | sparse:
+        found |= {frozenset((sid, other)) for other in points if other != sid}
     return found
 
 

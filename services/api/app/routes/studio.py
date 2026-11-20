@@ -1,8 +1,8 @@
 """The comparison studio: one indicator across up to 10 countries, or several for one country.
 
-The API does the work (Rules D, E, F, G): it puts every selected series on one frequency, computes
-the actual value or the change over that frequency, enforces the 10-country cap and reports which
-frequencies are possible and why. The web app only renders it.
+The API does the work (Rules 30, 22, 31, 32): it puts every selected series on one frequency,
+computes the actual value or the change over that frequency, enforces the 10-country cap and
+reports which frequencies are possible and why. The web app only renders it.
 """
 
 from datetime import date, timedelta
@@ -269,7 +269,7 @@ def compare(
     metric: MetricParam = "actual",
     years: Years = 10,
 ) -> StudioResult:
-    """One indicator for up to 10 countries, all on the same frequency (Rules D, E, F, G)."""
+    """One indicator for up to 10 countries, all on the same frequency (Rules 30, 22, 31, 32)."""
     if concept not in CONCEPTS:
         raise HTTPException(status_code=404, detail=f"Unknown indicator {concept}")
     codes = list(dict.fromkeys(c.strip().upper() for raw in countries for c in raw.split(",") if c))

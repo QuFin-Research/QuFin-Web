@@ -163,7 +163,7 @@ COUNTRIES: tuple[Country, ...] = (
     Country("QAT", "QA", "Qatar", "QAR", "Qatar Central Bank", gcc=True, em=True),
     Country("BHR", "BH", "Bahrain", "BHD", "Central Bank of Bahrain", gcc=True, em=True),
     Country("OMN", "OM", "Oman", "OMR", "Central Bank of Oman", gcc=True, em=True),
-    # The 50 further economies of the 85-country list (Rule J). Currency, central bank and the
+    # The 50 further economies of the 85-country list (Rule 34). Currency, central bank and the
     # emerging-market flag are from general knowledge, not yet verified at each source
     # (docs/assumptions-register.md, section 4l).
     Country("ALB", "AL", "Albania", "ALL", "Bank of Albania", em=True),

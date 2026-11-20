@@ -22,6 +22,7 @@ class Base(DeclarativeBase):
 def import_models() -> None:
     """Import every model module so its tables are registered on Base.metadata."""
     from app.stores import (  # noqa: F401
+        candidates,
         decisions,
         jobs,
         macro,

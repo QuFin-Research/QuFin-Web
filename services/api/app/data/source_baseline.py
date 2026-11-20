@@ -1,4 +1,4 @@
-"""Source decisions every database must hold (rules 16, P).
+"""Source decisions every database must hold (rules 16, 38).
 
 `uv run python -m app.cli source-decision --baseline` applies them. A pair already served by the
 series named here is left alone, so running it twice changes nothing. When a pair has no decision
@@ -53,7 +53,7 @@ _LAST_BEFORE: dict[str, str] = {
     "RS": "2026-09", "SE": "2026-09", "SK": "2026-09", "TR": "2026-09",
 }  # fmt: skip
 # Level with Eurostat at the probe: the IMF had October too. The tie goes to the more native
-# source, Eurostat (rule P, Part 0).
+# source, Eurostat (rule 38, Part 0).
 _TIED: frozenset[str] = frozenset({"AL", "BE", "CH", "EE", "LU", "SI"})
 _ISO3 = {iso2: iso3 for iso3, iso2 in ISO3_TO_ISO2.items()}
 
@@ -74,7 +74,7 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
     if before is None:
         reason = (
             "New pair: Eurostat is the only source that publishes Kosovo's HICP (October 2026 at "
-            "the 19 Nov 2026 probe). Provisional until a release cycle is measured (rule P)."
+            "the 19 Nov 2026 probe). Provisional until a release cycle is measured (rule 38)."
         )
         return BaselineDecision(
             iso2, CONCEPT, f"ESTAT_HICP_{geo}", "eurostat", SWITCH_DATE, "provisional", reason
@@ -83,7 +83,7 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
     if iso2 in _TIED:
         reason = (
             f"Tie at the 19 Nov 2026 probe: {old_id} (imf) and Eurostat both held October 2026. "
-            "Equal on earliest and frequency, so the more native source wins (rule P, Part 0): "
+            "Equal on earliest and frequency, so the more native source wins (rule 38, Part 0): "
             "Eurostat for a European economy, which also keeps the bloc on one source. "
             "Provisional until a release cycle is measured. Eurostat's series may start later "
             "than the one it replaces; the earlier history stays in the retired series."
@@ -92,7 +92,7 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
         reason = (
             f"Eurostat held October 2026 at the 19 Nov 2026 probe (dataset updated 18 Nov); "
             f"{old_id} ({old_source}) stopped at {_LAST_BEFORE[iso2]}. Provisional until a "
-            "release cycle is measured (rule P). Eurostat's series starts later than the one "
+            "release cycle is measured (rule 38). Eurostat's series starts later than the one "
             "it replaces; the earlier history stays in the retired series."
         )
     return BaselineDecision(
@@ -107,12 +107,30 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
             old_id,
             old_source,
             old_from,
-            "Served the pair before the switch to Eurostat (rule P, 19 Nov 2026).",
+            "Served the pair before the switch to Eurostat (rule 38, 19 Nov 2026).",
         ),
     )
 
 
-BASELINE: tuple[BaselineDecision, ...] = tuple(_decision(i, g) for i, g in HICP_GEO.items())
+# The United States' commercial property prices: a new pair, decided on 19 Nov 2026 (rule 38).
+_US_COMMERCIAL_PROPERTY = BaselineDecision(
+    "US",
+    "commercial_property_prices",
+    "BIS_CPP_US",
+    "bis",
+    SWITCH_DATE,
+    "provisional",
+    "BIS index (CoStar repeat sales since 1996, Federal Reserve Financial Accounts source) held "
+    "Q2 2026 on 19 Nov 2026; FRED's COMREPUSQ159N (the IMF's financial soundness indicator, "
+    "annual change) stopped at Q1 2026 and reached FRED in batches, the latest on 1 Oct 2026. "
+    "The BIS is earlier at the same frequency. Provisional until a release cycle is measured "
+    "(rule 38).",
+)
+
+BASELINE: tuple[BaselineDecision, ...] = (
+    *(_decision(i, g) for i, g in HICP_GEO.items()),
+    _US_COMMERCIAL_PROPERTY,
+)
 
 # Series kept although they are no longer in the catalog: the pair's history stays readable as of
 # dates before the switch (rule 16). The doctor and the pruning never delete them.

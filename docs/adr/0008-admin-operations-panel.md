@@ -28,7 +28,7 @@ call outside data sources cannot rest on it.
    the reason.
 4. **The Run button starts the same commands a person would run.** `POST /v1/admin/jobs/refresh`
    plans one `ingest-<source>` command per source, only for series that are due or overdue (FRED
-   first, rule H), runs each in its own process with a timeout, and records every step in
+   first as a run order only, not a source preference, rule 38), runs each in its own process with a timeout, and records every step in
    `job_runs` so the panel can poll `GET /v1/admin/jobs/{id}`. A process per step means a slow source
    cannot take the API down and each step still ends with the release check (rule 2).
 5. **Guards.** One run at a time (`409`), at most one start per `QUFIN_REFRESH_MIN_INTERVAL_SECONDS`

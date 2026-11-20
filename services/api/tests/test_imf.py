@@ -74,7 +74,7 @@ def test_imf_release_dates_err_late():
 
 def test_reserves_come_from_fred_where_it_carries_them_and_share_one_name():
     assert not set(FRED_RESERVES) & {f"TRESEG{c}M052N" for c in IMF_RESERVES.values()}
-    assert all(BY_ID[s].source == "fred" for s in FRED_RESERVES)  # rule 17
+    assert all(BY_ID[s].source == "fred" for s in FRED_RESERVES)  # chosen under old rule 17
     assert all(BY_ID[s].source == "imf" for s in IMF_RESERVES)
     assert {"CN", "HK", "US"}.isdisjoint(RESERVES.values())  # stale, or not a gauge of the dollar
     names = {concept_for(c, s).name for s, c in RESERVES.items()}

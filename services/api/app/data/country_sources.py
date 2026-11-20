@@ -1,4 +1,4 @@
-"""Tier 3 of the source cascade (Rule O): each economy's official national portals.
+"""Tier 3 of the source cascade (Rule 37): each economy's official national portals.
 
 Where FRED (tier 1) and the multilateral aggregators (tier 2) lack an indicator or only have a
 frozen mirror, QuFin goes to the country's statistics office or central bank. This registry says

@@ -5,7 +5,8 @@ current observation for its measure (latest month September or October 2026, lat
 2026 Q1). Left out, and why:
 
 - the United States, except for property prices: FRED carries the US dollar indexes and credit
-  series with vintages (rule 17), and the Fed's own policy rate is stored from FRED, but
+  series with vintages (old rule 17, not re-measured), and the Fed's own policy rate is stored
+  from FRED, but
   FRED's copy of the BIS property price index (not seasonally adjusted, with vintages) was a
   quarter behind the BIS API on 13 Nov 2026 (FRED to 2026 Q1, BIS to Q2), so the BIS is read;
 - the euro area for policy rates: the ECB deposit facility rate is already stored (rule 16), so
@@ -28,10 +29,11 @@ commercial property prices, and consumer prices for the economies no other sourc
 out, and why:
 
 - the United States, again: credit, central bank total assets (WALCL), debt securities and
-  debt service are read from FRED where it has them (rule 17), and the BIS global liquidity
-  series measure credit to borrowers outside the US. The BIS has a US commercial property index
-  (1990 to 2026 Q2); whether FRED carries one could not be checked on 17 Nov 2026 (the FRED key in
-  the environment was rejected), so it stays out until it is (docs/assumptions-register.md);
+  debt service are read from FRED where it has them (old rule 17, not re-measured), and the BIS
+  global liquidity
+  series measure credit to borrowers outside the US. The BIS US commercial property index was
+  added on 19 Nov 2026 under rule 38: it holds Q2 2026 while FRED's IMF copy stops at Q1
+  (docs/assumptions-register.md, section 4s);
 - Russia, as before, and Thailand, Peru, the Philippines and Morocco, which are not in the
   taxonomy;
 - any economy whose series is stale (latest period before the usual release) or has missing
@@ -533,7 +535,7 @@ _DSSFIN_AREAS = (
     "ZA",
 )
 
-# Malta and Serbia moved to Eurostat's HICP on 19 Nov 2026 (rule P, gap_ids.py).
+# Malta and Serbia moved to Eurostat's HICP on 19 Nov 2026 (rule 38, gap_ids.py).
 _CPI_AREAS = ("NZ",)
 
 # Commercial property: one series per economy, whole country where the BIS has it, the most general
@@ -542,6 +544,7 @@ _CPI_AREAS = ("NZ",)
 # index), adjustment (not seasonally adjusted).
 _CPP_PARTS = (
     ("DE", "0.A.0.*.6.0"),
+    ("US", "0.A.0.*.6.0"),  # CoStar repeat sales since 1996, NREI before (rule 38, 19 Nov 2026)
     ("ES", "0.A.0.*.6.0"),
     ("ID", "4.A.0.*.6.0"),  # big cities: the BIS has no whole-country series
     ("NL", "0.B.0.*.6.0"),  # offices

@@ -6,9 +6,9 @@ from app.data.indicator_concepts import (
     ACRONYMS,
     CONCEPTS,
     LOCAL_ALIASES,
-    NON_FRED_ALLOWED,
     REDUNDANT,
     SERIES_CONCEPTS,
+    SOURCE_REASONS,
     concept_for,
 )
 from app.data.macro_catalog import CATALOG
@@ -46,10 +46,26 @@ def test_series_derivable_from_stored_ones_are_not_stored():
     assert not set(REDUNDANT) & {e.id for e in CATALOG}
 
 
-def test_fred_is_the_main_source_for_the_us():
-    for entry in CATALOG:
-        if entry.country == "US" and entry.id not in NON_FRED_ALLOWED:
-            assert entry.source == "fred", entry.id
+def test_every_recorded_source_reason_describes_a_real_series_and_says_why():
+    """Rule 38: a source chosen for a reason has it written down; FRED is not the default."""
+    from app.data.macro_catalog import BY_ID
+
+    assert SOURCE_REASONS
+    for series_id, reason in SOURCE_REASONS.items():
+        assert series_id in BY_ID, f"{series_id} has a reason but is not in the catalog"
+        assert len(reason.split()) >= 4, series_id
+
+
+def test_no_series_is_required_to_come_from_fred_for_being_a_us_series():
+    """The retired rule 17 made FRED the US default. A US series from another source needs no
+    exemption: it needs the rule 38 reason, which is a record (not a gate) in `SOURCE_REASONS`."""
+    from app.data.macro_catalog import CATALOG
+
+    sources = {e.source for e in CATALOG if e.country == "US"}
+    assert {"fred", "eia", "treasury", "bis"} <= sources  # mixed, each chosen for a reason
+    for e in CATALOG:
+        if e.country == "US" and e.source == "bis":
+            assert e.id in SOURCE_REASONS, e.id  # not an original or native source: say why
 
 
 def test_api_returns_the_display_name_and_the_official_title(client, ingested):  # noqa: F811
@@ -125,7 +141,7 @@ def test_api_returns_the_global_acronym(client, ingested):  # noqa: F811
 
 
 def test_consumer_prices_of_the_eurostat_economies_come_from_eurostat_alone():
-    """Rule P (19 Nov 2026): Eurostat's HICP was ahead of the IMF, BIS and FRED series for these
+    """Rule 38 (19 Nov 2026): Eurostat's HICP was ahead of the IMF, BIS and FRED series for these
     economies. One source per pair (rule 16): none of the others is declared beside it."""
     from app.data.gap_ids import HICP_GEO
     from app.data.macro_catalog import BY_ID

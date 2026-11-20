@@ -18,6 +18,7 @@ from app.domain.scorecard import (
     build_scorecard,
     rescaled_average,
     score_indicator,
+    size_factor,
 )
 from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
 from app.schemas.market import (
@@ -97,7 +98,7 @@ def indicator_statuses(
     for series_id, spec in SCORED.items():
         entry = BY_ID[series_id]
         # A source change never alters a past score: as of an earlier date the series that served
-        # the pair then is read (rules 16 and P).
+        # the pair then is read (rules 16 and 38).
         served = sources.series_in_force(series_id, entry.country, as_of)
         meta = store.get_series(served)
         if meta is None:
@@ -191,6 +192,7 @@ def to_country_score(card: CountryScorecard) -> CountryScore:
         data="live",
         confidence=PillarConfidence(**{p: round(ps.confidence, 2) for p, ps in pillars.items()}),
         overall_confidence=round(card.scorecard.overall_confidence, 2),
+        size_factor=round(size_factor(card.scorecard.overall_confidence), 2),
         as_of=card.as_of,
         indicators=[
             ScorecardIndicator(

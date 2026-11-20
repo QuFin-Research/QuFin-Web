@@ -1,4 +1,7 @@
-"""The comparison studio API: 10-country cap, common frequency, SA/NSA, PoC, overlay (Rules D-G)."""
+"""The comparison studio API: 10-country cap, common frequency, SA/NSA, PoC, overlay.
+
+Rules 30 to 32 and 22.
+"""
 
 # Fixtures imported from test_macro_api are used by name, which ruff reads as redefinition.
 # ruff: noqa: F811

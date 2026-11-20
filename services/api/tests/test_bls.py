@@ -151,7 +151,7 @@ def test_response_that_is_not_json_is_an_error():
 
 @pytest.fixture(autouse=True)
 def bls_series_in_catalog(monkeypatch):
-    """The catalog carries no BLS series (FRED has them, Rule H); the connector is kept for a
+    """The catalog carries no BLS series (FRED has them; old rule H); the connector is kept for a
     series FRED lacks, so its tests register ECI as a BLS series for their duration."""
     entry: CatalogSeries = _bls(ECI)
     monkeypatch.setitem(BY_ID, ECI, entry)

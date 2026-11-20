@@ -124,6 +124,11 @@ class CountryScore(ApiModel):
         "confidence means size positions smaller; it never changes the score itself",
     )
     overall_confidence: float | None = None
+    size_factor: float | None = Field(
+        default=None,
+        description="Share of a normal position a trade idea based on this score may take: "
+        "the overall confidence, 0 to 1 (S4). It never changes the score",
+    )
     as_of: date | None = None
     scorecard_version: str | None = Field(
         default=None,

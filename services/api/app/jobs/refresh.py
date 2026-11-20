@@ -3,12 +3,13 @@
 The admin panel's "Run refresh" button and a scheduler both start this. It does not reload the
 whole catalog (hundreds of requests to sources that ask us to be gentle, rule 28): it asks only
 for series whose next release has arrived or that are overdue, one ingest command per source, in
-the order FRED first (rule H), then the agencies and aggregators. Each command is the same CLI
+a fixed order that is only a run order, not a source preference (rule 38): FRED first because most
+series come from it, then the agencies and aggregators. Each command is the same CLI
 command a person would run, in its own process, so a crash or a slow source cannot take the API
 down, and each ends with the release check as always (rule 2).
 
 A step that fails for a transient reason (a timeout, a network error, a 5xx) is retried on the
-capped ladder of rule L, after the other sources have had their turn: about 15 s, 60 s, 5 min,
+capped ladder of rule 35, after the other sources have had their turn: about 15 s, 60 s, 5 min,
 15 min and 1 h later, each wait varied by up to 20% so retries do not arrive in step. A step still
 failing after the last rung is marked degraded. A supplier that refuses (403, 429) is never
 retried or asked again in the run (rule 28). The release check runs last.
@@ -38,12 +39,14 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import Settings
 from app.data.macro_catalog import BY_ID
 from app.jobs.check_data import LAG_WINDOW, macro_status
+from app.jobs.ingest_staged import staging_due
 from app.schemas.admin import JobStep
 from app.stores.jobs import FAILED, SUCCEEDED, JobStore
 from app.stores.macro import MacroStore
 
 JOB = "refresh"
 CHECK_COMMAND = "check-data"
+STAGING_COMMAND = "ingest-staged"
 DEFER_ENV = "QUFIN_DEFER_RELEASE_CHECK"
 API_DIR = Path(__file__).resolve().parents[2]
 CHUNK = 100  # series ids per command: a command line has a length limit
@@ -69,7 +72,7 @@ KEY_SETTING = {"fred": "fred_api_key", "bls": "bls_api_key", "eia": "eia_api_key
 
 StepOutcome = Literal["ok", "overdue", "failed", "degraded"]
 
-# Rule L: the waits before each retry of a failing feed, in seconds, and the random variation.
+# Rule 35: the waits before each retry of a failing feed, in seconds, and the random variation.
 RETRY_LADDER = (15, 60, 300, 900, 3600)
 RETRY_JITTER = 0.2
 _REFUSED = re.compile(r"returned (403|429)|refused an earlier request")
@@ -116,6 +119,8 @@ def plan(session: Session, settings: Settings, today: date) -> list[Step]:
             skip = f"no {source.upper()} API key configured"
         for i in range(0, len(ids), CHUNK):
             steps.append(Step(command or "-", source, tuple(ids[i : i + CHUNK]), skip))
+    if staging_due(session, today):
+        steps.append(Step(STAGING_COMMAND, "staging", ()))
     if any(step.skip_reason is None for step in steps):
         steps.append(Step(CHECK_COMMAND, "release check", ()))
     return steps
@@ -125,7 +130,7 @@ def subprocess_executor(step: Step, timeout: int) -> StepResult:
     """Run one ingest command. Exit 1 with a release report is a finished run that found series
     still overdue (the source has not published); anything else non-zero is a failure."""
     cmd = [sys.executable, "-m", "app.cli", step.command, *step.series_ids]
-    ingest = step.command != CHECK_COMMAND
+    ingest = step.command not in (CHECK_COMMAND, STAGING_COMMAND)
     env = {**os.environ, DEFER_ENV: "1"} if ingest else dict(os.environ)
     try:
         done = subprocess.run(  # noqa: S603 - fixed argv, ids come from the catalog
@@ -134,6 +139,10 @@ def subprocess_executor(step: Step, timeout: int) -> StepResult:
     except subprocess.TimeoutExpired:
         return StepResult("failed", f"timed out after {timeout} s")
     lines = [ln for ln in (done.stdout + "\n" + done.stderr).splitlines() if ln.strip()]
+    if step.command == STAGING_COMMAND:
+        summary = next((ln for ln in reversed(lines) if ln.startswith("staged:")), "")
+        # Staged series are measured, not relied on: a failure is reported, never failing the run.
+        return StepResult("ok" if done.returncode == 0 else "overdue", summary[:300])
     if ingest:
         failed = [ln for ln in lines if "FAILED" in ln]
         loaded = len(step.series_ids) - len(failed)
@@ -171,7 +180,7 @@ def refused(result: StepResult) -> bool:
 
 
 def transient(result: StepResult) -> bool:
-    """A failure that may pass: worth a retry on the ladder (rule L)."""
+    """A failure that may pass: worth a retry on the ladder (rule 35)."""
     return (
         result.status == "failed" and not refused(result) and bool(_TRANSIENT.search(result.detail))
     )
@@ -194,7 +203,7 @@ def execute(
     budget_seconds: float | None = None,
 ) -> None:
     """Run the steps in order, saving progress after each; retry transient failures on the ladder
-    of rule L; run the release check last. Never raises: a run that cannot finish is recorded as
+    of rule 35; run the release check last. Never raises: a run that cannot finish is recorded as
     failed. `budget_seconds` caps the time the ladder may take."""
     progress = summarize_steps(steps)
     rng = rng or random.Random()  # noqa: S311 - jitter, not security

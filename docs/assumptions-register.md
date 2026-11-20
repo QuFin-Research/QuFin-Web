@@ -1,5 +1,8 @@
 # Assumptions register
 
+> From 20 Nov 2026 the rule book numbers every rule. Sections written before then cite rules by their old letters (B, D, F, G, I, J, L, N, O, P and the retired A, C, E, H, K, M); Appendix A of `RULEBOOK.md` maps each to its number.
+
+
 Every judgement QuFin's data and scorecard rest on, with what has and has not been checked
 against the producer (rule 12 in `RULEBOOK.md`). Audit of 6 Nov 2026. Add a row
 whenever a judgement is added; a judgement without a row is a defect.
@@ -365,7 +368,7 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | Central bank total assets join `central_bank_balance_sheet` | Done | Same concept as the Fed's `WALCL` (rule 19), compared as year-on-year change because the amounts are in different currencies (`COMPARED_AS`). The euro area's own ECB balance sheet was not checked for a duplicate |
 | International debt securities and debt service ratio units are not published by the BIS | Unverified | No unit attribute in the response. Millions of US dollars (US total 3,104,204 = $3.1 trillion) and percent of income follow the BIS's descriptions; a changed unit would not be caught by the load |
 | Commercial property: one series per economy, mixed property types and coverage | Judgement | Seven economies (Germany, Spain, Indonesia's big cities, the Netherlands' offices, Saudi Arabia's retail, Slovenia's and Turkey's offices and retail). Compared as year-on-year change (`COMPARED_AS`). Japan ends two quarters early, Greece is half-yearly, Poland and Portugal annual |
-| The United States is left to FRED for every new measure | Gap | Rule 17. The BIS has a US commercial property index (1990 to 2026 Q2); whether FRED carries one could not be checked on 17 Nov 2026 because the FRED key in this environment was rejected. A US debt service ratio and total credit are the same open question |
+| The United States is left to FRED for every new measure | Resolved for commercial property, otherwise open | Rule 17 was replaced by rule P on 18 Nov 2026: FRED is not preferred for being FRED. US commercial property now comes from the BIS (section 4s). A US debt service ratio and total credit remain unmeasured |
 | Consumer prices only for economies no other source covers | Done | New Zealand, Malta and Serbia (monthly, year-on-year, from 1990 or 2007). The IMF came first (rule 16): Chile (442 months) and Colombia (441) loaded from it the same day. Kuwait's BIS series ends in June 2026 and was marked overdue, so it is out. Not in the BIS: Andorra, Cambodia, Cameroon, the Faroe Islands, the Isle of Man, Kosovo, Liechtenstein, Monaco, North Korea, Qatar; the UAE ends in December 2025 |
 | Economies with a gap or a stale series are left out | Done | International debt securities: Oman, Congo, Kuwait, Kenya, Liechtenstein, Cambodia, Nigeria (missing quarters), Moldova (ends 2002), Iran (ends 2009). Corporate debt securities: Lithuania, Latvia. Central bank assets: Israel, Indonesia, South Korea (a quarter late), Kuwait (missing quarters) |
 | CPMI payments and FMIs | Not requested | Annual, eight tables, not a market indicator; the owner declined it |
@@ -397,7 +400,7 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | The IMF release dates are derived, not published | Judgement | `imf_calendar.py`: the last weekday of the second month after the period; the freshness check adds a 31-day step, the median derived lag (90 days) and 14 days of grace. Typical economies arrive faster (4 to 7 weeks), so the rule is late for them, as rule 9 asks; the seven series are 80 days or more behind it |
 | Portugal consumer prices come from FRED `CP0000PTM086NEST` (Eurostat HICP, all items, index 2025 = 100) | Done | Monthly to September 2026, updated by FRED on 16 Oct 2026; loaded from 1990. FRED first (rule H), one source per pair (rule M): `IMF_CPI_PRT` was removed. It is the harmonised index, not Portugal's national CPI. The OECD copies of the national CPI on FRED (`PRTCPIALLMINMEI`) ended in April 2025 |
 | India and Moldova consumer prices, and the four reserves series, stay overdue | Open | No fresher keyless source was found (FRED's OECD copies of India's CPI ended in March 2025). They return when the IMF receives the countries' data, or when a national portal is chosen (tier 3 terms unread). Grace periods were not widened (rule 2) |
-| US commercial property (open since 17 Nov) can be resolved from FRED | Open | The "FRED key rejected" note in section 4n was a mistake in the check (the key object was passed, not its value). FRED carries `COMREPUSQ159N`, annual percent change, quarterly to 2026 Q1; the BIS index runs to 2026 Q2. Not changed |
+| US commercial property (open since 17 Nov) | Resolved 19 Nov 2026 | Measured against FRED's `COMREPUSQ159N`: the BIS is earlier (section 4s) |
 
 ## 4q. Rulebook compliance: variants, duplicate pre-filter, retry ladder, source history (18 Nov 2026)
 
@@ -415,15 +418,71 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 
 | Judgement | Status | Basis |
 |---|---|---|
-| Eurostat is the earliest eligible source for these economies | Judgement, provisional | Probed on 19 Nov 2026: Eurostat held October 2026 (dataset updated 18 Nov, 11:00 CET) while the series serving the pair stopped at September (August for Iceland, North Macedonia, Malta, Romania). A release cycle has not yet been measured, so each decision is provisional (rule P) and is confirmed or reversed after the December release |
-| Six economies level with Eurostat went to it by the native tie-break | Judgement, provisional | Albania, Belgium, Switzerland, Estonia, Luxembourg and Slovenia: the IMF also had October at the 19 Nov 2026 probe, so the two tied on latest period and frequency, and the real release times of the IMF are unknown (its dates are derived). The tie goes to the more native source (rule P, Part 0): Eurostat for a European economy, which also keeps the bloc on one source. Re-measured after the December release like the others |
+| Eurostat is the earliest eligible source for these economies | Judgement, provisional | Probed on 19 Nov 2026: Eurostat held October 2026 (dataset updated 18 Nov, 11:00 CET) while the series serving the pair stopped at September (August for Iceland, North Macedonia, Malta, Romania). A release cycle has not yet been measured, so each decision is provisional (rule 38) and is confirmed or reversed after the December release |
+| Six economies level with Eurostat went to it by the native tie-break | Judgement, provisional | Albania, Belgium, Switzerland, Estonia, Luxembourg and Slovenia: the IMF also had October at the 19 Nov 2026 probe, so the two tied on latest period and frequency, and the real release times of the IMF are unknown (its dates are derived). The tie goes to the more native source (rule 38, Part 0): Eurostat for a European economy, which also keeps the bloc on one source. Re-measured after the December release like the others |
 | Eurostat does not serve Bosnia, Moldova, Ukraine | Verified | The API answered that the selection held more than one series for `BA`, `MD`, `UA`; they keep the IMF series |
 | Kosovo is a new pair | Done | Eurostat is the only source found; provisional |
 | The measure changes from each country's national CPI to the HICP | Judgement | On 19 Nov 2026 the IMF and BIS series differed from the HICP by 0.11 to 2.26 points (section 4q). The HICP excludes owner-occupiers' imputed rents (ECOICOP 04.2) and counts spending in the territory by residents and non-residents. The variant is "HICP, all items"; a comparison with a national CPI shows a notice (rules 10, 18, 23). Scorecards are unaffected: only the US is scored |
 | Eurostat's candidate-economy figures may be less comparable | Judgement | Eurostat says it has not fully evaluated Montenegro, North Macedonia, Serbia, Türkiye and Kosovo against the HICP rules; their variant says so |
-| History is shorter for some economies | Open, owner's decision | Eurostat's HICP starts in 1997 or later, the series it replaces in 1990 for 28 of the economies. The longest losses: Iceland 1990 to 2016, Norway 1990 to 2001, Switzerland 1990 to 2005, Serbia 1994 to 2006, Albania 2008 to 2016, Malta and most euro economies 1990 to 1997. The earlier history stays in the retired series and is read as of dates before the switch (rule 16); charts of today's series start later. Rule P does not weigh history depth, rule I wants it: no splicing from a second source is allowed |
+| History is shorter for some economies | Open, owner's decision | Eurostat's HICP starts in 1997 or later, the series it replaces in 1990 for 28 of the economies. The longest losses: Iceland 1990 to 2016, Norway 1990 to 2001, Switzerland 1990 to 2005, Serbia 1994 to 2006, Albania 2008 to 2016, Malta and most euro economies 1990 to 1997. The earlier history stays in the retired series and is read as of dates before the switch (rule 16); charts of today's series start later. Rule 38 does not weigh history depth, rule 33 wants it: no splicing from a second source is allowed |
 | The final figure replaces the flash as a new vintage | Verified in the store | `record_latest` dates a period by its first read (never later than the derived date) and closes the old value when a revision arrives, so flash and final are separate vintages. The flag `e` itself is not stored per observation (open) |
 | The derived release date is late for Eurostat | Judgement | `hicp_release` is the last weekday of the month after; the real final is 15 to 18 days after the month (Eurostat metadata, read 19 Nov 2026). A first read earlier than the derived date is used instead, so freshness is judged on the real first read |
 | Reuse terms of the HICP dataset | Unverified | The copyright page returned 404 on 19 Nov 2026. The general notice read on 13 Nov 2026 allows commercial reuse with attribution for EU, EFTA and candidate data; no dataset-specific terms were found |
 | Retired series are protected from pruning | Done | The doctor and the FRED job's prune keep the 35 predecessors (`PREDECESSORS`), because their history is read as of dates before the switch |
 | Order of a switch: decisions first, then the load | Design choice | A retired series gives up its canonical code (the unique index allows one live series per country and indicator), which the new series takes. Run `source-decision --baseline`, then `ingest-eurostat`, in every database. The refresh plan only covers stored series, so the new series must be loaded once by hand |
+
+## 4s. US commercial property prices from the BIS, not FRED (19 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The BIS is earlier than FRED for US commercial property | Verified, provisional | Probed 19 Nov 2026. BIS `WS_CPP` US (whole country, all commercial properties, not seasonally adjusted, price index 2010 = 100): quarterly to 2026 Q2, from 1945 Q4. FRED `COMREPUSQ159N`: quarterly, to 2026 Q1, from 2005, last updated 1 Oct 2026. FRED's own first-seen dates show it receives the data in batches (Q4 2024 and Q1 2025 on 2 Sep 2025, Q2 2025 on 8 Dec 2025, then Q3 2025 to Q1 2026 all on 1 Oct 2026), 184 days or more after the quarter; the BIS had Q2 within 142 days |
+| The two are different measures | Judgement | The BIS series is an index level built from CoStar's repeat-sales index since 1996 and appraisal-based series before (source: the Federal Reserve's Financial Accounts, series `FL075035503`). FRED's is the IMF's financial soundness indicator, "Commercial real estate prices", as a percent change from a year ago, and carries the IMF's copyright notice ("reprinted with permission"). Both are quarterly; the series is compared as year-on-year change (`COMPARED_AS`) |
+| Frequency is equal, so earliest decides | Verified | Both are quarterly. No tie, so the native tie-break (rule 38, Part 0) is not used |
+| The BIS licence allows QuFin's use | Verified | The licence register row for the BIS (attribution, no endorsement, no charge): availability of the series is "All users". The underlying CoStar data is third-party, and the BIS publishes it openly; its own terms for that data were not read separately |
+| No vintages | Judgement | The BIS API serves current values only; QuFin records each value as first seen and a revision as a new vintage (rule 6) |
+| Recorded as a provisional decision | Done | `source-decision --baseline` records `BIS_CPP_US` for the pair (US, commercial property prices) from 19 Nov 2026; there is no predecessor series, because FRED's was never stored. It is re-measured after the next quarterly release (rule 38) |
+| Code that still said FRED first | Done | `NON_FRED_ALLOWED` now records the rule 38 reason for `BIS_CPP_US`; the tests that kept the US out of the BIS accept commercial property and residential property (`BIS_SPP_US`), as measured |
+
+## 4t. The FRED-first checks retired (19 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The code no longer requires US series to come from FRED | Done | `NON_FRED_ALLOWED` became `SOURCE_REASONS`, a record of why a source was chosen, and the two tests that failed any unlisted non-FRED US series are replaced by consistency tests (each reason names a real series, and a BIS series for the US must say why). The wording of old rules 17, H and M in code and docs now points to rule 38 or rule 16 |
+| US sources chosen under the retired rule 17 are not re-measured | Open | FRED is still the source of most US series, the Employment Cost Index, FRED's copies of IMF reserves and a few European series (real GDP and trade balance of five economies, and others). They were chosen because FRED was first, not because they were measured earliest. Rule 38 says to re-measure them at least once a quarter; none has been |
+| A general check that a native source was considered cannot be written yet | Gap | A test of "every series not from its native source has a reason" would flag 450 European series today: BIS 299, World Bank 80, OECD 34, IMF 28, FRED 9. Most have no Eurostat candidate at all (credit, property prices, annual indicators), so the BIS or the World Bank is the only source. Telling those from real misses needs a table of the candidates that publish each pair (rule 37); it does not exist, so the check stays a record |
+| The refresh order still starts with FRED | Design choice | `SOURCE_COMMAND` runs FRED first because most series come from it. It is a run order, not a source preference |
+
+
+## 4u. Staging, slice 1: timing the IMF against Eurostat's HICP (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The 32 IMF consumer price series are staged again so December can be timed on both sides | Design choice | The 36 Eurostat decisions of 19 Nov are provisional until a release cycle is measured (rule 38). The IMF series that served them are retired and read-only, so they cannot be refreshed; each is loaded as `CAND_IMF_CPI_<area>`, a `staged` series, from 1990 |
+| A staged series never holds the canonical code, is never served and never compared | Done | `lifecycle` is `staged`; `MacroStore.list_series()` leaves it out, the API answers 404 for it, the scorecard and the duplicate check do not read it, and its canonical code is empty because one live series per country and indicator holds the code |
+| The day a period was first read is kept apart from the vintage date | Design choice | `record_latest` dates a period by the earlier of its derived release date and the day it was seen, which understates the lag of a late source. `candidate_sightings` keeps the day itself. Periods present at the first load are `bootstrap`: published before QuFin looked, so they say nothing about timing |
+| The refresh loads staged candidates once a day and never fails on them | Design choice | A step `ingest-staged` is planned only when staged series are stored and none was loaded today (rule 28); a failure is reported as `overdue`, not `failed` (rule 2) |
+| Candidates exist only for the pairs under provisional decision | Open | The BIS and FRED candidates (Malta and Serbia consumer prices, US commercial property), and every other pair, follow with the candidate table of slice 4 |
+| Nothing measures the lag yet | Open | The sightings are kept from the first refresh; slice 2 turns them into a lag per candidate and compares it with the series that serves the pair |
+
+## 4v. Staging, slice 2: how the lag is measured (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The lag is the days from the end of the period to the day QuFin first read it | Design choice | Rule 38 (a). The day QuFin first read a value is an upper bound of the day the source published it, because QuFin looks once a day; both sides are measured the same way, so the bias is shared |
+| Only periods published after the candidate was first loaded are compared | Design choice | Periods present at the first load are `bootstrap`: nobody knows who published them first |
+| A source that has not shown a period yet is later, and is counted | Design choice | If the other side first read the period on or before the day this one was last loaded and this one had nothing, its lag is at least the days since the period ended. The table marks such a lag with a `+`. Without it a silent source would never lose |
+| One published period is enough to judge, and every verdict stays provisional | Judgement | Rule 38 says "at least one release cycle" (`MIN_RELEASES`). With one period the median is that period; the decision stays provisional and is re-measured each cycle |
+| The verdict compares periods won, the action compares median lags | Design choice | `measure-candidates` shows who was earlier in more periods and runs `choose()` on the median lags and the latest periods: a tie goes to the more native source. It records nothing |
+| First real reading, 20 Nov 2026 | Open | Eurostat's October was first read 18 days after the month. The IMF had not shown October for most of the 32 pairs, so each is at least 21 days (a bound); the verdict is "served earlier, confirm" until the IMF publishes and a real lag replaces the bound |
+
+## 4w. Staging, slice 3: from a measurement to a decision (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| A lower bound is not a measurement | Design choice | `decide-sources` acts only when at least one period was read on both sides. While the candidate has published nothing the verdict is shown and the action is `wait`; on 20 Nov 2026 all 32 pairs wait |
+| Only a confirmation is recorded by a command | Design choice | A replacement changes the source of a pair, which needs a catalog entry: a reviewed pull request that the owner merges and a row here (rules 26 and 38). `--apply` therefore confirms provisional decisions and never replaces one |
+| A confirmation holds for one database until it is written in the code | Open | `decide-sources --apply` changes the decision in the database it runs on. A fresh database is built from `app/data/source_baseline.py`, so the owner sets `status` there to make it permanent |
+| A winner takes a new series id | Design choice | The series that served the pair before keeps its id, retired, so its history stays readable as of earlier dates; the winner is added to the catalog under an unused id and `promote-candidate` copies the staged values, vintages and first-read days into it in one transaction |
+| The staged copy is removed after the move | Design choice | It never served or scored anything, so no as-of read refers to it; keeping it beside the new series would store the same data twice (rule 16) |
+| Which pairs are confirmed | Open | None yet. The first confirmations come after the IMF publishes November's and December's figures |
+

@@ -1,4 +1,4 @@
-"""QuFin Doctor (Rule N): each check finds its fault, and --fix repairs only what is safe."""
+"""QuFin Doctor (Rule 36): each check finds its fault, and --fix repairs only what is safe."""
 
 # Fixtures imported from test_macro_api are used by name, which ruff reads as redefinition.
 # ruff: noqa: F811
@@ -84,7 +84,7 @@ def test_values_that_are_not_finite_are_found_and_removed_with_fix(db_session):
     assert found(doctor.run(db_session, TODAY), "non-finite values") == []
 
 
-def test_reversed_and_overlapping_vintages_are_flagged_never_repaired(db_session):
+def test_reversed_vintages_are_deleted_and_overlapping_ones_only_flagged(db_session):
     put(db_session, "UNRATE")
     db_session.execute(
         text(
@@ -102,7 +102,12 @@ def test_reversed_and_overlapping_vintages_are_flagged_never_repaired(db_session
     report = doctor.run(db_session, TODAY, fix=True)
     messages = " ".join(f.detail for f in found(report, "vintage dates"))
     assert "start after they end" in messages and "overlap" in messages
-    assert not any(f.fixed for f in found(report, "vintage dates"))
+    fixed = {f.detail.split()[1]: f.fixed for f in found(report, "vintage dates")}
+    assert fixed["rows"] is True  # the reversed row is deleted, so the next ingest refetches it
+    assert not any("overlap" in f.detail and f.fixed for f in found(report, "vintage dates"))
+    remaining = doctor.run(db_session, TODAY)
+    details = " ".join(f.detail for f in found(remaining, "vintage dates"))
+    assert "start after they end" not in details and "overlap" in details
     quick = doctor.run(db_session, TODAY, quick=True)  # the overlap scan is the slow one
     assert "overlap" not in " ".join(f.detail for f in found(quick, "vintage dates"))
 
@@ -113,7 +118,7 @@ def test_two_series_for_one_country_and_indicator_are_a_duplicate(db_session, mo
     monkeypatch.setitem(SERIES_CONCEPTS, ("US", "ICSA"), SERIES_CONCEPTS[("US", "UNRATE")])
     dup = found(doctor.run(db_session, TODAY), "duplicate indicator")
     assert len(dup) == 1 and "UNRATE (fred)" in dup[0].detail and "ICSA (fred)" in dup[0].detail
-    assert not dup[0].fixed  # which one to keep is a person's decision (Rule M)
+    assert not dup[0].fixed  # which one to keep is a person's decision (rule 16)
 
 
 def test_a_series_without_an_adjustment_tag_is_an_error(db_session):
@@ -132,12 +137,39 @@ def test_a_stale_canonical_code_is_rederived_with_fix(db_session):
     assert found(doctor.run(db_session, TODAY), "canonical code") == []
 
 
-def test_series_outside_the_catalog_are_removed_with_fix(db_session):
+def test_series_outside_the_catalog_are_reported_never_removed_by_the_doctor(db_session):
     put(db_session, "NOT_IN_CATALOG")
     report = doctor.run(db_session, TODAY)
     assert found(report, "stale series")[0].subject == "NOT_IN_CATALOG"
-    assert found(doctor.run(db_session, TODAY, fix=True), "stale series")[0].fixed
+    assert "prune-stale" in found(report, "stale series")[0].detail
+    assert not found(doctor.run(db_session, TODAY, fix=True), "stale series")[0].fixed
+    assert MacroStore(db_session).get_series("NOT_IN_CATALOG") is not None  # rule 36
+
+
+def _prune_command(db_session, monkeypatch, *argv):
+    from contextlib import contextmanager
+
+    from app import cli
+
+    monkeypatch.setattr(cli, "upgrade_to_head", lambda _engine: None)
+    monkeypatch.setattr(cli, "get_engine", lambda: None)
+    monkeypatch.setattr(doctor, "backup_database", lambda _session: "backup.db")
+
+    @contextmanager
+    def scope():
+        yield db_session
+
+    monkeypatch.setattr(cli, "session_scope", scope)
+    return cli.main(["prune-stale", *argv])
+
+
+def test_prune_stale_removes_series_only_when_told_to(db_session, monkeypatch, capsys):
+    put(db_session, "NOT_IN_CATALOG")
+    assert _prune_command(db_session, monkeypatch) == 1  # lists, removes nothing
+    assert MacroStore(db_session).get_series("NOT_IN_CATALOG") is not None
+    assert _prune_command(db_session, monkeypatch, "--yes") == 0
     assert MacroStore(db_session).get_series("NOT_IN_CATALOG") is None
+    assert "backup" in capsys.readouterr().out
 
 
 def test_every_catalog_series_missing_from_the_database_is_an_error(db_session):

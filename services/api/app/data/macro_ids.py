@@ -112,13 +112,13 @@ ISO3_TO_ISO2: dict[str, str] = {
     "VEN": "VE",
 }
 
-# Economies added with the 85-country list (Rule J), probed on 13 Nov 2026 and left out of the IMF
+# Economies added with the 85-country list (Rule 34), probed on 13 Nov 2026 and left out of the IMF
 # CPI because it was not current: Cambodia (latest April 2026), Cameroon (February 2026), Serbia
 # (December 2025), plus Malta, which loaded but failed the release check (latest June 2026, due
 # 30 Sept); and not published by the IMF at all: Andorra, the Faroe Islands, the Isle of
 # Man, Kosovo, Liechtenstein, Monaco, North Korea.
 _NOT_YET = frozenset({"KHM", "CMR", "SRB", "MLT"})  # Chile, Colombia: added
-# Consumer prices of the economies in HICP_GEO come from Eurostat (rule P, 19 Nov 2026, see
+# Consumer prices of the economies in HICP_GEO come from Eurostat (rule 38, 19 Nov 2026, see
 # gap_ids.py), not from the IMF: one source per pair (rule 16). Portugal's IMF series had
 # already stopped at July 2026.
 _EUROSTAT_INSTEAD = frozenset(a for a, i in ISO3_TO_ISO2.items() if i in HICP_GEO)

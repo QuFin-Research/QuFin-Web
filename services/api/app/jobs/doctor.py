@@ -1,16 +1,20 @@
 """QuFin Doctor: fast, deterministic health checks of the macro database, with safe repairs (N).
 
-`uv run python -m app.cli doctor` reports; `--fix` repairs what can be repaired without guessing:
+`uv run python -m app.cli doctor` reports; `--fix` makes only the repairs of rule 36, none of which
+puts a number in the database that the source did not publish:
 
-- rows that belong to no series (orphaned vintages) and values that are not finite are deleted;
-- series the catalog no longer lists are removed (the same prune the FRED job runs);
-- canonical codes that no longer match a series' frequency or adjustment are re-derived.
+- rows that belong to no series (orphaned vintages) are deleted;
+- rows whose value is not finite, or whose vintage dates are reversed (start after end), are
+  deleted, so the next ingest fetches a clean value from the source;
+- canonical codes that no longer match a series' frequency or adjustment are re-derived (a label
+  computed from stored fields, never a data value).
 
 A destructive repair first copies the database to `<name>.doctor-<timestamp>.db` and the report
 says what was done. Everything else is only flagged, because choosing the right series, the right
-source or the right date is a decision for a person: duplicate country-indicator pairs (Rule M),
-overlapping or reversed vintage dates, series missing or frozen upstream (quarantine means taking
-it out of the catalog, with the reason recorded), and countries that have no data yet.
+source or the right date is a decision for a person: duplicate country-indicator pairs (rule 16),
+overlapping vintage dates, series the catalog no longer lists (removed on purpose with
+`prune-stale`), series missing or frozen upstream (quarantine means taking it out of the catalog,
+with the reason recorded), and countries that have no data yet.
 """
 
 import shutil
@@ -31,10 +35,10 @@ from app.data.macro_catalog import BY_ID
 from app.data.taxonomy import COUNTRIES, COUNTRY_BY_ISO2, TaxonomyError, canonical_code
 from app.domain.harmonize import adjustment_tag
 from app.jobs.check_data import LAG_WINDOW, macro_status
-from app.jobs.ingest_fred import prune, stale_series
+from app.jobs.ingest_fred import stale_series
 from app.stores.macro import MacroStore
 
-EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule J) plus Chile and Colombia
+EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule 34) plus Chile and Colombia
 Level = Literal["error", "warning"]
 
 
@@ -66,7 +70,7 @@ WIDELY_HELD = 8  # an indicator held by this many countries is one a country sho
 
 @dataclass(frozen=True)
 class Gap:
-    """A country-indicator pair with no stored series, and where tier 3 says to look (Rule O)."""
+    """A country-indicator pair with no stored series, and where tier 3 says to look (Rule 37)."""
 
     iso3: str
     country: str
@@ -189,11 +193,18 @@ class _Run:
             "SELECT COUNT(*) FROM macro_observations WHERE realtime_start > realtime_end",
         )
         if reversed_:
+            if self.fix:
+                self._backup_once()
+                self.session.execute(
+                    text("DELETE FROM macro_observations WHERE realtime_start > realtime_end")
+                )
+                self.session.commit()
             self.add(
                 "vintage dates",
                 "error",
                 "macro_observations",
                 f"{reversed_} rows start after they end",
+                self.fix,
             )
         if self.quick:
             return
@@ -270,16 +281,11 @@ class _Run:
         stored = {s.meta.id for s in store.list_series()}
         extra = sorted(stale_series(store))
         if extra:
-            if self.fix:
-                self._backup_once()
-                prune(self.session)
-                self.session.commit()
             self.add(
                 "stale series",
                 "warning",
                 ", ".join(extra),
-                "stored but not in the catalog",
-                self.fix,
+                "stored but not in the catalog: review, then remove with `prune-stale --yes`",
             )
         missing = sorted(set(BY_ID) - stored)
         if missing:

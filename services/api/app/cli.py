@@ -9,6 +9,11 @@ uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
+uv run python -m app.cli ingest-staged               # candidate sources, loaded but never served
+uv run python -m app.cli candidates                  # which candidate is timed against which pair
+uv run python -m app.cli measure-candidates          # their release lags, and what rule 38 would do
+uv run python -m app.cli decide-sources [--apply]    # confirm the provisional decisions it supports
+uv run python -m app.cli promote-candidate ID --as NEW --from DATE --reason TEXT  # a winner
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
 uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
 uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
@@ -20,9 +25,10 @@ uv run python -m app.cli sync-taxonomy               # canonical codes, pillars 
 uv run python -m app.cli build-calendar              # releases: previous, actual, next due
 uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC indicators
 uv run python -m app.cli doctor [--fix]           # database health check and safe repair
+uv run python -m app.cli prune-stale [--yes]         # remove series the catalog no longer lists
 uv run python -m app.cli coverage-matrix --out FILE  # every country against every indicator (CSV)
 uv run python -m app.cli check-data                  # release-schedule check of every source
-uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule P)
+uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule 38)
 uv run python -m app.cli source-history [--country]  # which source served each pair, and when
 uv run python -m app.cli catalog-version             # scorecard and catalog versions (rule 20)
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
@@ -56,6 +62,7 @@ from app.connectors.treasury import TreasuryClient
 from app.connectors.worldbank import WorldBankClient
 from app.core.config import get_settings
 from app.data.benchmarks import BENCHMARK_SERIES
+from app.data.candidates import CANDIDATES
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.data.source_baseline import BASELINE
@@ -63,6 +70,7 @@ from app.domain.versioning import SCORECARD_VERSION, catalog_version
 from app.jobs import (
     build_calendar,
     coverage_matrix,
+    decide_sources,
     doctor,
     ingest_bis,
     ingest_bls,
@@ -74,13 +82,17 @@ from app.jobs import (
     ingest_national,
     ingest_oecd,
     ingest_ons,
+    ingest_staged,
     ingest_treasury,
     ingest_worldbank,
+    measure_candidates,
+    promote,
     sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
-from app.jobs.ingest_fred import ingest, prune
+from app.jobs.ingest_fred import ingest, prune, stale_series
 from app.jobs.scorecard import bias_backtest, format_bias_report
+from app.stores.candidates import CandidateStore
 from app.stores.db import get_engine, session_scope
 from app.stores.macro import MacroStore
 from app.stores.migrate import upgrade_to_head
@@ -198,6 +210,101 @@ def _ingest_imf(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<16} {status}")
     _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_staged(args: argparse.Namespace) -> int:
+    """Load the candidate sources without serving them (rule 38). Reported, never a failed run."""
+    upgrade_to_head(get_engine())
+    chosen = [c for c in CANDIDATES if args.source in (None, c.source)]
+    with ImfClient(raw=_raw_zone()) as imf, session_scope() as session:
+        results = ingest_staged.ingest({"imf": imf}, session, chosen, args.start)
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<22} {status}")
+    failed = sum(r.error is not None for r in results)
+    print(f"staged: {len(results) - failed} of {len(results)} candidates loaded")
+    return 0 if not failed else 1
+
+
+def _candidates(_args: argparse.Namespace) -> int:
+    """Which candidate serves which pair, and what has been seen of it."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        store, sightings = MacroStore(session), CandidateStore(session)
+        stored = {s.meta.id: s for s in store.list_series(("staged",))}
+        print(f"{'candidate':<22} {'pair':<22} {'serves':<20} {'last period':<12} first reads")
+        for c in CANDIDATES:
+            row = stored.get(c.id)
+            last = row.last_period.isoformat()[:7] if row and row.last_period else "not loaded"
+            reads = len(sightings.measurable(c.id)) if row else 0
+            print(f"{c.id:<22} {c.country + ' ' + c.concept:<22} {c.serves:<20} {last:<12} {reads}")
+    return 0
+
+
+def _measure_candidates(_args: argparse.Namespace) -> int:
+    """Rule 38: each candidate's lag against the series that serves its pair. Records nothing."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        measured = measure_candidates.measure_all(session, CANDIDATES)
+    print(
+        f"{'candidate':<22} {'serves':<16} {'served':>6} {'candidate':>9}  "
+        f"{'earlier (served/cand/level)':<27} {'verdict':<18} action"
+    )
+    for m in measured:
+        if m.served_median is None:
+            print(f"{m.candidate_id:<22} {m.serves:<16} no period published since staging yet")
+            continue
+        split = f"{m.served_wins}/{m.candidate_wins}/{m.level}"
+        plus = "+" if m.bounded else " "  # at least: one side had not shown a period yet
+        print(
+            f"{m.candidate_id:<22} {m.serves:<16} {m.served_median:>5}d "
+            f"{m.candidate_median:>7}d{plus} "
+            f"{split:<27} {m.verdict:<18} {m.recommendation}"
+        )
+    waiting = sum(m.served_median is None for m in measured)
+    print(f"{len(measured) - waiting} of {len(measured)} measured; {waiting} waiting for a release")
+    return 0
+
+
+def _decide_sources(args: argparse.Namespace) -> int:
+    """Rule 38: what the measurement means for each provisional decision. --apply confirms only."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        outcomes = decide_sources.plan(session, CANDIDATES)
+        print(f"{'candidate':<22} {'pair':<22} {'decision':<12} {'action':<12} why")
+        for o in outcomes:
+            c = o.candidate
+            pair = f"{c.country} {c.concept}"
+            print(f"{c.id:<22} {pair:<22} {o.status or '-':<12} {o.action:<12} {o.why}")
+        counts = {a: sum(o.action == a for o in outcomes) for a in decide_sources.ACTIONS}
+        print(", ".join(f"{n} {a}" for a, n in counts.items() if n))
+        if args.apply:
+            done = decide_sources.apply(session, outcomes)
+            print(
+                f"confirmed {len(done)} decisions in this database; to keep them for every "
+                "database set status to confirmed in app/data/source_baseline.py"
+            )
+        elif counts[decide_sources.CONFIRM]:
+            print("nothing recorded; run again with --apply to confirm them")
+    return 0
+
+
+def _promote_candidate(args: argparse.Namespace) -> int:
+    """Move a winning staged candidate into the catalog series a reviewed pull request added."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        try:
+            done = promote.promote(
+                session, args.candidate, args.series, args.effective_from, reason=args.reason
+            )
+        except promote.PromotionError as exc:
+            print(f"refused: {exc}")
+            return 2
+    print(
+        f"{done.candidate_id} -> {done.series_id}: {done.observations} observations and "
+        f"{done.sightings} first reads moved; {done.retired} is retired from {args.effective_from}"
+    )
+    return 0
 
 
 def _ingest_ons(args: argparse.Namespace) -> int:
@@ -328,7 +435,7 @@ def _release_check(session: Session) -> list[DataCheck]:
 
 
 def _finish_report(checks: list[DataCheck]) -> None:
-    """What every ingest ends with (rules 2 and N): the release report and the doctor line."""
+    """What every ingest ends with (rules 2 and 36): the release report and the doctor line."""
     if _deferred():
         return
     print()
@@ -337,13 +444,32 @@ def _finish_report(checks: list[DataCheck]) -> None:
 
 
 def _doctor_summary() -> None:
-    """One line after every ingest (Rule N): the quick checks, without any repair."""
+    """One line after every ingest (Rule 36): the quick checks, without any repair."""
     with session_scope() as session:
         report = doctor.run(session, _today(), quick=True)
     print(
         f"doctor: {len(report.errors)} errors, {len(report.warnings)} warnings "
         "(uv run python -m app.cli doctor for the list)"
     )
+
+
+def _prune_stale(args: argparse.Namespace) -> int:
+    """Remove the series the catalog no longer lists, after a backup. The doctor only reports them
+    (rule 36); removing data is a decision, so it needs --yes."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        stale = stale_series(MacroStore(session))
+        if not stale:
+            print("no stale series")
+            return 0
+        print("stale series: " + ", ".join(stale))
+        if not args.yes:
+            print("nothing removed; run again with --yes to back up the database and remove them")
+            return 1
+        backup = doctor.backup_database(session)
+        removed = prune(session)
+        print(f"removed {len(removed)} series; backup: {backup}")
+    return 0
 
 
 def _doctor(args: argparse.Namespace) -> int:
@@ -378,7 +504,7 @@ def _check_data(_args: argparse.Namespace) -> int:
 
 
 def _source_decision(args: argparse.Namespace) -> int:
-    """Rule P: record that a series serves a pair from a date, confirm a provisional decision,
+    """Rule 38: record that a series serves a pair from a date, confirm a provisional decision,
     or stage a candidate. A change retires the previous series (rule 16)."""
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -591,6 +717,34 @@ def main(argv: list[str] | None = None) -> int:
     )
     imf.set_defaults(func=_ingest_imf)
 
+    staged = sub.add_parser(
+        "ingest-staged", help="load candidate sources without serving them (rule 38)"
+    )
+    staged.add_argument("--source", choices=["imf"], default=None)
+    staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
+    staged.set_defaults(func=_ingest_staged)
+    sub.add_parser(
+        "candidates",
+        help="the candidate sources, the pair each is timed against, and what was read",
+    ).set_defaults(func=_candidates)
+    sub.add_parser(
+        "measure-candidates",
+        help="each candidate release lag against the series it is timed against",
+    ).set_defaults(func=_measure_candidates)
+    decide = sub.add_parser(
+        "decide-sources", help="what the measurement means for each provisional decision"
+    )
+    decide.add_argument("--apply", action="store_true", help="confirm the decisions it supports")
+    decide.set_defaults(func=_decide_sources)
+    promo = sub.add_parser(
+        "promote-candidate", help="move a winning staged candidate into its new catalog series"
+    )
+    promo.add_argument("candidate", help="the staged candidate id, e.g. CAND_IMF_CPI_DEU")
+    promo.add_argument("--as", dest="series", required=True, help="the new catalog series id")
+    promo.add_argument("--from", dest="effective_from", type=date.fromisoformat, required=True)
+    promo.add_argument("--reason", required=True, help="the measurement, per rule 38")
+    promo.set_defaults(func=_promote_candidate)
+
     ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
     ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")
     ons.add_argument(
@@ -660,6 +814,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         nat.set_defaults(func=func)
 
+    stale = sub.add_parser(
+        "prune-stale", help="remove series the catalog no longer lists (backs up first)"
+    )
+    stale.add_argument("--yes", action="store_true", help="really remove them")
+    stale.set_defaults(func=_prune_stale)
     doc = sub.add_parser("doctor", help="check the database's health; --fix repairs what is safe")
     doc.add_argument("--fix", action="store_true", help="repair (a backup is taken first)")
     doc.add_argument("--quick", action="store_true", help="skip the vintage overlap scan")
@@ -696,7 +855,7 @@ def main(argv: list[str] | None = None) -> int:
     decide.add_argument("--concept", help="the indicator concept key, e.g. consumer_prices")
     decide.add_argument("--series", help="the series that serves the pair from the date")
     decide.add_argument("--source", help="the source of that series, e.g. eurostat")
-    decide.add_argument("--reason", help="why: the candidates measured, per rule P")
+    decide.add_argument("--reason", help="why: the candidates measured, per rule 38")
     decide.add_argument("--from", dest="effective_from", type=date.fromisoformat)
     decide.add_argument("--provisional", action="store_true", help="first choice for a new pair")
     decide.add_argument("--confirm", action="store_true", help="confirm the provisional decision")

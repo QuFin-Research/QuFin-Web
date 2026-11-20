@@ -21,7 +21,7 @@ from app.data.scorecard_catalog import SCORED
 from app.data.series_variants import variant_of
 from app.stores.source_decisions import SourceStore
 
-SCORECARD_VERSION = "2026.11.1"
+SCORECARD_VERSION = "2026.11.2"
 
 
 def catalog_version(session: Session) -> str:
