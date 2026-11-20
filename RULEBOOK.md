@@ -883,7 +883,7 @@ One-off appendix. Lists every changed reference, so a reviewer can verify the mo
 | `docs/data-connections.md` | `rule 28` (unchanged), any `rule P` / `rule O` | Renumbered |
 | `docs/data-pipeline.md` | Any rule letter references | Renumbered |
 | `private/scorecard-methodology.md` | `rule P`, `rule O`, `rule B`, `rule I`, `rule D` | Renumbered |
-| Any open PR / issue | Same | Rebase onto the v3.3 consolidation PR |
+| Any open PR / issue | Same | Rebase onto the v3.4 consolidation PR |
 
 ### Files to add
 
