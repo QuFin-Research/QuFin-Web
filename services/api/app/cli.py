@@ -12,6 +12,7 @@ uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED 
 uv run python -m app.cli ingest-staged               # candidate sources, loaded but never served
 uv run python -m app.cli candidates                  # which candidate is timed against which pair
 uv run python -m app.cli measure-candidates          # their release lags, and what rule 38 would do
+uv run python -m app.cli prune-staged [--yes]        # remove staged series no candidate names
 uv run python -m app.cli decide-sources [--apply]    # confirm the provisional decisions it supports
 uv run python -m app.cli promote-candidate ID --as NEW --from DATE --reason TEXT  # a winner
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
@@ -216,6 +217,9 @@ def _ingest_staged(args: argparse.Namespace) -> int:
     """Load the candidate sources without serving them (rule 38). Reported, never a failed run."""
     upgrade_to_head(get_engine())
     chosen = [c for c in CANDIDATES if args.source in (None, c.source)]
+    if not chosen:
+        print("no candidates: nothing is staged (rule 38, Bloc aggregator first)")
+        return 0
     with ImfClient(raw=_raw_zone()) as imf, session_scope() as session:
         results = ingest_staged.ingest({"imf": imf}, session, chosen, args.start)
     for r in results:
@@ -224,6 +228,24 @@ def _ingest_staged(args: argparse.Namespace) -> int:
     failed = sum(r.error is not None for r in results)
     print(f"staged: {len(results) - failed} of {len(results)} candidates loaded")
     return 0 if not failed else 1
+
+
+def _prune_staged(args: argparse.Namespace) -> int:
+    """Remove staged series no candidate names any more, after a backup. Needs --yes."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        stale = ingest_staged.stale_staged(session)
+        if not stale:
+            print("no stale staged series")
+            return 0
+        print(f"staged series no candidate names: {len(stale)}")
+        if not args.yes:
+            print("nothing removed; run again with --yes to back up the database and remove them")
+            return 1
+        backup = doctor.backup_database(session)
+        removed = ingest_staged.prune_staged(session, stale)
+        print(f"removed {removed} staged series; backup: {backup}")
+    return 0
 
 
 def _candidates(_args: argparse.Namespace) -> int:
@@ -510,11 +532,14 @@ def _source_decision(args: argparse.Namespace) -> int:
     with session_scope() as session:
         sources = SourceStore(session)
         if args.baseline:
-            applied = 0
+            applied = confirmed = 0
             for b in BASELINE:
                 history = sources.history(b.country, b.concept)
                 if history and history[-1].effective_to is None:
                     if history[-1].series_id == b.series_id:
+                        if b.status == CONFIRMED and history[-1].status != CONFIRMED:
+                            sources.confirm(b.country, b.concept)
+                            confirmed += 1
                         continue
                 elif not history and b.predecessor is not None:
                     p = b.predecessor
@@ -537,7 +562,8 @@ def _source_decision(args: argparse.Namespace) -> int:
                 )
                 applied += 1
             print(
-                f"baseline: {applied} decisions recorded, {len(BASELINE) - applied} already there"
+                f"baseline: {applied} decisions recorded, {len(BASELINE) - applied} already there, "
+                f"{confirmed} confirmed"
             )
             return 0
         if args.stage:
@@ -727,6 +753,11 @@ def main(argv: list[str] | None = None) -> int:
         "candidates",
         help="the candidate sources, the pair each is timed against, and what was read",
     ).set_defaults(func=_candidates)
+    pruned = sub.add_parser(
+        "prune-staged", help="remove staged series no candidate names any more (backs up first)"
+    )
+    pruned.add_argument("--yes", action="store_true", help="really remove them")
+    pruned.set_defaults(func=_prune_staged)
     sub.add_parser(
         "measure-candidates",
         help="each candidate release lag against the series it is timed against",

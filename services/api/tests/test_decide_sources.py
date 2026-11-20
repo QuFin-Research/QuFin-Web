@@ -16,11 +16,17 @@ from app.jobs.promote import PromotionError, promote
 from app.stores.candidates import CandidateStore
 from app.stores.macro import MacroStore
 from app.stores.source_decisions import CONFIRMED, PROVISIONAL, SourceStore
+from tests.staging import DE, register
 from tests.test_macro_api import db_session  # noqa: F401  (fixture)
-from tests.test_measurement import DE, OCT, FakeImf, _serve_hicp_de
+from tests.test_measurement import OCT, FakeImf, _serve_hicp_de
 
 SEP = date(2026, 9, 1)
 EUROSTAT_READ = date(2026, 11, 18)
+
+
+@pytest.fixture(autouse=True)
+def _registered(monkeypatch):
+    register(monkeypatch, DE)
 
 
 def staged_pair(session, *, decision=True, staged_on=date(2026, 11, 5)):
@@ -84,7 +90,8 @@ def test_a_slower_candidate_confirms_the_provisional_decision_and_apply_records_
     assert again.action == SETTLED  # measured again each cycle: still the earliest
 
 
-def test_a_faster_candidate_is_a_replacement_that_apply_never_makes(db_session):
+def test_a_faster_candidate_is_a_replacement_that_apply_never_makes(db_session, monkeypatch):
+    monkeypatch.setattr("app.domain.measurement.bloc_aggregator_of", lambda country: None)
     staged_pair(db_session)
     imf_publishes_october(
         db_session, date(2026, 11, 12)

@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from datetime import date, timedelta
 from typing import Literal
 
-from app.domain.source_selection import Candidate, Producer, choose
+from app.domain.source_selection import Candidate, Producer, bloc_aggregator_of, choose
 
 # Rule 38: "over at least one release cycle".
 MIN_RELEASES = 1
@@ -164,7 +164,8 @@ def measure(
                 candidate_median,
                 candidate_latest,
             ),
-        ]
+        ],
+        bloc_aggregator=bloc_aggregator_of(country),
     )
     recommendation = "confirm" if chosen and chosen.source == served_source else "replace"
     return Measurement(

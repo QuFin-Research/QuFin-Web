@@ -16,15 +16,16 @@ from collections.abc import Callable, Iterable, Mapping
 from datetime import UTC, date, datetime
 from typing import Any
 
+from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from app.connectors.sdmx import SdmxError
-from app.data.candidates import Candidate
+from app.data.candidates import CANDIDATES, Candidate
 from app.data.imf_calendar import imf_release
 from app.data.macro_catalog import DEFAULT_OBSERVATION_START
 from app.jobs.ingest_fred import IngestResult
-from app.stores.candidates import CandidateStore
-from app.stores.macro import MacroStore, SeriesMeta
+from app.stores.candidates import CandidateSightingRow, CandidateStore
+from app.stores.macro import MacroObservationRow, MacroSeriesRow, MacroStore, SeriesMeta
 
 log = logging.getLogger(__name__)
 
@@ -87,8 +88,35 @@ def ingest(
     return results
 
 
-def staging_due(session: Session, today: date) -> bool:
-    """Whether a refresh should load the staged candidates: some are stored and none was loaded
-    today (a monthly series is not fetched more than once a day, rule 28)."""
-    staged = MacroStore(session).list_series((STAGED,))
+def staging_due(session: Session, today: date, registered: Iterable[str] | None = None) -> bool:
+    """Whether a refresh should load the staged candidates: some registered ones are stored and
+    one was not loaded today (a monthly series is not fetched more than once a day, rule 28)."""
+    ids = {c.id for c in CANDIDATES} if registered is None else set(registered)
+    staged = [s for s in MacroStore(session).list_series((STAGED,)) if s.meta.id in ids]
     return bool(staged) and any(s.ingested_at.date() < today for s in staged)
+
+
+def stale_staged(session: Session, registered: Iterable[str] | None = None) -> list[str]:
+    """Staged series no candidate in the registry names any more (for example after rule 38 made
+    the bloc aggregator first for their pair)."""
+    ids = {c.id for c in CANDIDATES} if registered is None else set(registered)
+    return [s.meta.id for s in MacroStore(session).list_series((STAGED,)) if s.meta.id not in ids]
+
+
+def prune_staged(session: Session, series_ids: Iterable[str]) -> int:
+    """Delete staged series, their values and first-read days. Only staged ones: a staged series
+    never served or scored anything, so no as-of read refers to it."""
+    removed = 0
+    for series_id in series_ids:
+        row = session.get(MacroSeriesRow, series_id)
+        if row is None or row.lifecycle != STAGED:
+            continue
+        for table, column in (
+            (CandidateSightingRow, CandidateSightingRow.series_id),
+            (MacroObservationRow, MacroObservationRow.series_id),
+            (MacroSeriesRow, MacroSeriesRow.id),
+        ):
+            session.execute(delete(table).where(column == series_id))
+        removed += 1
+    session.commit()
+    return removed

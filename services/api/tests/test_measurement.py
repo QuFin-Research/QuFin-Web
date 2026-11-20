@@ -5,7 +5,8 @@
 
 from datetime import date, timedelta
 
-from app.data.candidates import CANDIDATE_BY_ID
+import pytest
+
 from app.domain.measurement import (
     MIN_RELEASES,
     lag_days,
@@ -17,10 +18,16 @@ from app.domain.measurement import (
 from app.jobs.ingest_staged import ingest
 from app.jobs.measure_candidates import measure_all
 from app.stores.macro import OPEN_END, MacroStore, SeriesMeta, Vintage
+from tests.staging import DE
 from tests.test_macro_api import db_session  # noqa: F401  (fixture)
 
 OCT = date(2026, 10, 1)
-DE = CANDIDATE_BY_ID["CAND_IMF_CPI_DEU"]
+
+
+@pytest.fixture(autouse=True)
+def _measures_decide(monkeypatch):
+    # these tests are about the measures; Bloc aggregator first has its own tests
+    monkeypatch.setattr("app.domain.measurement.bloc_aggregator_of", lambda country: None)
 
 
 # --- the arithmetic ----------------------------------------------------------------------
