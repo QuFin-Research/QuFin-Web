@@ -6,11 +6,11 @@ refreshes it as a served series, the API never returns it, and the duplicate che
 leave it out. If it wins, a reviewed pull request adds it to the catalog and records the source
 decision (rules 26 and 38).
 
-The registry is empty. Slice 1 staged the 32 IMF consumer price series that had served the
-pairs moved to Eurostat's HICP on 19 Nov 2026; rule 38's *Bloc aggregator first* (v3.5) makes
-Eurostat the source of those pairs whatever the IMF's timing, so nothing is staged for them. The
-staging tools stay for the pairs the measures still decide (the United States, and every economy
-Eurostat does not serve); their candidates are added here as those sources are measured.
+The registry holds the pairs the measures still decide: the United States and every economy
+Eurostat does not serve. Slice 1 staged 32 IMF consumer price series for the pairs moved to
+Eurostat's HICP on 19 Nov 2026; rule 38's *Bloc aggregator first* (v3.5) makes Eurostat the source
+of those pairs whatever the IMF's timing, so they were removed. Candidates are added here as other
+pairs are measured.
 """
 
 from dataclasses import dataclass
@@ -30,8 +30,24 @@ class Candidate:
     area: str  # the source's own area code
     serves: str  # the series serving the pair now
     flow: str  # the source's dataset
-    key: str  # the source's series key
+    key: str  # the source's series key (FRED: the series id)
+    months: int = 1  # months in a period: 1 monthly, 3 quarterly
 
 
-CANDIDATES: tuple[Candidate, ...] = ()
+CANDIDATES: tuple[Candidate, ...] = (
+    # The United States' commercial property prices: the BIS serves the pair (provisional since
+    # 19 Nov 2026); FRED's copy of the IMF's financial soundness indicator is the rival (rule 38).
+    Candidate(
+        id="CAND_FRED_CPP_US",
+        country="US",
+        concept="commercial_property_prices",
+        source="fred",
+        producer="bloc",
+        area="US",
+        serves="BIS_CPP_US",
+        flow="",
+        key="COMREPUSQ159N",
+        months=3,
+    ),
+)
 CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}

@@ -39,6 +39,7 @@ overdue or discontinued, so a scheduler surfaces it.
 """
 
 import argparse
+import contextlib
 import logging
 import os
 import sys
@@ -220,8 +221,25 @@ def _ingest_staged(args: argparse.Namespace) -> int:
     if not chosen:
         print("no candidates: nothing is staged (rule 38, Bloc aggregator first)")
         return 0
-    with ImfClient(raw=_raw_zone()) as imf, session_scope() as session:
-        results = ingest_staged.ingest({"imf": imf}, session, chosen, args.start)
+    settings = get_settings()
+    needed = {c.source for c in chosen}
+    if "fred" in needed and settings.fred_api_key is None:
+        print("QUFIN_FRED_API_KEY is not set: FRED candidates cannot be loaded", file=sys.stderr)
+        return 2
+    with contextlib.ExitStack() as stack:
+        clients: dict[str, object] = {}
+        if "imf" in needed:
+            clients["imf"] = stack.enter_context(ImfClient(raw=_raw_zone()))
+        if "fred" in needed and settings.fred_api_key is not None:
+            clients["fred"] = stack.enter_context(
+                FredClient(
+                    settings.fred_api_key.get_secret_value(),
+                    settings.fred_base_url,
+                    raw=_raw_zone(),
+                )
+            )
+        session = stack.enter_context(session_scope())
+        results = ingest_staged.ingest(clients, session, chosen, args.start)
     for r in results:
         status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<22} {status}")

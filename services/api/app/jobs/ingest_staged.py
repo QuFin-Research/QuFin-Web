@@ -19,6 +19,7 @@ from typing import Any
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.connectors.fred import FredError
 from app.connectors.sdmx import SdmxError
 from app.data.candidates import CANDIDATES, Candidate
 from app.data.imf_calendar import imf_release
@@ -52,6 +53,40 @@ def _imf_meta(c: Candidate) -> SeriesMeta:
     )
 
 
+def _fred_meta(c: Candidate, info: Any) -> SeriesMeta:
+    return SeriesMeta(
+        id=c.id,
+        source="fred",
+        title=f"{info.title} (candidate)",
+        units=info.units,
+        frequency=info.frequency,
+        seasonal_adjustment=info.seasonal_adjustment,
+        country=c.country,
+        dimension="housing",
+        last_updated=info.last_updated,
+        cycle="leading",
+    )
+
+
+def _load_fred(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
+    """FRED's current value of each period, dated by the first vintage that carried it."""
+    info = client.series(c.key)
+    vintages = client.vintages(c.key, start)
+    first: dict[date, date] = {}
+    latest: dict[date, tuple[date, float]] = {}
+    for v in vintages:
+        if v.value is None:
+            continue
+        first[v.period] = min(v.realtime_start, first.get(v.period, v.realtime_start))
+        if v.period not in latest or v.realtime_start >= latest[v.period][0]:
+            latest[v.period] = (v.realtime_start, v.value)
+    observations = sorted((p, value) for p, (_, value) in latest.items())
+    rows = store.record_latest(
+        _fred_meta(c, info), observations, lambda p: first.get(p, today), today, STAGED
+    )
+    return observations, rows
+
+
 def ingest(
     clients: Mapping[str, Any],
     session: Session,
@@ -66,18 +101,21 @@ def ingest(
     results: list[IngestResult] = []
     for i, c in enumerate(candidates):
         client = clients.get(c.source)
-        if client is None or c.source != "imf":
+        if client is None or c.source not in ("imf", "fred"):
             results.append(IngestResult(c.id, None, f"no loader for source {c.source}"))
             continue
         if i:
             sleep(PAUSE_SECONDS)
         first_load = store.lifecycle_of(c.id) is None
         try:
-            fetched = client.series(c.flow, c.key, start)
-            observations = [(p, v) for p, v in fetched.observations if v is not None]
-            rows = store.record_latest(_imf_meta(c), observations, imf_release, today, STAGED)
+            if c.source == "fred":
+                observations, rows = _load_fred(client, store, c, start, today)
+            else:
+                fetched = client.series(c.flow, c.key, start)
+                observations = [(p, v) for p, v in fetched.observations if v is not None]
+                rows = store.record_latest(_imf_meta(c), observations, imf_release, today, STAGED)
             new = sightings.record(c.id, [p for p, _ in observations], today, bootstrap=first_load)
-        except (SdmxError, KeyError) as exc:
+        except (SdmxError, FredError, KeyError) as exc:
             session.rollback()
             log.warning("staged load of %s failed: %s", c.id, exc)
             results.append(IngestResult(c.id, None, str(exc)))

@@ -52,8 +52,15 @@ class FakeImf:
 # --- the registry ---------------------------------------------------------------------------------
 
 
-def test_the_registry_is_empty_because_bloc_aggregator_first_ended_staging_for_eurostat_pairs():
-    assert CANDIDATES == ()  # rule 38 (v3.5): nothing is staged for an economy Eurostat serves
+def test_the_registry_holds_no_economy_eurostat_serves_and_names_the_series_it_is_timed_against():
+    from app.domain.source_selection import bloc_aggregator_of
+
+    # rule 38 (v3.5): nothing is staged for an economy Eurostat serves
+    assert CANDIDATES and all(bloc_aggregator_of(c.country) is None for c in CANDIDATES)
+    assert all(c.id.startswith(PREFIX) and BY_ID[c.serves].country == c.country for c in CANDIDATES)
+    [property_prices] = [c for c in CANDIDATES if c.concept == "commercial_property_prices"]
+    assert (property_prices.source, property_prices.serves) == ("fred", "BIS_CPP_US")
+    assert property_prices.months == 3 and property_prices.key == "COMREPUSQ159N"
 
 
 def test_a_candidate_is_never_a_catalog_series_and_names_the_series_it_is_timed_against():
@@ -190,3 +197,80 @@ def test_only_staged_series_can_be_pruned(db_session):
     _serve_hicp_de(db_session, date(2026, 11, 18))
     assert prune_staged(db_session, ["ESTAT_HICP_DE"]) == 0  # a served series is never touched
     assert _live.lifecycle_of("ESTAT_HICP_DE") == "live"
+
+
+# --- a FRED candidate, quarterly, dated by its own first vintage ---------------------------------
+
+
+class FakeFred:
+    def __init__(self, vintages, fail=False):
+        self._vintages, self.fail = vintages, fail
+
+    def series(self, series_id):
+        from types import SimpleNamespace
+
+        if self.fail:
+            from app.connectors.fred import FredError
+
+            raise FredError(f"FRED has no series {series_id}")
+        return SimpleNamespace(
+            title="Commercial real estate prices",
+            units="Percent change",
+            frequency="Quarterly",
+            seasonal_adjustment="Not Seasonally Adjusted",
+            last_updated=None,
+        )
+
+    def vintages(self, series_id, start):
+        return self._vintages
+
+
+def _vintage(period, start, value, end=date(9999, 12, 31)):
+    from app.stores.macro import Vintage
+
+    return Vintage(period, start, end, value)
+
+
+CPP = Candidate(
+    id="CAND_FRED_CPP_US",
+    country="US",
+    concept="commercial_property_prices",
+    source="fred",
+    producer="bloc",
+    area="US",
+    serves="BIS_CPP_US",
+    flow="",
+    key="COMREPUSQ159N",
+    months=3,
+)
+
+
+def test_a_fred_candidate_is_staged_with_its_current_values_and_first_vintage_dates(db_session):
+    q1, q2 = date(2025, 10, 1), date(2026, 1, 1)
+    fred = FakeFred(
+        [
+            _vintage(q1, date(2026, 1, 20), 1.0, date(2026, 4, 9)),
+            _vintage(q1, date(2026, 4, 10), 1.5),  # revised: the current value is 1.5
+            _vintage(q2, date(2026, 10, 1), 2.0),
+            _vintage(date(2026, 4, 1), date(2026, 10, 1), None),  # no value: skipped
+        ]
+    )
+    [r] = ingest({"fred": fred}, db_session, [CPP], today=TODAY)
+    assert r.error is None and r.rows == 2
+    store = MacroStore(db_session)
+    assert store.lifecycle_of(CPP.id) == "staged"
+    [summary] = [s for s in store.list_series(("staged",)) if s.meta.id == CPP.id]
+    assert summary.meta.frequency == "Quarterly" and summary.last_period == q2
+    assert len(CandidateStore(db_session).sightings(CPP.id)) == 2
+
+
+def test_a_fred_candidate_that_fails_is_reported_not_raised(db_session):
+    [r] = ingest({"fred": FakeFred([], fail=True)}, db_session, [CPP], today=TODAY)
+    assert r.error and "no series" in r.error
+    assert MacroStore(db_session).lifecycle_of(CPP.id) is None
+
+
+def test_a_source_without_a_loader_is_reported(db_session):
+    odd = Candidate(**{**CPP.__dict__, "source": "oecd"})
+    [r] = ingest({"oecd": object()}, db_session, [odd], today=TODAY)
+    assert r.error == "no loader for source oecd"
