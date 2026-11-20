@@ -484,5 +484,14 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A confirmation holds for one database until it is written in the code | Open | `decide-sources --apply` changes the decision in the database it runs on. A fresh database is built from `app/data/source_baseline.py`, so the owner sets `status` there to make it permanent |
 | A winner takes a new series id | Design choice | The series that served the pair before keeps its id, retired, so its history stays readable as of earlier dates; the winner is added to the catalog under an unused id and `promote-candidate` copies the staged values, vintages and first-read days into it in one transaction |
 | The staged copy is removed after the move | Design choice | It never served or scored anything, so no as-of read refers to it; keeping it beside the new series would store the same data twice (rule 16) |
-| Which pairs are confirmed | Open | None yet. The first confirmations come after the IMF publishes November's and December's figures |
+| Which pairs are confirmed | Superseded | By section 4x: the Eurostat pairs are confirmed by rule 38's *Bloc aggregator first*, without a measurement |
 
+## 4x. Bloc aggregator first (20 Nov 2026, v3.5)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Eurostat serves any pair it publishes for its economies, however early another source is | Owner decision (rule 26 review pending) | Comparability across the bloc (rule 23) outweighs a few days of freshness. The lateness is priced into every score like any source's (S2). The United States and every other economy keep the measures |
+| Eurostat's economies are the EU27, the euro area, IS, NO, CH, LI and AL, BA, GE, MD, ME, MK, RS, TR, UA, XK | Design choice | `EUROSTAT_ECONOMIES` in `app/domain/source_selection.py`. Whether Eurostat publishes a given indicator for one of them is checked by the probe, not assumed |
+| An outage splices nothing | Design choice | The pair is unusable (rule 3) and drops out of scores (S2). The other candidates are staged and timed after one release cycle past the grace period, and the owner may approve a change (rules 6, 16 and 20 forbid splicing definitions) |
+| The 32 staged IMF series are removed | Design choice | Nothing is measured for those pairs, so staged copies would only be stored. `prune-staged --yes` removes them after a backup; they never served or scored anything |
+| The 36 Eurostat HICP decisions are confirmed | Design choice | `app/data/source_baseline.py`; `source-decision --baseline` raises a database's provisional ones. The US commercial property decision stays provisional |

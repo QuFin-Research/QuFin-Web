@@ -9,15 +9,25 @@ from types import SimpleNamespace
 import pytest
 
 from app.connectors.sdmx import SdmxError
-from app.data.candidates import CANDIDATE_BY_ID, CANDIDATES, PREFIX
+from app.data.candidates import CANDIDATES, PREFIX, Candidate
 from app.data.macro_catalog import BY_ID
 from app.jobs import refresh
-from app.jobs.ingest_staged import ingest, staging_due
+from app.jobs.ingest_staged import ingest, prune_staged, staging_due, stale_staged
 from app.stores.candidates import CandidateStore
 from app.stores.macro import MacroStore, SeriesMeta
+from tests.staging import DE
 from tests.test_macro_api import db_session  # noqa: F401  (fixture)
 
-DE = CANDIDATE_BY_ID["CAND_IMF_CPI_DEU"]
+FRA = Candidate(
+    **{
+        **DE.__dict__,
+        "id": "CAND_IMF_CPI_FRA",
+        "country": "FR",
+        "area": "FRA",
+        "serves": "ESTAT_HICP_FR",
+        "key": DE.key.replace("DEU", "FRA"),
+    }
+)
 TODAY = date(2026, 11, 20)
 
 
@@ -42,16 +52,16 @@ class FakeImf:
 # --- the registry ---------------------------------------------------------------------------------
 
 
-def test_the_candidates_are_the_imf_series_that_served_the_provisional_consumer_price_pairs():
-    assert len(CANDIDATES) == 32
-    assert len({c.id for c in CANDIDATES}) == 32
-    for c in CANDIDATES:
-        assert c.id.startswith(PREFIX) and c.id not in BY_ID  # never a catalog series
+def test_the_registry_is_empty_because_bloc_aggregator_first_ended_staging_for_eurostat_pairs():
+    assert CANDIDATES == ()  # rule 38 (v3.5): nothing is staged for an economy Eurostat serves
+
+
+def test_a_candidate_is_never_a_catalog_series_and_names_the_series_it_is_timed_against():
+    for c in (DE, FRA):
+        assert c.id.startswith(PREFIX) and c.id not in BY_ID
         assert c.concept == "consumer_prices" and c.source == "imf" and c.producer == "global"
-        assert BY_ID[c.serves].source == "eurostat"  # the series it is timed against
+        assert BY_ID[c.serves].source == "eurostat"
         assert c.key.startswith(f"{c.area}.CPI.")
-    assert {"DEU", "FRA", "ISL", "TUR"} <= {c.area for c in CANDIDATES}
-    assert "PRT" not in {c.area for c in CANDIDATES}  # Portugal's was FRED's copy, not the IMF
 
 
 # --- loading without serving ----------------------------------------------------------------------
@@ -103,7 +113,7 @@ def test_the_api_never_serves_a_staged_series(client, db_session):
 
 
 def test_one_candidate_that_fails_does_not_stop_the_others(db_session):
-    other = CANDIDATE_BY_ID["CAND_IMF_CPI_FRA"]
+    other = FRA
     results = ingest(
         {"imf": FakeImf(months(30), fail=["DEU"])}, db_session, [DE, other], today=TODAY
     )
@@ -136,11 +146,13 @@ def test_the_day_each_period_was_first_read_is_kept_and_the_first_load_is_not_ti
 def test_the_staging_step_is_planned_only_when_candidates_are_stored_and_not_loaded_today(
     db_session,
 ):
-    assert not staging_due(db_session, TODAY)  # nothing staged yet
+    assert not staging_due(db_session, TODAY, [DE.id])  # nothing staged yet
     ingest({"imf": FakeImf(months(30))}, db_session, [DE], today=TODAY)
     today = datetime.now(UTC).date()
-    assert not staging_due(db_session, today)  # loaded today: not again (rule 28)
-    assert staging_due(db_session, today + timedelta(days=1))
+    assert not staging_due(db_session, today, [DE.id])  # loaded today: not again (rule 28)
+    assert staging_due(db_session, today + timedelta(days=1), [DE.id])
+    # a staged series no candidate names is not loaded again
+    assert not staging_due(db_session, today + timedelta(days=1), [])
 
 
 class _Done:
@@ -155,3 +167,26 @@ def test_a_staging_failure_is_reported_and_never_fails_the_refresh(monkeypatch, 
     step = refresh.Step(refresh.STAGING_COMMAND, "staging", ())
     result = refresh.subprocess_executor(step, 5)
     assert result.status == status and "30 of 32" in result.detail
+
+
+# --- staged series no candidate names -----------------------------------------------------------
+
+
+def test_staged_series_no_candidate_names_are_found_and_removed_with_their_first_reads(db_session):
+    ingest({"imf": FakeImf(months(30))}, db_session, [DE, FRA], today=TODAY)
+    assert stale_staged(db_session, [DE.id]) == [FRA.id]  # FRA is no longer a candidate
+    assert stale_staged(db_session, [DE.id, FRA.id]) == []
+    assert prune_staged(db_session, [FRA.id]) == 1
+    store = MacroStore(db_session)
+    assert store.lifecycle_of(FRA.id) is None and store.lifecycle_of(DE.id) == "staged"
+    assert CandidateStore(db_session).sightings(FRA.id) == []
+    assert len(CandidateStore(db_session).sightings(DE.id)) == 30  # the others are untouched
+
+
+def test_only_staged_series_can_be_pruned(db_session):
+    _live = MacroStore(db_session)
+    from tests.test_measurement import _serve_hicp_de
+
+    _serve_hicp_de(db_session, date(2026, 11, 18))
+    assert prune_staged(db_session, ["ESTAT_HICP_DE"]) == 0  # a served series is never touched
+    assert _live.lifecycle_of("ESTAT_HICP_DE") == "live"

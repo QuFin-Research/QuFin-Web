@@ -4,9 +4,11 @@ Rule 38 says the same input always yields the same choice. This is that choice, 
 rule gives:
 
 1. Eligibility: an ineligible candidate is never chosen, however early it is.
-2. Earliest, then frequency: the source whose new observations can first be read wins; where two
+2. Bloc aggregator first: for an economy Eurostat serves, an eligible Eurostat candidate serves the
+   pair however early any other candidate is. Nothing is measured for such a pair.
+3. Earliest, then frequency: the source whose new observations can first be read wins; where two
    are equally early the one that releases more often wins.
-3. Ties: the most native source (Part 0: the original producer, then the aggregator of the
+4. Ties: the most native source (Part 0: the original producer, then the aggregator of the
    economy's own country or bloc, then a global aggregator); then the fresher latest period at the
    probe recorded for the decision; then the source code in ascending order. Load order never
    matters.
@@ -23,6 +25,64 @@ from datetime import date
 from typing import Literal
 
 Producer = Literal["original", "bloc", "global"]
+
+# The economies Eurostat serves (Part 0): the European Union, the euro area, the EFTA economies
+# and the candidate economies it covers. Whether it publishes a given indicator for one of
+# them is a different question: no Eurostat candidate, no bloc-first.
+EUROSTAT_ECONOMIES = frozenset(
+    [
+        "AT",
+        "BE",
+        "BG",
+        "HR",
+        "CY",
+        "CZ",
+        "DK",
+        "EE",
+        "FI",
+        "FR",
+        "DE",
+        "GR",
+        "HU",
+        "IE",
+        "IT",
+        "LV",
+        "LT",
+        "LU",
+        "MT",
+        "NL",
+        "PL",
+        "PT",
+        "RO",
+        "SK",
+        "SI",
+        "ES",
+        "SE",
+        "EA",
+        "IS",
+        "NO",
+        "CH",
+        "LI",
+        "AL",
+        "BA",
+        "GE",
+        "MD",
+        "ME",
+        "MK",
+        "RS",
+        "TR",
+        "UA",
+        "XK",
+    ]
+)
+BLOC_AGGREGATOR = "eurostat"
+
+
+def bloc_aggregator_of(country: str) -> str | None:
+    """The source rule 38 puts first for an economy, or None: the United States and every
+    other economy are decided by the measures."""
+    return BLOC_AGGREGATOR if country in EUROSTAT_ECONOMIES else None
+
 
 # Fastest first (rule 38 (b)).
 FREQUENCY_ORDER = ("hourly", "daily", "weekly", "monthly", "quarterly", "semi-annual", "annual")
@@ -44,11 +104,18 @@ def _freshness(candidate: Candidate) -> int:
     return -candidate.latest_period.toordinal() if candidate.latest_period else 0
 
 
-def choose(candidates: Iterable[Candidate]) -> Candidate | None:
-    """The source rule 38 picks, or None when no candidate is eligible."""
+def choose(
+    candidates: Iterable[Candidate], *, bloc_aggregator: str | None = None
+) -> Candidate | None:
+    """The source rule 38 picks, or None when no candidate is eligible. `bloc_aggregator` is the
+    source that serves the economy first when it is eligible (`bloc_aggregator_of`)."""
     eligible = [c for c in candidates if c.eligible]
     if not eligible:
         return None
+    if bloc_aggregator is not None:
+        first = [c for c in eligible if c.source == bloc_aggregator]
+        if first:
+            return first[0]
     unknown = [c.source for c in eligible if c.frequency not in FREQUENCY_ORDER]
     if unknown:
         raise ValueError(f"unknown frequency for {', '.join(sorted(unknown))}")

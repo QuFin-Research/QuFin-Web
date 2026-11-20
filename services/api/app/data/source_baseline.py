@@ -73,35 +73,32 @@ def _decision(iso2: str, geo: str) -> BaselineDecision:
     before = _predecessor(iso2)
     if before is None:
         reason = (
-            "New pair: Eurostat is the only source that publishes Kosovo's HICP (October 2026 at "
-            "the 19 Nov 2026 probe). Provisional until a release cycle is measured (rule 38)."
+            "Eurostat serves the pair (rule 38, Bloc aggregator first): it is the only source that "
+            "publishes Kosovo's HICP (October 2026 at the 19 Nov 2026 probe)."
         )
         return BaselineDecision(
-            iso2, CONCEPT, f"ESTAT_HICP_{geo}", "eurostat", SWITCH_DATE, "provisional", reason
+            iso2, CONCEPT, f"ESTAT_HICP_{geo}", "eurostat", SWITCH_DATE, "confirmed", reason
         )
     old_id, old_source, old_from = before
-    if iso2 in _TIED:
-        reason = (
-            f"Tie at the 19 Nov 2026 probe: {old_id} (imf) and Eurostat both held October 2026. "
-            "Equal on earliest and frequency, so the more native source wins (rule 38, Part 0): "
-            "Eurostat for a European economy, which also keeps the bloc on one source. "
-            "Provisional until a release cycle is measured. Eurostat's series may start later "
-            "than the one it replaces; the earlier history stays in the retired series."
-        )
-    else:
-        reason = (
-            f"Eurostat held October 2026 at the 19 Nov 2026 probe (dataset updated 18 Nov); "
-            f"{old_id} ({old_source}) stopped at {_LAST_BEFORE[iso2]}. Provisional until a "
-            "release cycle is measured (rule 38). Eurostat's series starts later than the one "
-            "it replaces; the earlier history stays in the retired series."
-        )
+    probe = (
+        f"{old_id} ({old_source}) also held October 2026"
+        if iso2 in _TIED
+        else f"{old_id} ({old_source}) stopped at {_LAST_BEFORE[iso2]}"
+    )
+    reason = (
+        "Eurostat serves the pair (rule 38, Bloc aggregator first): one definition for the bloc, "
+        "whatever any other source's timing. First moved on 19 Nov 2026, when Eurostat held "
+        f"October 2026 (dataset updated 18 Nov) and {probe}; provisional until v3.5 made it final. "
+        "Eurostat's series may start later than the one it replaces; the earlier history stays "
+        "in the retired series."
+    )
     return BaselineDecision(
         iso2,
         CONCEPT,
         f"ESTAT_HICP_{geo}",
         "eurostat",
         SWITCH_DATE,
-        "provisional",
+        "confirmed",
         reason,
         Predecessor(
             old_id,

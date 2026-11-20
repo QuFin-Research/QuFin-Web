@@ -80,3 +80,27 @@ def test_the_eurostat_decisions_of_19_nov_2026_follow_from_the_probe():
 def test_an_unknown_frequency_is_refused_not_guessed():
     with pytest.raises(ValueError, match="unknown frequency"):
         choose([c("a", freq="fortnightly")])
+
+
+# --- Bloc aggregator first (rule 38, v3.5) -----------------------------------------------------
+
+
+def test_bloc_aggregator_of_names_eurostat_for_its_economies_only():
+    from app.domain.source_selection import bloc_aggregator_of
+
+    for country in ("DE", "EA", "CH", "AL", "XK", "TR"):
+        assert bloc_aggregator_of(country) == "eurostat"
+    for country in ("US", "JP", "GB", "CA"):
+        assert bloc_aggregator_of(country) is None
+
+
+def test_an_eligible_eurostat_candidate_wins_however_early_another_is():
+    field = [c("destatis", "original", lag=1), c("imf", lag=2), c("eurostat", "bloc", lag=40)]
+    assert choose(field, bloc_aggregator="eurostat").source == "eurostat"
+    assert choose(field).source == "destatis"  # without the rule the measures decide
+
+
+def test_every_candidate_is_back_when_eurostat_is_ineligible_or_absent():
+    ineligible = [c("imf", lag=5), c("eurostat", "bloc", lag=1, eligible=False)]
+    assert choose(ineligible, bloc_aggregator="eurostat").source == "imf"
+    assert choose([c("imf", lag=5), c("oecd", lag=9)], bloc_aggregator="eurostat").source == "imf"

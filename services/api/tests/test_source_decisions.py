@@ -316,7 +316,7 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
 
     old, new = SourceStore(db_session).history("DE", "consumer_prices")
     assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
-    assert new.series_id == "ESTAT_HICP_DE" and new.status == PROVISIONAL
+    assert new.series_id == "ESTAT_HICP_DE" and new.status == CONFIRMED
     sources = SourceStore(db_session)
     assert sources.in_force("DE", "consumer_prices", date(2026, 11, 18)).series_id == "IMF_CPI_DEU"
     assert (
@@ -374,12 +374,36 @@ def test_a_retired_series_gives_up_its_canonical_code_to_the_series_that_replace
     db_session.commit()  # no unique violation
 
 
-def test_the_six_economies_level_with_eurostat_went_to_it_by_the_native_tie_break():
+def test_every_eurostat_pair_is_confirmed_by_bloc_aggregator_first_and_only_us_property_waits():
     from app.data.source_baseline import BASELINE
 
-    tied = {b.country: b for b in BASELINE if b.reason.startswith("Tie at the 19 Nov 2026 probe")}
-    assert set(tied) == {"AL", "BE", "CH", "EE", "LU", "SI"}
-    assert all("more native source" in b.reason for b in tied.values())
-    assert all(
-        b.predecessor and b.predecessor.series_id.startswith("IMF_CPI_") for b in tied.values()
+    waiting = [b.country for b in BASELINE if b.status != "confirmed"]
+    assert waiting == ["US"]  # BIS commercial property: the measures still decide it
+    hicp = [b for b in BASELINE if b.source == "eurostat"]
+    assert len(hicp) == 36 and all("Bloc aggregator first" in b.reason for b in hicp)
+    tied = {b.country for b in hicp if "also held October 2026" in b.reason}
+    assert tied == {"AL", "BE", "CH", "EE", "LU", "SI"}  # level with the IMF, still Eurostat
+
+
+def test_the_baseline_raises_a_provisional_eurostat_decision_to_confirmed(
+    db_session, monkeypatch, capsys
+):
+    put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
+    put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
+    sources = SourceStore(db_session)
+    sources.decide("DE", "consumer_prices", "IMF_CPI_DEU", "imf", date(2020, 1, 1), reason="first")
+    sources.decide(
+        "DE",
+        "consumer_prices",
+        "ESTAT_HICP_DE",
+        "eurostat",
+        date(2026, 11, 19),
+        reason="tie",
+        status=PROVISIONAL,
+    )
+    assert _cli_on(db_session, monkeypatch).main(["source-decision", "--baseline"]) == 0
+    assert "confirmed" in capsys.readouterr().out
+    assert (
+        SourceStore(db_session).in_force("DE", "consumer_prices", date(2026, 11, 20)).status
+        == CONFIRMED
     )
