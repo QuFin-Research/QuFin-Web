@@ -11,6 +11,7 @@ uv run python -m app.cli ingest-oecd                 # OECD leading indicators, 
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
 uv run python -m app.cli ingest-staged               # candidate sources, loaded but never served
 uv run python -m app.cli candidates                  # which candidate is timed against which pair
+uv run python -m app.cli measure-candidates          # their release lags, and what rule 38 would do
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
 uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
 uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
@@ -81,6 +82,7 @@ from app.jobs import (
     ingest_staged,
     ingest_treasury,
     ingest_worldbank,
+    measure_candidates,
     sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
@@ -232,6 +234,31 @@ def _candidates(_args: argparse.Namespace) -> int:
             last = row.last_period.isoformat()[:7] if row and row.last_period else "not loaded"
             reads = len(sightings.measurable(c.id)) if row else 0
             print(f"{c.id:<22} {c.country + ' ' + c.concept:<22} {c.serves:<20} {last:<12} {reads}")
+    return 0
+
+
+def _measure_candidates(_args: argparse.Namespace) -> int:
+    """Rule 38: each candidate's lag against the series that serves its pair. Records nothing."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        measured = measure_candidates.measure_all(session, CANDIDATES)
+    print(
+        f"{'candidate':<22} {'serves':<16} {'served':>6} {'candidate':>9}  "
+        f"{'earlier (served/cand/level)':<27} {'verdict':<18} action"
+    )
+    for m in measured:
+        if m.served_median is None:
+            print(f"{m.candidate_id:<22} {m.serves:<16} no period published since staging yet")
+            continue
+        split = f"{m.served_wins}/{m.candidate_wins}/{m.level}"
+        plus = "+" if m.bounded else " "  # at least: one side had not shown a period yet
+        print(
+            f"{m.candidate_id:<22} {m.serves:<16} {m.served_median:>5}d "
+            f"{m.candidate_median:>7}d{plus} "
+            f"{split:<27} {m.verdict:<18} {m.recommendation}"
+        )
+    waiting = sum(m.served_median is None for m in measured)
+    print(f"{len(measured) - waiting} of {len(measured)} measured; {waiting} waiting for a release")
     return 0
 
 
@@ -655,6 +682,10 @@ def main(argv: list[str] | None = None) -> int:
         "candidates",
         help="the candidate sources, the pair each is timed against, and what was read",
     ).set_defaults(func=_candidates)
+    sub.add_parser(
+        "measure-candidates",
+        help="each candidate release lag against the series it is timed against",
+    ).set_defaults(func=_measure_candidates)
 
     ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
     ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")

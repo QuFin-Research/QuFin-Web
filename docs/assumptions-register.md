@@ -464,3 +464,14 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | Candidates exist only for the pairs under provisional decision | Open | The BIS and FRED candidates (Malta and Serbia consumer prices, US commercial property), and every other pair, follow with the candidate table of slice 4 |
 | Nothing measures the lag yet | Open | The sightings are kept from the first refresh; slice 2 turns them into a lag per candidate and compares it with the series that serves the pair |
 
+## 4v. Staging, slice 2: how the lag is measured (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The lag is the days from the end of the period to the day QuFin first read it | Design choice | Rule 38 (a). The day QuFin first read a value is an upper bound of the day the source published it, because QuFin looks once a day; both sides are measured the same way, so the bias is shared |
+| Only periods published after the candidate was first loaded are compared | Design choice | Periods present at the first load are `bootstrap`: nobody knows who published them first |
+| A source that has not shown a period yet is later, and is counted | Design choice | If the other side first read the period on or before the day this one was last loaded and this one had nothing, its lag is at least the days since the period ended. The table marks such a lag with a `+`. Without it a silent source would never lose |
+| One published period is enough to judge, and every verdict stays provisional | Judgement | Rule 38 says "at least one release cycle" (`MIN_RELEASES`). With one period the median is that period; the decision stays provisional and is re-measured each cycle |
+| The verdict compares periods won, the action compares median lags | Design choice | `measure-candidates` shows who was earlier in more periods and runs `choose()` on the median lags and the latest periods: a tie goes to the more native source. It records nothing |
+| First real reading, 20 Nov 2026 | Open | Eurostat's October was first read 18 days after the month. The IMF had not shown October for most of the 32 pairs, so each is at least 21 days (a bound); the verdict is "served earlier, confirm" until the IMF publishes and a real lag replaces the bound |
+
