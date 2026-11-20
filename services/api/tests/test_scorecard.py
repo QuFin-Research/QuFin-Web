@@ -234,3 +234,74 @@ def test_methodology_details_appear_only_when_qufin_shows_the_mechanism(client, 
     assert {i["id"] for i in body["details"]["indicators"]} == set(scorecard_catalog.SCORED)
     [us] = client.get("/v1/scorecards/countries", params={"asOf": "2026-10-10"}).json()
     assert us["mechanism"] == "shown" and us["indicators"]
+
+
+# --- S1: the window and the floor depend on the series' own frequency -------------------------
+
+
+def stepped(values, months, start=date(1990, 1, 1)):
+    """Observations `months` apart, from `start`."""
+    out, y, m = [], start.year, start.month - 1
+    for v in values:
+        out.append((date(y + m // 12, m % 12 + 1, 1), v))
+        m += months
+    return out
+
+
+@pytest.mark.parametrize(
+    ("frequency", "months", "floor"),
+    [("Quarterly", 3, 16), ("Semiannual", 6, 8), ("Annual", 12, 8)],
+)
+def test_a_z_score_needs_the_floor_of_its_own_frequency(frequency, months, floor):
+    below = stepped([float(i % 5) for i in range(floor - 2)] + [9.0], months)  # floor - 1 points
+    enough = stepped([float(i % 5) for i in range(floor - 1)] + [9.0], months)  # floor points
+    assert history_score(below, frequency) is None
+    assert history_score(enough, frequency) is not None
+
+
+def test_an_annual_series_is_scored_over_twenty_years_and_the_others_over_ten():
+    import statistics
+
+    values = [100.0] * 5 + [float(i % 4) for i in range(20)]  # five outliers older than 20 years
+    annual = stepped(values, 12)
+    window = values[-20:]
+    expected = (window[-1] - statistics.fmean(window)) / statistics.pstdev(window)
+    assert history_score(annual, "Annual") == pytest.approx(expected)
+    # the same numbers as a quarterly series: only the last ten years (40 quarters) count
+    quarterly = stepped([100.0] * 5 + [float(i % 4) for i in range(40)], 3)
+    recent = [float(i % 4) for i in range(40)]
+    expected_q = (recent[-1] - statistics.fmean(recent)) / statistics.pstdev(recent)
+    assert history_score(quarterly, "Quarterly") == pytest.approx(expected_q)
+
+
+def test_momentum_looks_one_native_step_back_and_annualises_to_a_year():
+    from app.domain.scorecard import momentum
+
+    half_year = stepped([100.0, 110.0], 6, date(2020, 1, 1))
+    [(period, pace)] = momentum(half_year, "Semiannual", "pct")
+    assert period == date(2020, 7, 1) and pace == pytest.approx((1.1**2 - 1) * 100)
+    yearly = stepped([100.0, 110.0], 12, date(2020, 1, 1))
+    [(period, pace)] = momentum(yearly, "Annual", "pct")
+    assert period == date(2021, 1, 1) and pace == pytest.approx(10.0)  # a year: already annual
+    assert momentum(yearly, "Annual", "diff") == [(date(2021, 1, 1), 10.0)]
+    quarterly = stepped([100.0, 101.0], 3, date(2020, 1, 1))
+    [(_, pace)] = momentum(quarterly, "Quarterly", "pct")
+    assert pace == pytest.approx((1.01**4 - 1) * 100)  # unchanged from before
+
+
+# --- S4: caution goes into the size of a trade idea, not into the view ---------------------------
+
+
+def test_the_size_of_a_trade_idea_follows_confidence_and_never_the_score():
+    from app.domain.scorecard import size_factor
+
+    assert size_factor(1.0) == 1.0 and size_factor(0.0) == 0.0
+    assert size_factor(0.4) == 0.4
+    assert size_factor(1.7) == 1.0 and size_factor(-0.2) == 0.0  # clamped, never extrapolated
+    assert size_factor(pair_confidence(0.9, 0.55)) == 0.55  # a pair is as sure as its weaker side
+
+
+def test_the_live_scorecard_carries_the_size_factor_beside_the_confidence(client, ingested):  # noqa: F811
+    [us] = client.get("/v1/scorecards/countries", params={"asOf": "2026-10-10"}).json()
+    assert us["sizeFactor"] == us["overallConfidence"]
+    assert 0.0 <= us["sizeFactor"] <= 1.0

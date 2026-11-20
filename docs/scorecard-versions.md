@@ -13,6 +13,7 @@ to users is kept with both versions in `score_snapshots`.
 | Version | Date | What changed (no recipe) | Private methodology commit | S7 bias gate | Owner approval |
 |---|---|---|---|---|---|
 | 2026.11.1 | 19 Nov 2026 | First versioned recipe: the five-pillar US scorecard as it stood | `ec2d0ba` (private repository QuFin-Research/QuFin_Private, folder `private/`) | Passed 19 Nov 2026: 175 months, 2012-01 to 2026-07, every mean difference within ±0.03 (limit ±0.25) | Approved By: Haroon & Date: 19 Nov 2026 |
+| 2026.11.2 | 20 Nov 2026 | The z-score window and the fewest observations depend on the series' own frequency, and momentum looks one native step back (S1). No current score changes | `f425dc7` (private repository, not pushed yet) | Passed 20 Nov 2026: 175 months, mean differences identical to 2026.11.1 (within ±0.03); scores of all 34 indicators identical at eight dates from 2012 to 2026 | Not recorded |
 
 The S7 gate is the point-in-time backtest of the scorecard against complete information
 (`scorecard-bias`); no separate strategy backtest was run for this baseline.

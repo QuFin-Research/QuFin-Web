@@ -18,6 +18,7 @@ from app.domain.scorecard import (
     build_scorecard,
     rescaled_average,
     score_indicator,
+    size_factor,
 )
 from app.jobs.check_data import LAG_WINDOW, SeriesStatus, macro_status
 from app.schemas.market import (
@@ -191,6 +192,7 @@ def to_country_score(card: CountryScorecard) -> CountryScore:
         data="live",
         confidence=PillarConfidence(**{p: round(ps.confidence, 2) for p, ps in pillars.items()}),
         overall_confidence=round(card.scorecard.overall_confidence, 2),
+        size_factor=round(size_factor(card.scorecard.overall_confidence), 2),
         as_of=card.as_of,
         indicators=[
             ScorecardIndicator(

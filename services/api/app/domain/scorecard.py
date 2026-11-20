@@ -34,13 +34,24 @@ from app.domain.freshness import frequency_code
 
 PILLARS = ("growth", "inflation", "labour", "policy", "sentiment")
 SCORE_LIMIT = 3.0
-HISTORY_YEARS = 10
-# Fewer points than this and the history says too little about what is normal.
-MIN_HISTORY = {"M": 36, "Q": 12}
-# Part 0, section 0.2 names for the values above (S1). The other z-score floors and the annual
-# window of the rule book are not implemented: docs/rulebook-paths-waivers.md.
-ZSCORE_WINDOW_YEARS_STANDARD = HISTORY_YEARS
-ZSCORE_MIN_OBSERVATIONS_MONTHLY = MIN_HISTORY["M"]
+# Part 0, section 0.2 (S1): the lookback window and the fewest usable observations a z-score needs.
+# Fewer points than the floor and the history says too little about what is normal.
+ZSCORE_WINDOW_YEARS_STANDARD = 10  # monthly or faster, quarterly and semi-annual series
+ZSCORE_WINDOW_YEARS_ANNUAL = 20  # an annual series needs a longer history for the same sample
+ZSCORE_MIN_OBSERVATIONS_MONTHLY = 36
+ZSCORE_MIN_OBSERVATIONS_QUARTERLY = 16
+ZSCORE_MIN_OBSERVATIONS_SEMIANNUAL = 8
+ZSCORE_MIN_OBSERVATIONS_ANNUAL = 8
+HISTORY_YEARS = ZSCORE_WINDOW_YEARS_STANDARD  # the methodology page reports this one
+MIN_OBSERVATIONS = {
+    "M": ZSCORE_MIN_OBSERVATIONS_MONTHLY,
+    "Q": ZSCORE_MIN_OBSERVATIONS_QUARTERLY,
+    "S": ZSCORE_MIN_OBSERVATIONS_SEMIANNUAL,
+    "A": ZSCORE_MIN_OBSERVATIONS_ANNUAL,
+}
+PERIODS_PER_YEAR = {"M": 12, "Q": 4, "S": 2, "A": 1}
+# Momentum looks one native step back: three months, one quarter, one half year, one year (S1).
+MOMENTUM_MONTHS = {"M": 3, "Q": 3, "S": 6, "A": 12}
 # Share of an indicator's score that comes from its recent momentum rather than its standing.
 MOMENTUM_WEIGHT = 0.5
 
@@ -99,11 +110,18 @@ def transform(points: Sequence[tuple[date, float]], kind: Transform) -> list[tup
     return result
 
 
+def scoring_grid(frequency: str) -> str:
+    """M, Q, S or A: daily and weekly data are averaged to months before they are scored."""
+    code = frequency_code(frequency)
+    return code if code in ("Q", "S", "A") else "M"
+
+
 def history_score(points: Sequence[tuple[date, float]], frequency: str) -> float | None:
-    """The latest value as a z-score over the trailing ten years, clipped to -3..+3."""
-    code = "Q" if frequency_code(frequency) in ("Q", "S", "A") else "M"
-    window = [v for _, v in points[-(HISTORY_YEARS * (4 if code == "Q" else 12)) :]]
-    if len(window) < MIN_HISTORY[code]:
+    """The latest value as a z-score over the lookback window, clipped to -3..+3 (S1)."""
+    grid = scoring_grid(frequency)
+    years = ZSCORE_WINDOW_YEARS_ANNUAL if grid == "A" else ZSCORE_WINDOW_YEARS_STANDARD
+    window = [v for _, v in points[-(years * PERIODS_PER_YEAR[grid]) :]]
+    if len(window) < MIN_OBSERVATIONS[grid]:
         return None
     sd = statistics.pstdev(window)
     if sd == 0:
@@ -115,20 +133,20 @@ def history_score(points: Sequence[tuple[date, float]], frequency: str) -> float
 def momentum(
     points: Sequence[tuple[date, float]], frequency: str, change: ChangeKind
 ) -> list[tuple[date, float]]:
-    """Each period's change over three months (one quarter for quarterly series)."""
-    quarterly = frequency_code(frequency) in ("Q", "S", "A")
-    step = 1 if quarterly else 3
+    """Each period's change over one native step: three months, one quarter, one half year or one
+    year (S1). A percent change is annualised; a change in points or own units is the difference."""
+    months = MOMENTUM_MONTHS[scoring_grid(frequency)]
     by_period = dict(points)
     result = []
     for p, v in points:
-        y, m = divmod(p.month - 1 - (3 if quarterly else step), 12)
+        y, m = divmod(p.month - 1 - months, 12)
         prior = by_period.get(date(p.year + y, m + 1, 1))
         if prior is None:
             continue
         if change == "diff":
             result.append((p, v - prior))
         elif prior > 0 and v > 0:
-            result.append((p, ((v / prior) ** 4 - 1) * 100))  # annualised
+            result.append((p, ((v / prior) ** (12 // months) - 1) * 100))  # annualised
     return result
 
 
@@ -191,3 +209,10 @@ def build_scorecard(indicators: Sequence[IndicatorScore]) -> Scorecard:
 def pair_confidence(base: float, quote: float) -> float:
     """A currency pair is only as certain as its less certain side."""
     return min(base, quote)
+
+
+def size_factor(confidence: float) -> float:
+    """The share of a normal position a trade idea may take (S4): caution goes into the size,
+    never into the view. Full confidence is a full position, none is no position; the score
+    itself is not touched. For a pair, pass `pair_confidence` (S8)."""
+    return max(0.0, min(1.0, confidence))
