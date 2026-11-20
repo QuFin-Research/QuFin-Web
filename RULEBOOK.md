@@ -1,6 +1,6 @@
 # QuFin Rule Book (master)
 
-**Version 3.3 — 20 November 2026.** This rule book is the property of QuFin (the QuFin-Web repository). It stands on its own: no rule depends on any tool, vendor or person, and it remains in force whoever or whatever builds or maintains QuFin. Everything that builds, tests or reviews QuFin follows it, and a change that breaks a rule is a defect, however convenient. Each subject is ruled once, in one place. Terms used in more than one rule are defined once, in Part 0. Where two rules ever seem to disagree, the stricter reading applies until the rule book is corrected (rule 26); a disagreement is a defect.
+**Version 3.4 — 20 November 2026.** This rule book is the property of QuFin (the QuFin-Web repository). It stands on its own: no rule depends on any tool, vendor or person, and it remains in force whoever or whatever builds or maintains QuFin. Everything that builds, tests or reviews QuFin follows it, and a change that breaks a rule is a defect, however convenient. Each subject is ruled once, in one place. Terms used in more than one rule are defined once, in Part 0. Where two rules ever seem to disagree, the stricter reading applies until the rule book is corrected (rule 26); a disagreement is a defect.
 
 QuFin is a data-extensive trading assistant. Its trading ideas, scores and backtests rest on the data, so the rules below put data integrity first, then comparability, then transparency.
 
@@ -18,6 +18,8 @@ Every rule has a **number**, a **title**, a **Purpose** (one sentence stating wh
 - **Conditional (<conditions>)** — mandatory where the named conditions hold; no exception without a Rule 26 change.
 - **Informational** — a definition, convention or note; not independently enforceable, but relied on by rules that are.
 
+A Force may carry a scope in parentheses where a rule applies only inside part of the book: the scorecard rules S1–S9 are `Mandatory (within the scorecard mechanism)`, which means Mandatory wherever the scorecard is computed.
+
 Rules are numbered **1–38** with gaps at 5, 13, 14, 17 and 19 (retired; see Appendix A). The scorecard correction mechanism is a **sub-series S1–S9**, scoped to Part 4 because the private methodology quotes it as a unit; each S-rule follows the same Force, cross-reference and change procedure as any numbered rule. No new prefixes are introduced: any future rule is a number.
 
 Where two rules seem to disagree, the stricter reading applies until the book is corrected (Rule 26). A disagreement is a defect.
@@ -26,11 +28,11 @@ Where two rules seem to disagree, the stricter reading applies until the book is
 
 **Part 0 is binding. §0.1 definitions, §0.2 normative values and §0.3 principles are constraints equivalent in force to Mandatory rules.** A rule that cites them depends on them. A change to §0.1 or §0.3 is a Rule 26 change, recorded in the change log as `0.1 (term: <name>)` or `0.3 (principle: <n>)`. A change to a §0.2 value is a Rule 26 change, recorded as `0.2 (value: <name>)`.
 
-**Path resolution.** Every implementation and test path cited in a rule's cross-reference block is **relative to the repository root**. The path `app/…` means `services/api/app/…`; the path `tests/…` means `services/api/tests/…`; `apps/web/…`, `docs/…`, `migrations/…`, `scripts/…` and `private/…` are as written.
+**Path resolution.** Every implementation and test path cited in a rule's cross-reference block is **relative to the repository root**. The path `app/…` means `services/api/app/…`; the path `tests/…` means `services/api/tests/…`; the path `migrations/…` means `services/api/migrations/…`; `apps/web/…`, `docs/…` and `scripts/…` are as written. `private/…` paths live in a private repository and are not resolved by the test, because they do not exist in a public checkout.
 
-**Rule 25 applies to this document.** The rule book, its change log and its appendices are documents covered by Rule 25; no rule-book entry may name a development tool or assistant.
+**Rule 25 applies to this document.** The rule book, its change log and its appendices are documents covered by Rule 25; no rule-book entry may name an AI assistant or code-generation tool.
 
-Appendix A is the permanent record of every retired and renumbered rule. Appendix B is the **generated** cross-reference index. Appendix C is the change log. Appendix D exists only while the v2.4 → v3.3 migration is in flight, and is deleted after one release cycle.
+Appendix A is the permanent record of every retired and renumbered rule. Appendix B is the **generated** cross-reference index. Appendix C is the change log. Appendix D exists only while the v2.4 → v3.4 migration is in flight, and is deleted after one release cycle.
 
 ---
 
@@ -68,13 +70,16 @@ The values below are normative: a rule that cites them depends on them, and a ch
 | `GRACE_DAYS` (annual) | 60 | `app/domain/freshness.py` |
 | `LAG_WINDOW` | trailing 3 years | `app/jobs/check_data.py` |
 | `MOMENTUM_WEIGHT` | 0.5 | `app/domain/scorecard.py` |
-| `MAX_MEAN_BIAS` | ±0.25 score points | `app/domain/scorecard.py` |
-| `DEFAULT_OBSERVATION_START` | 1990-01-01 | catalog |
-| `DUPLICATE_FINGERPRINT_TOLERANCE` | 1e-6 (relative) | `app/jobs/check_data.py` |
-| `DUPLICATE_MIN_FINGERPRINTS` | 12 (effective: `min(12, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, periods − 1))`) | `app/jobs/check_data.py` |
-| `DUPLICATE_MIN_FINGERPRINTS_FLOOR` | 4 | `app/jobs/check_data.py` |
+| `MAX_MEAN_BIAS` | ±0.25 score points | `app/jobs/scorecard.py` |
+| `DEFAULT_OBSERVATION_START` | 1990-01-01 | `app/data/macro_catalog.py` |
+| `DUPLICATE_FINGERPRINT_TOLERANCE` | 1e-6 (relative) | `app/domain/duplicates.py` |
+| `DUPLICATE_MIN_FINGERPRINTS` | 12 (effective: `min(12, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, periods − 1))`) | `app/domain/duplicates.py` |
+| `DUPLICATE_MIN_FINGERPRINTS_FLOOR` | 4 | `app/domain/duplicates.py` |
+| `DUPLICATE_MIN_SHARED_PERIODS` | 20 | `app/domain/duplicates.py` |
+| `DUPLICATE_MIN_DISTINCT_VALUES` | 5 | `app/domain/duplicates.py` |
+| `DUPLICATE_MATCH_SHARE` | 0.95 | `app/domain/duplicates.py` |
 | `DUPLICATE_CHECK_TIMEOUT_SECONDS` | 600 | `app/jobs/check_data.py` |
-| `INGEST_RUN_TIME_BUDGET_SECONDS` | 1800 | `app/connectors/base.py` |
+| `INGEST_RUN_TIME_BUDGET_SECONDS` | 14400 | `app/core/config.py` (`refresh_run_timeout_seconds`) |
 | `DISCOVERY_SWEEP_TIME_BUDGET_SECONDS` | 21600 | `app/jobs/ingest.py` |
 | `ZSCORE_WINDOW_YEARS_STANDARD` | 10 | `app/domain/scorecard.py` |
 | `ZSCORE_WINDOW_YEARS_ANNUAL` | 20 | `app/domain/scorecard.py` |
@@ -108,7 +113,7 @@ These rules apply to every data source and every series, existing or new.
 **Cross-references:**
 - Depends on: 2, 26
 - Implementation: `app/jobs/check_data.py`
-- Tests: `tests/test_check_data.py`
+- Tests: `tests/test_freshness.py`, `tests/test_admin_api.py`
 
 ### Rule 2. Every ingest run ends with the release check
 
@@ -120,8 +125,8 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 0.1, 1, 3
-- Implementation: `app/jobs/check_data.py`
-- Tests: `tests/test_check_data.py`
+- Implementation: `app/jobs/check_data.py`, `app/jobs/refresh.py`
+- Tests: `tests/test_freshness.py`, `tests/test_admin_api.py`
 
 ### Rule 3. Unusable data stays out
 
@@ -146,7 +151,7 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 0.1, 9
-- Implementation: `app/data/catalog.py`
+- Implementation: `app/data/macro_catalog.py`
 - Tests: `tests/test_provenance.py`
 
 ### Rule 6. Point in time only; vintages are kept and served
@@ -159,8 +164,8 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 4, 9, 38
-- Implementation: `app/domain/vintage.py`
-- Tests: `tests/test_vintage.py`
+- Implementation: `app/stores/macro.py`
+- Tests: `tests/test_record_latest.py`, `tests/test_macro_api.py`
 
 ### Rule 7. Check the licence before relying on a series commercially
 
@@ -172,8 +177,8 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 4
-- Implementation: `docs/licence-register.md`, `app/data/licence.py`
-- Tests: `tests/test_licence.py`
+- Implementation: `docs/licence-register.md`
+- Tests: —
 
 ### Rule 8. Every number states its origin
 
@@ -185,7 +190,7 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 0.1, 10
-- Implementation: `app/api/provenance.py`
+- Implementation: `app/schemas/base.py`
 - Tests: `tests/test_provenance.py`
 
 ### Rule 9. Release dates come from the source's real calendar
@@ -198,8 +203,8 @@ These rules apply to every data source and every series, existing or new.
 
 **Cross-references:**
 - Depends on: 38
-- Implementation: `app/data/cot_calendar.py`, `app/domain/release_calendar.py`
-- Tests: `tests/test_release_calendar.py`
+- Implementation: `app/data/cot_calendar.py`, `app/jobs/build_calendar.py`
+- Tests: `tests/test_cot_calendar.py`
 
 ### Rule 10. Verify meaning at the source before scoring
 
@@ -211,12 +216,12 @@ These rules apply to every data source and every series, existing or new.
 
 Activity growth series are stored and scored in real terms. Where an eligible source publishes only a nominal series, the source choice under rule 38 proceeds as written (the nominal series is stored, not rejected), and QuFin **deflates it at scoring time using the reference CPI concept for the same economy** (rule 18). The deflated series is derived, not stored (rule 16); the deflator's vintage is the one current at the observation's release (rule 6); and the choice of deflator is recorded in `docs/assumptions-register.md` (rule 12).
 
-**Deflation of a nominal activity series.** The reference CPI is the country's `cpi` concept, chosen under rule 38. (a) **Frequency:** the nominal series is aggregated to the CPI's frequency before deflation (rule 30's period-end / period-average / period-sum rules apply); the CPI is never up-sampled. (b) **Adjustment:** an SA nominal series is deflated with an SA CPI where the CPI source publishes one; an NSA nominal series with an NSA CPI; a mixed pair carries rule 29's notice. (c) **Unusable or missing deflator:** if the reference CPI is missing (rule 37) or unusable under rule 3, the derived real series is unusable and drops out of every score (S2). (d) **Pending deflator:** if a nominal observation is released before the CPI for the same period, the derived real series is not scored until the CPI lands; an estimate of the CPI is admitted only under S5.
+**Deflation of a nominal activity series.** The reference CPI is the country's `consumer_prices` concept (rule 18), chosen under rule 38. (a) **Frequency:** the nominal series is aggregated to the CPI's frequency before deflation (rule 30's period-end / period-average / period-sum rules apply); the CPI is never up-sampled. (b) **Adjustment:** an SA nominal series is deflated with an SA CPI where the CPI source publishes one; an NSA nominal series with an NSA CPI; a mixed pair carries rule 29's notice. (c) **Unusable or missing deflator:** if the reference CPI is missing (rule 37) or unusable under rule 3, the derived real series is unusable and drops out of every score (S2). (d) **Pending deflator:** if a nominal observation is released before the CPI for the same period, the derived real series is not scored until the CPI lands; an estimate of the CPI is admitted only under S5.
 
 **Cross-references:**
-- Depends on: 0.1, 3, 4, 6, 12, 16, 18, 29, 30, 37, 38, S2, S5
+- Depends on: 3, 4, 6, 12, 16, 18, 29, 30, 37, 38, S2, S5
 - Implementation: `app/data/scorecard_catalog.py`
-- Tests: `tests/test_scorecard_catalog.py`
+- Tests: `tests/test_scorecard.py`
 
 ### Rule 11. Flag partial coverage
 
@@ -228,8 +233,8 @@ Activity growth series are stored and scored in real terms. Where an eligible so
 
 **Cross-references:**
 - Depends on: 4
-- Implementation: `app/data/catalog.py`
-- Tests: `tests/test_catalog.py`
+- Implementation: `app/data/macro_catalog.py`
+- Tests: —
 
 ### Rule 12. Assumptions are listed and checked, not trusted
 
@@ -242,7 +247,7 @@ Activity growth series are stored and scored in real terms. Where an eligible so
 **Cross-references:**
 - Depends on: 4
 - Implementation: `docs/assumptions-register.md`
-- Tests: `tests/test_assumptions_register.py`
+- Tests: —
 
 ### Rule 15. Every hot query on a data table is indexed; nothing aggregates a data table on a page load
 
@@ -267,12 +272,12 @@ Activity growth series are stored and scored in real terms. Where an eligible so
 
 A country-indicator pair is served from one source at a time; rule 38 says which. When the source changes, the new source loads its full history (rule 33), and the previous source's history becomes a retired series (Part 0, §0.1): kept read-only for as-of reads before the change, never served as current and never spliced into the new series. `tests/test_indicator_concepts.py` fails otherwise. The release check (rule 2) also compares every stored series with every other, from any source: two that carry the same values, or the same values in other units, both fail as `review` (Part 0, §0.1) until one is removed. Two exemptions, and only these: a retired series is not compared with the later series of its own pair (they are expected to match), and staged series are not compared. A retired series is still compared with every other pair's series.
 
-**Pre-filter and comparison.** The pre-filter (rule 15's cost concern) uses `DUPLICATE_FINGERPRINT_TOLERANCE` on consecutive-period ratios. The **full comparison** uses the same tolerance after unit normalisation and after the source's native rounding — **never bit-for-bit equality**. Two series become candidates for full comparison when their consecutive-period ratios match within tolerance in at least `min(DUPLICATE_MIN_FINGERPRINTS, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, periods − 1))` periods; a series with fewer than `DUPLICATE_MIN_FINGERPRINTS_FLOOR` usable observations is compared with all others as before, never pre-filtered. The pre-filter only chooses pairs and never reports a duplicate; its tests check that it finds every pair the full comparison finds. The check has `DUPLICATE_CHECK_TIMEOUT_SECONDS` to finish; if it cannot, it fails — it is never skipped.
+**Pre-filter and comparison.** The pre-filter (rule 15's cost concern) uses `DUPLICATE_FINGERPRINT_TOLERANCE` on consecutive-period ratios. The **full comparison** uses the same tolerance after unit normalisation and after the source's native rounding — **never bit-for-bit equality**. Two series are duplicates when they share at least `DUPLICATE_MIN_SHARED_PERIODS` periods holding at least `DUPLICATE_MIN_DISTINCT_VALUES` distinct values, and at least `DUPLICATE_MATCH_SHARE` of the shared periods carry equal values, or values in one fixed ratio (the same data in other units). Two series become candidates for full comparison when their consecutive-period ratios match within tolerance in at least `min(DUPLICATE_MIN_FINGERPRINTS, max(DUPLICATE_MIN_FINGERPRINTS_FLOOR, periods − 1))` periods (`periods` is the number of usable observations of the shorter of the two series), or when they carry equal values in at least `DUPLICATE_MIN_SHARED_PERIODS × DUPLICATE_MATCH_SHARE` shared periods (the same data on different period grids, such as a daily series and a monthly one that repeats its month-end value); a series with fewer than `DUPLICATE_MIN_FINGERPRINTS_FLOOR` usable observations is compared with all others as before, never pre-filtered. The pre-filter only chooses pairs and never reports a duplicate; its tests check that it finds every pair the full comparison finds. The check has `DUPLICATE_CHECK_TIMEOUT_SECONDS` to finish; if it cannot, it fails — it is never skipped.
 
 **Cross-references:**
 - Depends on: 0.1, 0.2, 2, 15, 33, 38
-- Implementation: `app/data/indicator_concepts.py`
-- Tests: `tests/test_indicator_concepts.py`
+- Implementation: `app/data/indicator_concepts.py`, `app/domain/duplicates.py`
+- Tests: `tests/test_indicator_concepts.py`, `tests/test_duplicates.py`
 
 ### Rule 18. Every series has one human-readable, global name, shared across countries
 
@@ -285,7 +290,7 @@ A country-indicator pair is served from one source at a time; rule 38 says which
 **Cross-references:**
 - Depends on: 4, 10, 23, 25, 28, 29
 - Implementation: `app/data/indicator_concepts.py`
-- Tests: `tests/test_indicator_concepts.py`, `tests/test_indicator_names.py`
+- Tests: `tests/test_indicator_concepts.py`
 
 ---
 
@@ -299,12 +304,12 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Force:** Mandatory.
 
-**Text:** Every series carries its adjustment as `SA`, `NSA`, or not applicable (`OTHER`, with the source's text and the reason: an annual series, a market price, or an adjustment other than seasonal). Rule 38 picks the source; this rule picks the variant within it: `SA` where the chosen source publishes it, otherwise `NSA`. A comparison across countries or indicators prefers `SA` series, and never mixes `SA` with `NSA` silently: a mix is shown with an explicit notice. Where the source chosen under rule 38 publishes only NSA, the series is NSA; a slower SA source is not substituted — the decision rests with the owner under rule 38. A flash admitted under S5 is treated as the first release (rule 38); the final figure replaces it under S5 and rule 6.
+**Text:** Every series carries its adjustment as `SA`, `NSA`, or not applicable (`OTHER`, with the source's text and the reason: an annual series, a market price, or an adjustment other than seasonal). Rule 38 picks the source; this rule picks the variant within it: `SA` where the chosen source publishes it, otherwise `NSA`. A comparison across countries or indicators prefers `SA` series, and never mixes `SA` with `NSA` silently: a mix is shown with an explicit notice. Where the source chosen under rule 38 publishes only NSA, the series is NSA; a slower SA source is not substituted unless the owner records a source decision for it under rule 38 (Changing source). A flash admitted under S5 is treated as the first release (rule 38); the final figure replaces it under S5 and rule 6.
 
 **Cross-references:**
-- Depends on: 6, 38, S5
-- Implementation: `app/data/catalog.py`
-- Tests: `tests/test_catalog.py`
+- Depends on: 0.1, 6, 38, S5
+- Implementation: `app/domain/harmonize.py`, `app/data/macro_catalog.py`
+- Tests: `tests/test_harmonize.py`
 
 ### Rule 30. One frequency when countries are compared
 
@@ -316,8 +321,8 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Cross-references:**
 - Depends on: 22, 23
-- Implementation: `app/domain/frequency.py`
-- Tests: `tests/test_frequency.py`
+- Implementation: `app/domain/harmonize.py`
+- Tests: `tests/test_harmonize.py`
 
 ### Rule 31. Charting limits
 
@@ -329,8 +334,8 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Cross-references:**
 - Depends on: 22, 23, 30
-- Implementation: `app/api/charts.py`
-- Tests: `tests/test_charts.py`
+- Implementation: `app/routes/studio.py`
+- Tests: `tests/test_studio.py`
 
 ### Rule 32. The frequency filter shows only what is possible
 
@@ -342,8 +347,8 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Cross-references:**
 - Depends on: 30, 31
-- Implementation: `apps/web/src/features/frequency-filter/`, `app/api/filters.py`
-- Tests: `apps/web/tests/frequency-filter.test.ts`
+- Implementation: `app/domain/harmonize.py`, `apps/web/src/features/macro/components/studio-view.tsx`
+- Tests: `tests/test_studio.py`, `apps/web/src/features/macro/lib/studio.test.ts`
 
 ### Rule 33. Deep history: every series from 1990
 
@@ -354,9 +359,9 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 **Text:** Every series, new or existing, loads the deepest history its source holds, targeting `1990-01-01` (`DEFAULT_OBSERVATION_START`), so all series share one start and indicators compare over the same dates (owner instruction, 13 Nov 2026). A source whose history begins after `1990-01-01` is loaded from its first available observation; a source whose first observation is after `2000-01-01` is accepted but recorded in the coverage report as shallow; a source whose history begins before `1990-01-01` is truncated to `1990-01-01`. The default start is `DEFAULT_OBSERVATION_START` in the catalog, so a routine run does not trim it. This holds for a new source after a source change too (rule 16 says how its overlap with the retired series is handled). A series whose source begins later keeps its own first date, stated in the coverage report; it is never spliced with older values from a second source (rule 16).
 
 **Cross-references:**
-- Depends on: 0.2, 16
-- Implementation: `app/jobs/ingest.py`
-- Tests: `tests/test_ingest.py`
+- Depends on: 0.1, 0.2, 16
+- Implementation: `app/data/macro_catalog.py`
+- Tests: —
 
 ### Rule 34. Universal country and indicator cross-matrix
 
@@ -370,8 +375,8 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Cross-references:**
 - Depends on: 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38
-- Implementation: `app/jobs/ingest.py`, `app/data/taxonomy.py`
-- Tests: `tests/test_taxonomy.py`
+- Implementation: `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py`
+- Tests: `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py`
 
 ### Rule 35. Release-calendar precision and a resilient retry policy
 
@@ -381,14 +386,14 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Text:** Every ingested series tracks its official `next_release_at` timestamp, and the scheduler triggers ingestion at the release window, so models train on the freshest data. When an upstream portal answers HTTP 429, 502, 503 or 504, or times out, there are two layers of retry:
 - *Within a request:* up to 3 retries after 2, 4 and 8 seconds (exponential, `2^n`), or after the supplier's `Retry-After` where it gives one, up to 120 seconds (`app/connectors/base.py`).
-- *Across attempts (a capped ladder):* a feed that still fails for a transient reason (a timeout, a network error, a 5xx) is tried again after the other sources have had their turn, about 15 seconds, 60 seconds, 5 minutes, 15 minutes and 1 hour later, each wait varied at random by up to 20% so retries do not arrive in step; after the last step the feed is marked degraded. The ladder is bounded by `INGEST_RUN_TIME_BUDGET_SECONDS` (Part 0, §0.2), and the release check (rule 2) runs last.
+- *Across attempts (a capped ladder):* a feed that still fails for a transient reason (a timeout, a network error, a 5xx) is tried again after the other sources have had their turn, about 15 seconds, 60 seconds, 5 minutes, 15 minutes and 1 hour later, each wait varied at random by up to 20% so retries do not arrive in step; after the last step the feed is marked degraded. The ladder may use at most 90% of `INGEST_RUN_TIME_BUDGET_SECONDS` (Part 0, §0.2), so that the release check (rule 2), which runs last, still fits.
 
 Rule 28 governs where it differs: a `Retry-After` longer than a step is honoured, and a 403 or a 429 that outlasts the retries stops requests to that supplier for the run, so neither layer can become a way round a limit.
 
 **Cross-references:**
 - Depends on: 0.2, 2, 28
-- Implementation: `app/connectors/base.py`
-- Tests: `tests/test_connectors.py`
+- Implementation: `app/connectors/base.py`, `app/jobs/refresh.py`
+- Tests: `tests/test_connector_framework.py`, `tests/test_admin_api.py`
 
 ### Rule 36. A self-running database health and integrity engine ("QuFin Doctor")
 
@@ -398,11 +403,11 @@ Rule 28 governs where it differs: a `Retry-After` longer than a step is honoured
 
 **Text:** QuFin keeps a fast, deterministic command line check with automatic repair, `uv run python -m app.cli doctor --fix`, that runs after every ingestion job and in continuous integration. It verifies and, where it can do so safely, repairs: (a) no duplicate country-indicator mapping (rule 16); staged series are exempt as in rule 16; (b) no orphaned vintage rows and no null or NaN corruption; (c) strictly increasing dates; (d) the `SA` and `NSA` tags are accurate; (e) release-schedule freshness (rule 2); and (f) upstream series that have frozen are quarantined or flagged.
 
-**A repair to a database row is restricted to:** (i) deleting an orphaned vintage row whose parent series no longer exists (after backup); (ii) deleting a corrupted row whose date is out of order, whose value is null, or whose value is NaN, **so the next ingest re-fetches a clean value from the source — never imputing or rewriting a numeric value**; (iii) setting a series to `review` (Part 0, §0.1) when its upstream source has frozen. **No other mutation is permitted.** A repair to **catalog metadata** (SA/NSA tag, change kind, source decision, concept, variant) is never applied by `doctor --fix`; it fails loudly and requires a reviewed PR that updates the catalog and `docs/assumptions-register.md` (rule 12), under Rule 26's process and Rule 29's variant rule. A repair never deletes data without a backup and a report line saying what was done.
+**A repair to a database row is restricted to:** (i) deleting an orphaned vintage row whose parent series no longer exists (after backup); (ii) deleting a corrupted row whose date is out of order, whose value is null, or whose value is NaN, **so the next ingest re-fetches a clean value from the source — never imputing or rewriting a numeric value**; (iii) reporting a series as `review` (Part 0, §0.1) when its upstream source has frozen: the status is computed by the release check (rule 2), so the doctor stores nothing for it. **No other mutation is permitted.** A repair to **catalog metadata** (SA/NSA tag, change kind, source decision, concept, variant) is never applied by `doctor --fix`; it fails loudly and requires a reviewed PR that updates the catalog and `docs/assumptions-register.md` (rule 12), under Rule 26's process and Rule 29's variant rule. A repair never deletes data without a backup and a report line saying what was done.
 
 **Cross-references:**
-- Depends on: 2, 12, 16, 26, 29
-- Implementation: `app/cli/doctor.py`
+- Depends on: 0.1, 2, 12, 16, 26, 29
+- Implementation: `app/jobs/doctor.py`
 - Tests: `tests/test_doctor.py`
 
 ### Rule 37. Candidate sources, and no silent gaps
@@ -416,7 +421,7 @@ Rule 28 governs where it differs: a `Retry-After` longer than a step is honoured
 - the multilateral aggregators: BIS, IMF, OECD, Eurostat, ECB and the World Bank;
 - the country's official statistics office, central bank, agency or government open-data portal, each registered in `app/data/country_sources.py` with the date its terms and limits were read (rules 7 and 28), and, for the remaining economies, the UNECE and WTO statistical portals.
 
-A frozen mirror (for example FRED's `*PROINDMISMEI` and `*CPICORMINMEI` series) is not a candidate: it fails the live-schedule rules (1 to 3). A pair may stay unpopulated only if no candidate has an active, current feed; each such pair is listed with the candidates checked and the date, so no gap is silent.
+A frozen mirror (for example FRED's `*PROINDMISMEI` and `*CPICORMINMEI` series) is not a candidate: it fails the live-schedule rules 1 to 3. A pair may stay unpopulated only if no candidate has an active, current feed; each such pair is listed with the candidates checked and the date, so no gap is silent.
 
 **Cross-references:**
 - Depends on: 0.1, 1, 2, 3, 7, 28, 38
@@ -443,7 +448,7 @@ Among eligible candidates, two measures decide:
 
 The best source meets both: it is the earliest and it releases at least as often as every other candidate. Where no source meets both, the earliest release wins. In practice this is usually the original producer, since aggregators republish after a lag (rule 4), but the rule does not assume it. Where eligible candidates publish different adjustments, a comparison shows rule 29's notice.
 
-*Ties.* If two or more sources are equal on both measures, the most native source wins (Part 0, §0.1): the original producer, then the aggregator of the economy's own country or bloc, then a global aggregator. For a European economy that is Eurostat rather than the IMF; for the United States it is FRED rather than the IMF or the World Bank. Sources equally native are ranked by the latest period at the last probe (the fresher observation wins); if still tied, the source code in ascending order wins. The outcome never depends on load order. Nativeness only breaks a tie: it never outweighs eligibility, earliest or frequency. Where a bloc's economies tie between their original producers and the bloc aggregator, each economy's own original producer wins; the bloc is uniform only where the original producer is ineligible or absent.
+*Ties.* If two or more sources are equal on both measures, the most native source wins (Part 0, §0.1): the original producer, then the aggregator of the economy's own country or bloc, then a global aggregator. For a European economy that is Eurostat rather than the IMF; for the United States it is FRED rather than the IMF or the World Bank. Sources equally native are ranked by the latest period at the probe recorded for the decision (rule 12): the fresher observation wins; if still tied, the source code in ascending order wins. The outcome never depends on load order. Nativeness only breaks a tie: it never outweighs eligibility, earliest or frequency. Where a bloc's economies tie between their original producers and the bloc aggregator, each economy's own original producer wins; the bloc is uniform only where the original producer is ineligible or absent.
 
 *New pairs.* "Earliest" needs one release cycle to measure, so a new pair is served at first from the eligible candidate with the most recent period at the probe (frequency, then nativeness, breaks a tie): a provisional source decision (Part 0, §0.1), served and scored. The other eligible candidates are staged (Part 0, §0.1) and timed for one release cycle. If the measured winner is the provisional source, the decision is confirmed; otherwise the winner replaces it as a source change, below.
 
@@ -452,9 +457,9 @@ The best source meets both: it is the earliest and it releases at least as often
 The chosen source is read as published (rule 6).
 
 **Cross-references:**
-- Depends on: 0.1, 1, 2, 3, 4, 6, 7, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5
-- Implementation: `app/data/source_selection.py`
-- Tests: `tests/test_source_selection.py`
+- Depends on: 0.1, 1, 2, 3, 4, 6, 7, 9, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5
+- Implementation: `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py`
+- Tests: `tests/test_source_selection.py`, `tests/test_source_decisions.py`
 
 ---
 
@@ -504,8 +509,8 @@ Changes are taken within one vintage (rule 6), never across vintages. A percent 
 
 **Cross-references:**
 - Depends on: 0.1, 2, 6, 20, 26
-- Implementation: `app/data/change_kind.py`
-- Tests: `tests/test_change_kind.py`
+- Implementation: `app/domain/changes.py`
+- Tests: `tests/test_changes.py`
 
 ### Rule 23. Only compare what has a common basis
 
@@ -517,7 +522,7 @@ Changes are taken within one vintage (rule 6), never across vintages. A percent 
 
 **Cross-references:**
 - Depends on: 18, 22, 30, S1
-- Implementation: `app/api/comparison.py`
+- Implementation: `app/domain/comparison.py`, `app/routes/taxonomy.py`
 - Tests: `tests/test_comparison.py`
 
 ---
@@ -536,10 +541,10 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Minimum sample by frequency.** A z-score requires at least the following usable observations in the lookback window, by frequency: monthly or higher, `ZSCORE_MIN_OBSERVATIONS_MONTHLY`; quarterly, `ZSCORE_MIN_OBSERVATIONS_QUARTERLY`; semi-annual, `ZSCORE_MIN_OBSERVATIONS_SEMIANNUAL`; annual, `ZSCORE_MIN_OBSERVATIONS_ANNUAL`, all in Part 0, §0.2. The floor applies to both the level and the momentum z-score distributions. A series below its floor is unscorable (weight 0 under S2).
 
-**Momentum.** Momentum is the arithmetic difference of the raw level from its prior observation at the series' native frequency (three months for monthly or higher, one quarter for quarterly, one half year for semi-annual, one year for annual), z-scored separately against the same lookback window as the level and averaged with the level z-score under `MOMENTUM_WEIGHT`.
+**Momentum.** Momentum is the change from the prior observation at the series' native frequency (three months for monthly or higher, one quarter for quarterly, one half year for semi-annual, one year for annual), taken in the series' declared change kind (rule 22): the annualised percent change for a series changed in percent, the difference for one changed in points or in its own units. It is z-scored separately against the same lookback window as the level and averaged with the level z-score under `MOMENTUM_WEIGHT`.
 
 **Cross-references:**
-- Depends on: 0.2, 6, 21, S2
+- Depends on: 0.2, 6, 21, 22, S2
 - Implementation: `app/domain/scorecard.py`
 - Tests: `tests/test_scorecard.py`
 
@@ -552,7 +557,7 @@ A delayed or missing indicator must make a score **less certain, never more bull
 **Text:** `score = Σ wᵢ·sᵢ / Σ wᵢ` over usable indicators (rule 3), with `wᵢ` = base importance × timeliness weight. The timeliness weight (`timeliness.weight`, Part 0, §0.1) halves for every 60 days between the end of a period and the day QuFin can read it; fresh data (daily rates, weekly claims) keeps full weight. Overdue, discontinued, missing or unscorable indicators drop out (weight 0); the only exception is a labelled estimate admitted under S5. Never count missing data as zero (a plain sum pulls scores toward neutral: strong economies underrated, weak ones overrated), and never carry an old value forward at full weight.
 
 **Cross-references:**
-- Depends on: 0.1, 3, S1, S5
+- Depends on: 0.1, 3, S5
 - Implementation: `app/domain/scorecard.py`
 - Tests: `tests/test_scorecard.py`
 
@@ -579,8 +584,8 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Cross-references:**
 - Depends on: S3
-- Implementation: `app/domain/trade_ideas.py`
-- Tests: `tests/test_trade_ideas.py`
+- Implementation: —
+- Tests: —
 
 ### S5. Fix delays at the source where the licence allows it
 
@@ -607,8 +612,8 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Cross-references:**
 - Depends on: 4, 9
-- Implementation: `app/api/scorecard.py`
-- Tests: `tests/test_scorecard_api.py`
+- Implementation: `app/routes/market.py`
+- Tests: `tests/test_market_api.py`
 
 ### S7. Prove there is no bias
 
@@ -620,7 +625,7 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Cross-references:**
 - Depends on: 0.1, 0.2, S1, S2, S3
-- Implementation: `app/cli/scorecard_bias.py`
+- Implementation: `app/jobs/scorecard.py`
 - Tests: `tests/test_scorecard.py`
 
 ### S8. A currency pair is only as certain as its less certain side
@@ -646,8 +651,8 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Cross-references:**
 - Depends on: 8
-- Implementation: `app/api/scorecard.py`
-- Tests: `tests/test_scorecard_api.py`
+- Implementation: `app/routes/market.py`
+- Tests: `tests/test_market_api.py`
 
 ---
 
@@ -662,7 +667,7 @@ A delayed or missing indicator must make a score **less certain, never more bull
 **Text:** The rule book is kept in this repository, in plain text, and is the only place rules are defined. The one governed exception is the scorecard recipe (rule 20): its parameters (indicators per pillar, directions, weights, calibration) live in the private methodology, under the rules that rule 20 and S1–S9 set here. Instruction files for any development tool may exist only as a pointer to it and must add no rule of their own. No rule may require a particular development tool, assistant or hosting vendor. The commands, settings, files and libraries the rules name are the current implementation (Part 0, §0.2): replaceable, with the rule book updated in the same pull request (rule 26). The data sources the rules name are provenance (rule 4), chosen and replaced under rules 37 and 38, not dependencies of the rules.
 
 **Cross-references:**
-- Depends on: 0.2, 4, 20, 26, 37, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9
+- Depends on: 0.1, 0.2, 4, 20, 26, 37, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9
 - Implementation: —
 - Tests: —
 
@@ -672,12 +677,12 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Force:** Mandatory.
 
-**Text:** Code, comments, commit messages, pull request descriptions, documents and releases carry no mention of, credit to or footer from any development tool or assistant. Names of data sources and licensed vendors are recorded where the data comes from (rule 4); that is provenance, not attribution. **This rule applies to the rule book, its change log and its appendices; no rule-book entry may name a development tool or assistant.**
+**Text:** Code, comments, commit messages, pull request descriptions, documents and releases carry no mention of, credit to or footer from any AI assistant or code-generation tool. A build, test, lint or package tool (for example `uv` or `pytest`) may be named where a rule or a command needs it. Names of data sources and licensed vendors are recorded where the data comes from (rule 4); that is provenance, not attribution. **This rule applies to the rule book, its change log and its appendices; no rule-book entry may name an AI assistant or code-generation tool.**
 
 **Cross-references:**
 - Depends on: 4
 - Implementation: —
-- Tests: `tests/test_no_attribution.py`
+- Tests: `tests/test_no_attribution.py`, `tests/test_rulebook.py`
 
 ### Rule 26. Changing the rule book needs the owner's approval and a log entry
 
@@ -685,10 +690,10 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Force:** Mandatory.
 
-**Text:** A rule changes only by a reviewed pull request that the QuFin owner merges. The change log below records the date, the rule and the reason. Rules are never loosened to make a change pass. S1–S9 are changed by the same procedure as any other rule (owner-approved pull request and change log entry), and the scorecard recipe they govern (rule 20) changes only with the additional approvals rule 20 requires (S7 bias gate, point-in-time backtest and owner approval). A change to a value in Part 0, §0.2 is a rule change recorded as `0.2 (value: <name>)`. A change to a §0.1 term is recorded as `0.1 (term: <name>)`; a change to a §0.3 principle is recorded as `0.3 (principle: <n>)`.
+**Text:** A rule changes only by a reviewed pull request that the QuFin owner merges. The change log below records the date, the rule and the reason. Rules are never loosened to make a change pass. S1–S9 are changed by the same procedure as any other rule (owner-approved pull request and change log entry), and the scorecard recipe they govern (rule 20) changes only with the additional approvals rule 20 requires (S7 bias gate, point-in-time backtest and owner approval). A change to a value in Part 0, §0.2 is a rule change recorded as `0.2 (value: <name>)`. A change to a §0.1 term is recorded as `0.1 (term: <name>)`; a change to a §0.3 principle is recorded as `0.3 (principle: <n>)`. Where another rule requires a reviewed pull request for a data-path change (rules 1, 22, 34 and 38: a catalog entry, a re-declared change kind, an eligibility verification or a source decision), the QuFin owner merges that pull request too, and it is recorded in `docs/assumptions-register.md` (rule 12); it is not a rule change and needs no change-log entry.
 
 **Cross-references:**
-- Depends on: 0.1, 0.2, 0.3, 20, S1, S2, S3, S4, S5, S6, S7, S8, S9
+- Depends on: 0.1, 0.2, 0.3, 1, 12, 20, 22, 34, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9
 - Implementation: —
 - Tests: —
 
@@ -703,7 +708,7 @@ A delayed or missing indicator must make a score **less certain, never more bull
 **Cross-references:**
 - Depends on: 4, 7, 28
 - Implementation: `docs/data-connections.md`, `docs/data-pipeline.md`
-- Tests: `tests/test_docs.py`
+- Tests: —
 
 ### Rule 28. Respect every data supplier's policy
 
@@ -722,7 +727,7 @@ A delayed or missing indicator must make a score **less certain, never more bull
 **Cross-references:**
 - Depends on: 4, 7, 27
 - Implementation: `app/connectors/base.py`, `docs/data-connections.md`, `docs/licence-register.md`
-- Tests: `tests/test_connectors.py`, `tests/test_docs.py`
+- Tests: `tests/test_connector_framework.py`
 
 ---
 
@@ -758,54 +763,55 @@ Any old reference (`rule P`, `rule S5`, `rule 1-28`) resolves through this table
 
 ## Appendix B. Cross-reference index
 
-**PROVISIONAL — REGENERATE BEFORE MERGE.** This appendix must be regenerated by `scripts/build_rule_index.py` after the v3.3 rule-body edits land; the version below reflects only the `Depends on:` / `Referenced by:` rows the v3.3 amendments directly touched. Prior hand-maintenance of this table has accumulated residual inconsistencies (for example, S3 and S4 have appeared in S1's and S2's `Referenced by:` respectively without the reverse edge; Rules 1, 2, 3 and 28 have appeared in Rule 38's `Referenced by:` without the reverse edge). **`tests/test_rulebook.py` will fail on those residuals; running `scripts/build_rule_index.py` resolves them.** Rule bodies hold no `Referenced by:` blocks; this appendix is their sole home.
+**Generated** by `scripts/build_rule_index.py` from the `Depends on:` lines of the rule bodies; do
+not edit it by hand. `tests/test_rulebook.py` fails if it differs from the script's output, or if a
+rule body cites a rule that is not in its `Depends on:` line. Rule bodies hold no `Referenced by:`
+blocks; this appendix is their sole home.
 
 | Rule | Depends on | Referenced by | Implementation | Tests |
 |---|---|---|---|---|
-| 1 | 2, 26 | 2, 34, 37, 38 | `app/jobs/check_data.py` | `tests/test_check_data.py` |
-| 2 | 0.1, 1, 3 | 1, 16, 22, 35, 36, 37 | `app/jobs/check_data.py` | `tests/test_check_data.py` |
-| 3 | 0.1 | 2, 10, 38, S2, S5 | `app/domain/freshness.py` | `tests/test_freshness.py` |
-| 4 | 0.1, 9 | 6, 7, 8, 10, 11, 12, 18, 24, 25, 27, 28, 38, S6 | `app/data/catalog.py` | `tests/test_provenance.py` |
-| 6 | 4, 9, 38 | 10, 20, 22, 29, 38, S1 | `app/domain/vintage.py` | `tests/test_vintage.py` |
-| 7 | 4 | 28, 34, 37, 38 | `docs/licence-register.md`, `app/data/licence.py` | `tests/test_licence.py` |
-| 8 | 0.1, 10 | 20, 24, S5, S9 | `app/api/provenance.py` | `tests/test_provenance.py` |
-| 9 | 38 | 2, 4, 6, 20, 38, S6 | `app/data/cot_calendar.py`, `app/domain/release_calendar.py` | `tests/test_release_calendar.py` |
-| 10 | 0.1, 3, 4, 6, 12, 16, 18, 29, 30, 37, 38, S2, S5 | 8, 18, 20, 21, 34, 38 | `app/data/scorecard_catalog.py` | `tests/test_scorecard_catalog.py` |
-| 11 | 4 | 10, 23 | `app/data/catalog.py` | `tests/test_catalog.py` |
-| 12 | 4 | 10, 20, 27, 34, 36, 38, S5 | `docs/assumptions-register.md` | `tests/test_assumptions_register.py` |
+| 1 | 2, 26 | 2, 26, 34, 37, 38, S5 | `app/jobs/check_data.py` | `tests/test_freshness.py`, `tests/test_admin_api.py` |
+| 2 | 0.1, 1, 3 | 1, 16, 22, 34, 35, 36, 37, 38 | `app/jobs/check_data.py`, `app/jobs/refresh.py` | `tests/test_freshness.py`, `tests/test_admin_api.py` |
+| 3 | 0.1 | 2, 10, 34, 37, 38, S2, S5 | `app/domain/freshness.py` | `tests/test_freshness.py` |
+| 4 | 0.1, 9 | 6, 7, 10, 11, 12, 18, 20, 24, 25, 27, 28, 38, S6 | `app/data/macro_catalog.py` | `tests/test_provenance.py` |
+| 6 | 4, 9, 38 | 10, 22, 29, 38, S1 | `app/stores/macro.py` | `tests/test_record_latest.py`, `tests/test_macro_api.py` |
+| 7 | 4 | 27, 28, 34, 37, 38 | `docs/licence-register.md` | — |
+| 8 | 0.1, 10 | 20, S5, S9 | `app/schemas/base.py` | `tests/test_provenance.py` |
+| 9 | 38 | 4, 6, 38, S6 | `app/data/cot_calendar.py`, `app/jobs/build_calendar.py` | `tests/test_cot_calendar.py` |
+| 10 | 3, 4, 6, 12, 16, 18, 29, 30, 37, 38, S2, S5 | 8, 18, 34, 38 | `app/data/scorecard_catalog.py` | `tests/test_scorecard.py` |
+| 11 | 4 | — | `app/data/macro_catalog.py` | — |
+| 12 | 4 | 10, 26, 34, 36, 38, S5 | `docs/assumptions-register.md` | — |
 | 15 | 0.1 | 16 | `tests/test_query_plans.py`, `migrations/` | `tests/test_query_plans.py` |
-| 16 | 0.1, 0.2, 2, 15, 33, 38 | 6, 10, 20, 33, 36, 38 | `app/data/indicator_concepts.py` | `tests/test_indicator_concepts.py` |
-| 18 | 4, 10, 23, 25, 28, 29 | 10, 23, 34, 38 | `app/data/indicator_concepts.py` | `tests/test_indicator_concepts.py`, `tests/test_indicator_names.py` |
-| 20 | 0.1, 4, 8, 21, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9 | 21, 24, 26, 38, S5 | `app/domain/scorecard.py`, `private/scorecard-methodology.md`, `private/disclosure-log.md`, `docs/scorecard-versions.md` | `tests/test_scorecard.py` |
-| 21 | 20, S1 | 20, S1, S2 | `private/scorecard-methodology.md` | `tests/test_scorecard.py` |
-| 22 | 0.1, 2, 6, 20, 26 | 23, 30, 31, S1 | `app/data/change_kind.py` | `tests/test_change_kind.py` |
-| 23 | 18, 22, 30, S1 | 10, 18, 30, 31, 38 | `app/api/comparison.py` | `tests/test_comparison.py` |
-| 24 | 0.2, 4, 20, 26, 37, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9 | 25, 27, 28 | — | — |
-| 25 | 4 | 18, 24 | — | `tests/test_no_attribution.py` |
-| 26 | 0.1, 0.2, 0.3, 20, S1, S2, S3, S4, S5, S6, S7, S8, S9 | 1, 22, 24, 34, 36, 38, S7 | — | — |
-| 27 | 4, 7, 28 | 28 | `docs/data-connections.md`, `docs/data-pipeline.md` | `tests/test_docs.py` |
-| 28 | 4, 7, 27 | 18, 27, 34, 35, 37, 38 | `app/connectors/base.py`, `docs/data-connections.md`, `docs/licence-register.md` | `tests/test_connectors.py`, `tests/test_docs.py` |
-| 29 | 6, 38, S5 | 10, 18, 34, 38 | `app/data/catalog.py` | `tests/test_catalog.py` |
-| 30 | 22, 23 | 10, 22, 23, 31, 32, 38 | `app/domain/frequency.py` | `tests/test_frequency.py` |
-| 31 | 22, 23, 30 | 32 | `app/api/charts.py` | `tests/test_charts.py` |
-| 32 | 30, 31 | 30 | `apps/web/src/features/frequency-filter/`, `app/api/filters.py` | `apps/web/tests/frequency-filter.test.ts` |
-| 33 | 0.2, 16 | 16, 34, 38 | `app/jobs/ingest.py` | `tests/test_ingest.py` |
-| 34 | 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38 | 28, 33 | `app/jobs/ingest.py`, `app/data/taxonomy.py` | `tests/test_taxonomy.py` |
-| 35 | 0.2, 2, 28 | 1, 28 | `app/connectors/base.py` | `tests/test_connectors.py` |
-| 36 | 2, 12, 16, 26, 29 | 2 | `app/cli/doctor.py` | `tests/test_doctor.py` |
-| 37 | 0.1, 1, 2, 3, 7, 28, 38 | 1, 10, 28, 34, 38 | `app/data/country_sources.py` | `tests/test_country_sources.py` |
-| 38 | 0.1, 1, 2, 3, 4, 6, 7, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5 | 1, 2, 3, 6, 9, 10, 16, 20, 24, 28, 29, 34 | `app/data/source_selection.py` | `tests/test_source_selection.py` |
-| S1 | 0.2, 6, 21, S2 | 20, 21, 23, 26, S2, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S2 | 0.1, 3, S1, S5 | 10, 20, 26, S1, S3, S4, S5, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S3 | S2 | 20, 26, S4, S7, S8 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S4 | S3 | 20 | `app/domain/trade_ideas.py` | `tests/test_trade_ideas.py` |
-| S5 | 0.1, 1, 3, 8, 12, 20, 29, 38, S2 | 10, 20, 26, 29, S2 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S6 | 4, 9 | 20 | `app/api/scorecard.py` | `tests/test_scorecard_api.py` |
-| S7 | 0.1, 0.2, S1, S2, S3 | 20, 26 | `app/cli/scorecard_bias.py` | `tests/test_scorecard.py` |
-| S8 | S3 | 20 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S9 | 8 | 20 | `app/api/scorecard.py` | `tests/test_scorecard_api.py` |
-
-**Before merge, run `scripts/build_rule_index.py` and commit its output as Appendix B.** Any row above that differs from the script's output is superseded by the script.
+| 16 | 0.1, 0.2, 2, 15, 33, 38 | 10, 33, 36, 38 | `app/data/indicator_concepts.py`, `app/domain/duplicates.py` | `tests/test_indicator_concepts.py`, `tests/test_duplicates.py` |
+| 18 | 4, 10, 23, 25, 28, 29 | 10, 23, 34, 38 | `app/data/indicator_concepts.py` | `tests/test_indicator_concepts.py` |
+| 20 | 0.1, 4, 8, 21, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9 | 21, 22, 24, 26, 38, S5 | `app/domain/scorecard.py`, `private/scorecard-methodology.md`, `private/disclosure-log.md`, `docs/scorecard-versions.md` | `tests/test_scorecard.py` |
+| 21 | 20, S1 | 20, S1 | `private/scorecard-methodology.md` | `tests/test_scorecard.py` |
+| 22 | 0.1, 2, 6, 20, 26 | 23, 26, 30, 31, S1 | `app/domain/changes.py` | `tests/test_changes.py` |
+| 23 | 18, 22, 30, S1 | 18, 30, 31 | `app/domain/comparison.py`, `app/routes/taxonomy.py` | `tests/test_comparison.py` |
+| 24 | 0.1, 0.2, 4, 20, 26, 37, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9 | — | — | — |
+| 25 | 4 | 18 | — | `tests/test_no_attribution.py`, `tests/test_rulebook.py` |
+| 26 | 0.1, 0.2, 0.3, 1, 12, 20, 22, 34, 38, S1, S2, S3, S4, S5, S6, S7, S8, S9 | 1, 22, 24, 34, 36, 38 | — | — |
+| 27 | 4, 7, 28 | 28 | `docs/data-connections.md`, `docs/data-pipeline.md` | — |
+| 28 | 4, 7, 27 | 18, 27, 34, 35, 37, 38 | `app/connectors/base.py`, `docs/data-connections.md`, `docs/licence-register.md` | `tests/test_connector_framework.py` |
+| 29 | 0.1, 6, 38, S5 | 10, 18, 34, 36, 38, S5 | `app/domain/harmonize.py`, `app/data/macro_catalog.py` | `tests/test_harmonize.py` |
+| 30 | 22, 23 | 10, 23, 31, 32, 38 | `app/domain/harmonize.py` | `tests/test_harmonize.py` |
+| 31 | 22, 23, 30 | 32 | `app/routes/studio.py` | `tests/test_studio.py` |
+| 32 | 30, 31 | — | `app/domain/harmonize.py`, `apps/web/src/features/macro/components/studio-view.tsx` | `tests/test_studio.py`, `apps/web/src/features/macro/lib/studio.test.ts` |
+| 33 | 0.1, 0.2, 16 | 16, 34, 38 | `app/data/macro_catalog.py` | — |
+| 34 | 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38 | 26 | `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py` | `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py` |
+| 35 | 0.2, 2, 28 | — | `app/connectors/base.py`, `app/jobs/refresh.py` | `tests/test_connector_framework.py`, `tests/test_admin_api.py` |
+| 36 | 0.1, 2, 12, 16, 26, 29 | — | `app/jobs/doctor.py` | `tests/test_doctor.py` |
+| 37 | 0.1, 1, 2, 3, 7, 28, 38 | 10, 24, 34, 38 | `app/data/country_sources.py` | `tests/test_country_sources.py` |
+| 38 | 0.1, 1, 2, 3, 4, 6, 7, 9, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5 | 6, 9, 10, 16, 20, 24, 26, 29, 34, 37, S5 | `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py` | `tests/test_source_selection.py`, `tests/test_source_decisions.py` |
+| S1 | 0.2, 6, 21, 22, S2 | 20, 21, 23, 24, 26, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S2 | 0.1, 3, S5 | 10, 20, 24, 26, S1, S3, S5, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S3 | S2 | 20, 24, 26, S4, S7, S8 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S4 | S3 | 20, 24, 26 | — | — |
+| S5 | 0.1, 1, 3, 8, 12, 20, 29, 38, S2 | 10, 20, 24, 26, 29, 38, S2 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S6 | 4, 9 | 20, 24, 26 | `app/routes/market.py` | `tests/test_market_api.py` |
+| S7 | 0.1, 0.2, S1, S2, S3 | 20, 24, 26 | `app/jobs/scorecard.py` | `tests/test_scorecard.py` |
+| S8 | S3 | 20, 24, 26 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S9 | 8 | 20, 24, 26 | `app/routes/market.py` | `tests/test_market_api.py` |
 
 ---
 
@@ -835,16 +841,17 @@ Fixed columns: **Date | Rules touched | Change | Reason | Approved by**. The Rul
 | 20 Nov 2026 | 0.1, 0.2, 0.3, 1-4, 6-12, 15, 16, 18, 20-38, S1-S9, A (renumbering), B (index), C (standardisation), D (migration) | v3.1 amendment: resolved 17 findings from an independent audit. Rule 34 now probes and stages only; serving requires human-verified eligibility PR. Rule 22 and Rule 31 restrict the change view to admissible change kinds. Preamble declares Part 0 binding and defines path resolution; §0.1 "Due date" prefers calendar and defines fallback. §0.2 gains six values. Rule 16 defines pre-filter tolerances, minimum fingerprints, full comparison and the exact "REDUNDANT" test. Rule 20 separates disclosure log from methodology change log. Rules 2, 36, 38 add staging exemptions and clarify source-change lifecycle and as-of boundary. Rule 10 defines real-vs-nominal. Rule 34 runs as async sweep; Rule 35 uses INGEST_RUN_TIME_BUDGET_SECONDS. Rule 36 restricts --fix to database hygiene. Rule S5 requires estimate method registration and owner approval. Rule S1 defines minimum sample, frequency-specific momentum and input series. Preamble and Appendix B move Referenced by to generated output; rule bodies keep Depends on only. Appendix C 20 Nov row reformatted; Appendix D cleanup instruction fixed. | Independent rulebook audit surfaced production-blocking and governance-blocking issues; adopting the fixes before the v3.0 PR merges. | Owner (Rule 26 review) |
 | 20 Nov 2026 | 0.1, 0.2, 0.3, 1-4, 6-12, 15, 16, 18, 20-38, S1-S9, A (renumbering), B (index), C (standardisation), D (migration) | v3.2 amendment: resolved eight findings from a second independent audit. (1) Restored the Depends on / body citation invariant across 15 rules. (2) Removed the assistant name from Appendix C per Rule 25; Rule 25 now explicitly covers the rule book itself. (3) Rule 10 gained a deflation paragraph defining frequency alignment, SA/NSA matching, unusable-deflator fallback and pending-deflator handling. (4) Rule 36's row-repair rules are now exhaustive. (5) Rule 16's full comparison now uses DUPLICATE_FINGERPRINT_TOLERANCE (never bit-for-bit) and DUPLICATE_MIN_FINGERPRINTS_FLOOR avoids O(N²) for shallow series. (6) Rule 38's pre-switch release dates now fall back to derived dates (rule 9) capped at first-load, with un-vintage-stamped label. (7) S1's ZSCORE_MIN_OBSERVATIONS split into frequency-specific floors; momentum defined as prior-period arithmetic difference at native frequency. (8) Rules 12 and 23 dependency chains closed. | Second independent audit found architecture, governance and scoring defects; adopting all eight before v3.1 is used. | Owner (Rule 26 review) |
 | **20 Nov 2026** | **0.2, 10, Preamble, S1, A (renumbering), B (index), C (standardisation), D (migration)** | **v3.3 amendment: resolved three findings from a third independent audit. (F1) Rule S1's lookback window is now frequency-aware via §0.2 `ZSCORE_WINDOW_YEARS_STANDARD` (10) and `ZSCORE_WINDOW_YEARS_ANNUAL` (20); all three S1 paragraphs reference the same window; the observation floor explicitly applies to both level and momentum distributions. (F2) Preamble's citation grammar declares `S<N>` (N in 1–9) and the range `S1–S9` as valid shorthand that expands to the nine S-rules in `Depends on:`; Rule S1's `Depends on:` now includes S2 (S1 cites it in text). (F3) Rule 10 clause (c) now covers a country where the reference CPI is missing (rule 37) as well as unusable (rule 3); Rule 10's `Depends on:` includes 37. Also fixed during application: Rule 38's `Depends on:` now includes 26 (its Text cites "rules 12 and 26"); Rule 26's `Referenced by:` was correct and no longer mismatched. Appendix B is marked provisional and must be regenerated via `scripts/build_rule_index.py` before merge.** | **Third independent audit found three residual defects in v3.2; adopting them plus two hand-verification fixes.** | **Owner (Rule 26 review)** |
+| 20 Nov 2026 | Preamble, 0.2 (value: INGEST_RUN_TIME_BUDGET_SECONDS), 0.2 (value: DUPLICATE_MIN_SHARED_PERIODS), 0.2 (value: DUPLICATE_MIN_DISTINCT_VALUES), 0.2 (value: DUPLICATE_MATCH_SHARE), 1-4, 6-12, 16, 18, 22-38, S1-S9, B (index) | v3.4 amendment, checked against the code and by a mechanical test of the citation invariant. (1) Seven `Depends on:` lines did not match their bodies (rules 10, 24, 33, 36, 37, 38, S2) and rule 29 and rule 26 gained citations; Appendix B is now generated by `scripts/build_rule_index.py` and tested by `tests/test_rulebook.py`. (2) 36 of the 62 implementation and test paths cited did not exist; each now names the file that does, and the Preamble's path resolution maps `migrations/…` to `services/api/migrations/…` and exempts `private/…`. (3) §0.2 now names the constants the code holds, in the files that hold them; `INGEST_RUN_TIME_BUDGET_SECONDS` is 14400, because the retry ladder of rule 35 takes 4875 seconds and could never fit in 1800; three values rule 16 needs are added. Values the code does not yet hold are listed in `docs/rulebook-paths-waivers.md`. (4) Rule 16 defines when two series are duplicates and keeps the second kind of candidate (equal values on different period grids), so the pre-filter finds every pair the full comparison finds. (5) Rule 26 says who approves a data-path change; rule 29's owner decision now has the procedure of rule 38; rule 36 reports instead of setting a status; rule 38's tie-break uses the probe recorded for the decision; rule 10 names the `consumer_prices` concept; rule 25 says what a tool is; S1's momentum is taken in the change kind of rule 22; the Preamble allows a scoped Force. | The v3.3 text could not be adopted as written: it cited files and values the code does not have, and contradicted rules 22 and 36 and the code. | Owner (Rule 26 review pending) |
 
 ---
 
-## Appendix D. Migration map (v2.4 → v3.3)
+## Appendix D. Migration map (v2.4 → v3.4)
 
 One-off appendix. Lists every changed reference, so a reviewer can verify the move is complete. Deleted after one release cycle; from that point, Appendix A is the permanent record.
 
 ### Rule references
 
-| v2.4 reference | v3.3 reference |
+| v2.4 reference | v3.4 reference |
 |---|---|
 | `rule P` | `rule 38` |
 | `rule O` | `rule 37` |
@@ -899,4 +906,4 @@ One-off appendix. Lists every changed reference, so a reviewer can verify the mo
 
 ---
 
-*End of QuFin Rule Book v3.3.*
+*End of QuFin Rule Book v3.4.*

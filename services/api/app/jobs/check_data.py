@@ -23,7 +23,7 @@ from app.stores.source_decisions import SourceStore
 # Release lags are measured over recent periods, so a changed release calendar shows up.
 LAG_WINDOW = timedelta(days=3 * 365)
 # The duplicate check (rule 16) fails, never skips, if it runs past this.
-DUPLICATE_BUDGET_SECONDS = 600.0
+DUPLICATE_CHECK_TIMEOUT_SECONDS = 600.0
 COT_FREQUENCY = "Weekly"
 
 
@@ -169,7 +169,7 @@ def check_macro(session: Session, today: date) -> list[DataCheck]:
     duplicates = find_duplicates(
         {sid: {v.period: v.value for v in store.as_of(sid)} for sid in compared},
         exempt=SourceStore(session).retired_pairs(),
-        budget_seconds=DUPLICATE_BUDGET_SECONDS,
+        budget_seconds=DUPLICATE_CHECK_TIMEOUT_SECONDS,
     )
     mixed = comparability_reasons({sid: s.meta for sid, s in summaries.items()})
     checks = []

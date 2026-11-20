@@ -37,6 +37,10 @@ SCORE_LIMIT = 3.0
 HISTORY_YEARS = 10
 # Fewer points than this and the history says too little about what is normal.
 MIN_HISTORY = {"M": 36, "Q": 12}
+# Part 0, section 0.2 names for the values above (S1). The other z-score floors and the annual
+# window of the rule book are not implemented: docs/rulebook-paths-waivers.md.
+ZSCORE_WINDOW_YEARS_STANDARD = HISTORY_YEARS
+ZSCORE_MIN_OBSERVATIONS_MONTHLY = MIN_HISTORY["M"]
 # Share of an indicator's score that comes from its recent momentum rather than its standing.
 MOMENTUM_WEIGHT = 0.5
 
