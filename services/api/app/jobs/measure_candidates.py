@@ -54,6 +54,7 @@ def measure_all(
                 candidate_read=sighting.first_seen if sighting else None,
                 served_loaded=min(served_loaded, today),
                 candidate_loaded=min(candidate_loaded, today),
+                months=c.months,
             )
             if read is not None:
                 reads.append(read)

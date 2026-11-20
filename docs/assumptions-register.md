@@ -495,3 +495,12 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | An outage splices nothing | Design choice | The pair is unusable (rule 3) and drops out of scores (S2). The other candidates are staged and timed after one release cycle past the grace period, and the owner may approve a change (rules 6, 16 and 20 forbid splicing definitions) |
 | The 32 staged IMF series are removed | Design choice | Nothing is measured for those pairs, so staged copies would only be stored. `prune-staged --yes` removes them after a backup; they never served or scored anything |
 | The 36 Eurostat HICP decisions are confirmed | Design choice | `app/data/source_baseline.py`; `source-decision --baseline` raises a database's provisional ones. The US commercial property decision stays provisional |
+
+## 4y. Staging, slice 4a: FRED's copy against the BIS for US commercial property (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| One candidate is registered | Design choice | `CAND_FRED_CPP_US` (FRED `COMREPUSQ159N`, quarterly) is timed against `BIS_CPP_US`, the only pair still decided by measurement. Other pairs and the discovery job (rule 34) come in slice 4b |
+| A FRED candidate is dated by its own vintages | Design choice | The first vintage that carried a period is its release date; the value stored is the latest vintage. First-read days (`candidate_sightings`) are still the day QuFin saw the period |
+| Quarterly lags count from the end of the quarter | Design choice | `Candidate.months` (3 here) goes to `read_period`, so both lags are measured from the quarter's end and are comparable |
+| The first measurement is preliminary | Open | One period was read on both sides on 20 Nov 2026 (BIS 142 days, FRED at least 144): too few to confirm. `decide-sources` waits until the verdict rests on a release cycle |
