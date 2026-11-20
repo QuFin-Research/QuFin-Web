@@ -34,7 +34,7 @@ from app.jobs.check_data import LAG_WINDOW, macro_status
 from app.jobs.ingest_fred import prune, stale_series
 from app.stores.macro import MacroStore
 
-EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule J) plus Chile and Colombia
+EXPECTED_COUNTRIES = 87  # the QuFin Country List (85, Rule 34) plus Chile and Colombia
 Level = Literal["error", "warning"]
 
 
@@ -66,7 +66,7 @@ WIDELY_HELD = 8  # an indicator held by this many countries is one a country sho
 
 @dataclass(frozen=True)
 class Gap:
-    """A country-indicator pair with no stored series, and where tier 3 says to look (Rule O)."""
+    """A country-indicator pair with no stored series, and where tier 3 says to look (Rule 37)."""
 
     iso3: str
     country: str

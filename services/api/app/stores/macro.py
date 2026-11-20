@@ -74,7 +74,7 @@ class MacroSeriesRow(Base):
     pillar: Mapped[str | None] = mapped_column(String(16), nullable=True)
     scale: Mapped[float] = mapped_column(Float, default=1.0, server_default="1")
     # live: served. retired: a pair's previous source, read only for as-of dates before the change
-    # (rule 16). staged: a candidate being timed, never served or scored (rule P).
+    # (rule 16). staged: a candidate being timed, never served or scored (rule 38).
     lifecycle: Mapped[str] = mapped_column(String(8), default="live", server_default="live")
     retired_on: Mapped[date | None] = mapped_column(Date, nullable=True)
 

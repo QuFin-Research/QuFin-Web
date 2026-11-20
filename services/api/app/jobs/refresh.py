@@ -3,13 +3,13 @@
 The admin panel's "Run refresh" button and a scheduler both start this. It does not reload the
 whole catalog (hundreds of requests to sources that ask us to be gentle, rule 28): it asks only
 for series whose next release has arrived or that are overdue, one ingest command per source, in
-a fixed order that is only a run order, not a source preference (rule P): FRED first because most
+a fixed order that is only a run order, not a source preference (rule 38): FRED first because most
 series come from it, then the agencies and aggregators. Each command is the same CLI
 command a person would run, in its own process, so a crash or a slow source cannot take the API
 down, and each ends with the release check as always (rule 2).
 
 A step that fails for a transient reason (a timeout, a network error, a 5xx) is retried on the
-capped ladder of rule L, after the other sources have had their turn: about 15 s, 60 s, 5 min,
+capped ladder of rule 35, after the other sources have had their turn: about 15 s, 60 s, 5 min,
 15 min and 1 h later, each wait varied by up to 20% so retries do not arrive in step. A step still
 failing after the last rung is marked degraded. A supplier that refuses (403, 429) is never
 retried or asked again in the run (rule 28). The release check runs last.
@@ -70,7 +70,7 @@ KEY_SETTING = {"fred": "fred_api_key", "bls": "bls_api_key", "eia": "eia_api_key
 
 StepOutcome = Literal["ok", "overdue", "failed", "degraded"]
 
-# Rule L: the waits before each retry of a failing feed, in seconds, and the random variation.
+# Rule 35: the waits before each retry of a failing feed, in seconds, and the random variation.
 RETRY_LADDER = (15, 60, 300, 900, 3600)
 RETRY_JITTER = 0.2
 _REFUSED = re.compile(r"returned (403|429)|refused an earlier request")
@@ -172,7 +172,7 @@ def refused(result: StepResult) -> bool:
 
 
 def transient(result: StepResult) -> bool:
-    """A failure that may pass: worth a retry on the ladder (rule L)."""
+    """A failure that may pass: worth a retry on the ladder (rule 35)."""
     return (
         result.status == "failed" and not refused(result) and bool(_TRANSIENT.search(result.detail))
     )
@@ -195,7 +195,7 @@ def execute(
     budget_seconds: float | None = None,
 ) -> None:
     """Run the steps in order, saving progress after each; retry transient failures on the ladder
-    of rule L; run the release check last. Never raises: a run that cannot finish is recorded as
+    of rule 35; run the release check last. Never raises: a run that cannot finish is recorded as
     failed. `budget_seconds` caps the time the ladder may take."""
     progress = summarize_steps(steps)
     rng = rng or random.Random()  # noqa: S311 - jitter, not security

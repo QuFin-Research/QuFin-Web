@@ -22,7 +22,7 @@ class StudioSeries(ApiModel):
     concept: str | None
     native_frequency: str
     adjustment: Literal["SA", "NSA", "OTHER"] = Field(
-        description="Seasonal adjustment as the source states it (Rule B)"
+        description="Seasonal adjustment as the source states it (Rule 29)"
     )
     adjustment_text: str
     units: str = Field(description="Units as the source states them")
@@ -38,7 +38,7 @@ class StudioSeries(ApiModel):
         description="The definition behind a shared name, e.g. HICP or CPI-U (rule 18)",
     )
     last_vintage: date | None = Field(
-        description="Date the latest published value of any period was released (Rule C)"
+        description="Date the latest published value of any period was released (Rule 6)"
     )
     usable: bool
     status_note: str
@@ -53,7 +53,7 @@ class StudioResult(ApiModel):
     frequency: str = Field(description="The display frequency every series was put on")
     poc_name: str | None = Field(description="Week-over-Week, Month-over-Month, and so on")
     allowed_frequencies: list[str]
-    restriction: str | None = Field(description="Why some frequencies are not available (Rule G)")
+    restriction: str | None = Field(description="Why some frequencies are not available (Rule 32)")
     notices: list[str] = Field(description="Anything the reader must know: mixed SA/NSA, scale")
     series: list[StudioSeries]
 

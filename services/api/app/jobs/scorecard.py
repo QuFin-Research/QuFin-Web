@@ -97,7 +97,7 @@ def indicator_statuses(
     for series_id, spec in SCORED.items():
         entry = BY_ID[series_id]
         # A source change never alters a past score: as of an earlier date the series that served
-        # the pair then is read (rules 16 and P).
+        # the pair then is read (rules 16 and 38).
         served = sources.series_in_force(series_id, entry.country, as_of)
         meta = store.get_series(served)
         if meta is None:

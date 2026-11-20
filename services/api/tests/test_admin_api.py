@@ -59,7 +59,7 @@ def factory_and_app():
     application.dependency_overrides[today_dependency] = lambda: TODAY
     application.state.refresh_inline = True
     application.state.refresh_executor = Recorder()
-    application.state.refresh_sleep = lambda _seconds: None  # rule L: no real waiting in tests
+    application.state.refresh_sleep = lambda _seconds: None  # rule 35: no real waiting in tests
     return factory, application
 
 
@@ -304,7 +304,7 @@ def test_executing_a_run_records_progress_even_if_the_executor_raises(factory_an
     assert done.status == "failed" and "boom" in (done.error or "")
 
 
-# --- rule L: the retry ladder -----------------------------------------------------------------
+# --- rule 35: the retry ladder -----------------------------------------------------------------
 
 
 class Scripted:

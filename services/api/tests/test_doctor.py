@@ -1,4 +1,4 @@
-"""QuFin Doctor (Rule N): each check finds its fault, and --fix repairs only what is safe."""
+"""QuFin Doctor (Rule 36): each check finds its fault, and --fix repairs only what is safe."""
 
 # Fixtures imported from test_macro_api are used by name, which ruff reads as redefinition.
 # ruff: noqa: F811

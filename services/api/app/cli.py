@@ -22,7 +22,7 @@ uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC 
 uv run python -m app.cli doctor [--fix]           # database health check and safe repair
 uv run python -m app.cli coverage-matrix --out FILE  # every country against every indicator (CSV)
 uv run python -m app.cli check-data                  # release-schedule check of every source
-uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule P)
+uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule 38)
 uv run python -m app.cli source-history [--country]  # which source served each pair, and when
 uv run python -m app.cli catalog-version             # scorecard and catalog versions (rule 20)
 uv run python -m app.cli scorecard-bias              # the scorecard must show no directional bias
@@ -328,7 +328,7 @@ def _release_check(session: Session) -> list[DataCheck]:
 
 
 def _finish_report(checks: list[DataCheck]) -> None:
-    """What every ingest ends with (rules 2 and N): the release report and the doctor line."""
+    """What every ingest ends with (rules 2 and 36): the release report and the doctor line."""
     if _deferred():
         return
     print()
@@ -337,7 +337,7 @@ def _finish_report(checks: list[DataCheck]) -> None:
 
 
 def _doctor_summary() -> None:
-    """One line after every ingest (Rule N): the quick checks, without any repair."""
+    """One line after every ingest (Rule 36): the quick checks, without any repair."""
     with session_scope() as session:
         report = doctor.run(session, _today(), quick=True)
     print(
@@ -378,7 +378,7 @@ def _check_data(_args: argparse.Namespace) -> int:
 
 
 def _source_decision(args: argparse.Namespace) -> int:
-    """Rule P: record that a series serves a pair from a date, confirm a provisional decision,
+    """Rule 38: record that a series serves a pair from a date, confirm a provisional decision,
     or stage a candidate. A change retires the previous series (rule 16)."""
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -696,7 +696,7 @@ def main(argv: list[str] | None = None) -> int:
     decide.add_argument("--concept", help="the indicator concept key, e.g. consumer_prices")
     decide.add_argument("--series", help="the series that serves the pair from the date")
     decide.add_argument("--source", help="the source of that series, e.g. eurostat")
-    decide.add_argument("--reason", help="why: the candidates measured, per rule P")
+    decide.add_argument("--reason", help="why: the candidates measured, per rule 38")
     decide.add_argument("--from", dest="effective_from", type=date.fromisoformat)
     decide.add_argument("--provisional", action="store_true", help="first choice for a new pair")
     decide.add_argument("--confirm", action="store_true", help="confirm the provisional decision")

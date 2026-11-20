@@ -1,4 +1,4 @@
-"""Source decisions: which source serves each country-indicator pair, and from when (rules 16, P).
+"""Source decisions: which source serves each country-indicator pair, and from when (rules 16, 38).
 
 A pair is (country, concept). Each decision names the series that serves the pair from
 `effective_from`; a change closes the open decision, retires the previous series (kept read-only
@@ -6,7 +6,7 @@ for as-of reads before the change) and opens a new one. Reads as of an earlier d
 series in force then, so past scores and backtests do not change when a source does.
 
 A pair with no decision is served by its catalog series, as before. A provisional decision is the
-first one for a pair, made before a release cycle has been measured (rule P); it serves and is
+first one for a pair, made before a release cycle has been measured (rule 38); it serves and is
 scored like any other, and scores record it (rule 20).
 """
 
@@ -158,7 +158,7 @@ class SourceStore:
         return _decision(row)
 
     def confirm(self, country: str, concept: str) -> None:
-        """The measured winner is the provisional source: the decision stands (rule P)."""
+        """The measured winner is the provisional source: the decision stands (rule 38)."""
         self.session.execute(
             update(SourceDecisionRow)
             .where(

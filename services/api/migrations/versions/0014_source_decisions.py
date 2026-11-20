@@ -1,4 +1,4 @@
-"""source decisions and series lifecycle (rules 16, P)
+"""source decisions and series lifecycle (rules 16, 38)
 
 Revision ID: 0014
 Revises: 0013

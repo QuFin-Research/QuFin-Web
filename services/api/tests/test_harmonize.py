@@ -1,4 +1,4 @@
-"""Frequency harmonisation and PoC (Rules D, E, G): down-sampling, completeness, change units."""
+"""Frequency harmonisation and PoC (Rules 30, 22, 32): down-sampling, completeness, change units."""
 
 from datetime import date, timedelta
 

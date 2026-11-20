@@ -22,4 +22,4 @@ is a baseline, not an approval.
 
 Source changes do not change the scorecard version. They change the catalog version, are recorded as
 source decisions (`uv run python -m app.cli source-history`), and never alter a past score: as of an
-earlier date the series that served the pair then is read (rules 16 and P).
+earlier date the series that served the pair then is read (rules 16 and 38).

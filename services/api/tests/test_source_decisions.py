@@ -1,4 +1,4 @@
-"""Source history and score versioning (rules 16, P and 20).
+"""Source history and score versioning (rules 16, 38 and 20).
 
 A country-indicator pair is served by one source at a time. A change is a dated source decision:
 the old series is retired and kept for as-of reads, the new one serves from the change date, and
@@ -54,7 +54,7 @@ def decide_change(session):
     sources = SourceStore(session)
     sources.decide("US", "consumer_prices", OLD, "fred", date(2020, 1, 1), reason="first")
     return sources.decide(
-        "US", "consumer_prices", NEW, "eurostat", CHANGE, reason="earlier release (rule P)"
+        "US", "consumer_prices", NEW, "eurostat", CHANGE, reason="earlier release (rule 38)"
     )
 
 

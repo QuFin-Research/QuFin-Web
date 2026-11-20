@@ -2,7 +2,7 @@
 
 Checked live on 13 Nov 2026. What was added, and what was left out and why:
 
-- FRED/ALFRED (old rule H, not re-measured under rule P): real GDP for Germany, France, Italy,
+- FRED/ALFRED (old rule H, not re-measured under rule 38): real GDP for Germany, France, Italy,
   Japan and Canada, and the goods trade
   balance of five economies (the UK is left out: its series fell overdue on 13 Nov 2026, because
   FRED posts the OECD's UK figures every second month), all seasonally adjusted with vintages.
@@ -11,18 +11,18 @@ Checked live on 13 Nov 2026. What was added, and what was left out and why:
   last March 2025 or June 2021), the OECD's MEI series that FRED no longer updates; the UK real GDP
   series `CLVMNACSCAB1GQUK` (marked DISCONTINUED, last July 2020); and the Brazilian and South
   African unemployment series (`LRHUTTTT{BR,ZA}M156S` do not exist on FRED).
-- ONS (the original producer, rule P; old rule H, UK fallback): unemployment rate, real GDP and
+- ONS (the original producer, rule 38; old rule H, UK fallback): unemployment rate, real GDP and
   core CPI, where FRED has no current
   seasonally adjusted series with vintages. The ONS publishes the latest values only, so each period
   is dated by its usual release lag, erring late (rule 9).
-- Every series here starts in 1990 where the source goes back that far (Rule I).
+- Every series here starts in 1990 where the source goes back that far (Rule 33).
 """
 
 from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-HISTORY_START = date(1990, 1, 1)  # Rule I: the training horizon for every series added from now on
+HISTORY_START = date(1990, 1, 1)  # Rule 33: the training horizon for every series added from now on
 
 
 @dataclass(frozen=True)
@@ -93,7 +93,7 @@ FRED_ADDITIONS = (
     ),
 )
 # Portugal's consumer prices were FRED's copy of Eurostat's HICP (CP0000PTM086NEST) from 18 Nov
-# 2026; from 19 Nov 2026 they come from Eurostat itself (HICP_GEO below, rule P).
+# 2026; from 19 Nov 2026 they come from Eurostat itself (HICP_GEO below, rule 38).
 FRED_ADDITION_BY_ID = {a.id: a for a in FRED_ADDITIONS}
 
 
@@ -269,7 +269,8 @@ EUROSTAT_SERIES: tuple[EurostatSeries, ...] = (
     ),
 )
 # Monthly unemployment (seasonally adjusted, percent of the labour force, ages 15 to 74 and over as
-# Eurostat defines it) for the EU members that had only the World Bank's annual figure (rule K):
+# Eurostat defines it) for the EU members that had only the World Bank's annual figure
+# (rule 38 (b)):
 # probed live on 13 Nov 2026, current to September or October 2026. Greece is "EL" at Eurostat.
 # Bulgaria and Malta answered HTTP 307 on 13 Nov, during Eurostat's announced maintenance window;
 # both answered 200 on 14 Nov, so they were loaded then.
@@ -317,11 +318,11 @@ EUROSTAT_SERIES = (
         for geo, iso2 in _UNE_GEO.items()
     ),
 )
-# Rule P, 19 Nov 2026: consumer prices from Eurostat's HICP, all items, annual rate of change
+# Rule 38, 19 Nov 2026: consumer prices from Eurostat's HICP, all items, annual rate of change
 # (`prc_hicp_minr`), for every economy where Eurostat's latest month was ahead of the series then
 # serving the pair (October 2026 against September or August; Kosovo had none). For Albania,
 # Belgium, Switzerland, Estonia, Luxembourg and Slovenia the IMF series was level with it
-# (October too); the tie goes to the more native source, Eurostat (rule P, Part 0). Eurostat
+# (October too); the tie goes to the more native source, Eurostat (rule 38, Part 0). Eurostat
 # publishes the final HICP about 15 to 18 days after the month and flags early figures `e`;
 # the licence covers EU, EFTA and candidate economies (Bosnia, Moldova and Ukraine are not
 # served). Greece is "EL" at Eurostat. See docs/assumptions-register.md section 4r.

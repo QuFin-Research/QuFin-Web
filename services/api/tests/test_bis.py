@@ -173,7 +173,7 @@ def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
 def test_economies_left_out_stay_out():
     ids = set(BIS_SERIES)
     # The US is carried by FRED with vintages, except property prices, where the BIS was a
-    # quarter ahead of FRED on 13 and 19 Nov 2026 (rule P): residential and commercial.
+    # quarter ahead of FRED on 13 and 19 Nov 2026 (rule 38): residential and commercial.
     assert not {i for i in ids if i.endswith("_US") and not i.startswith(("BIS_SPP_", "BIS_CPP_"))}
     assert not {i for i in ids if i.endswith("_RU")}
     assert "BIS_CBPOL_DE" not in ids and "BIS_CBPOL_FR" not in ids  # the ECB rate, rule 16
@@ -583,7 +583,7 @@ def test_every_new_measure_area_is_in_the_taxonomy_and_never_russia_or_the_us():
         for area in MEASURES[code].areas:
             assert COUNTRY_BY_ISO2["EA" if area == "XM" else area], (code, area)
             assert area != "RU"
-            assert area != "US" or code == "CPP", (code, area)  # the BIS was earlier (rule P)
+            assert area != "US" or code == "CPP", (code, area)  # the BIS was earlier (rule 38)
 
 
 def test_declared_units_are_what_the_unit_classifier_reads_from_the_units_text():

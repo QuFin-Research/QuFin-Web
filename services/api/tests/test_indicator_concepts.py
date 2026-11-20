@@ -47,7 +47,7 @@ def test_series_derivable_from_stored_ones_are_not_stored():
 
 
 def test_every_recorded_source_reason_describes_a_real_series_and_says_why():
-    """Rule P: a source chosen for a reason has it written down; FRED is not the default."""
+    """Rule 38: a source chosen for a reason has it written down; FRED is not the default."""
     from app.data.macro_catalog import BY_ID
 
     assert SOURCE_REASONS
@@ -58,7 +58,7 @@ def test_every_recorded_source_reason_describes_a_real_series_and_says_why():
 
 def test_no_series_is_required_to_come_from_fred_for_being_a_us_series():
     """The retired rule 17 made FRED the US default. A US series from another source needs no
-    exemption: it needs the rule P reason, which is a record (not a gate) in `SOURCE_REASONS`."""
+    exemption: it needs the rule 38 reason, which is a record (not a gate) in `SOURCE_REASONS`."""
     from app.data.macro_catalog import CATALOG
 
     sources = {e.source for e in CATALOG if e.country == "US"}
@@ -141,7 +141,7 @@ def test_api_returns_the_global_acronym(client, ingested):  # noqa: F811
 
 
 def test_consumer_prices_of_the_eurostat_economies_come_from_eurostat_alone():
-    """Rule P (19 Nov 2026): Eurostat's HICP was ahead of the IMF, BIS and FRED series for these
+    """Rule 38 (19 Nov 2026): Eurostat's HICP was ahead of the IMF, BIS and FRED series for these
     economies. One source per pair (rule 16): none of the others is declared beside it."""
     from app.data.gap_ids import HICP_GEO
     from app.data.macro_catalog import BY_ID

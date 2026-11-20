@@ -1,18 +1,18 @@
-"""World Bank annual indicators for the 50 economies added with the 85-country list (Rule J).
+"""World Bank annual indicators for the 50 economies added with the 85-country list (Rule 34).
 
 Probed on 13 Nov 2026 (one request per indicator and ten countries) and kept apart from the
 catalog so the concepts, units and cycle classification can use it too. Four indicators, each a
-different thing from what the monthly sources already give these countries (rules 16 and K):
+different thing from what the monthly sources already give these countries (rules 16 and 38 (b)):
 
 - real GDP, constant 2015 US dollars (growth is derived from it, never stored beside it);
 - unemployment, percent of the labour force (ILO modelled estimate);
 - current account balance, percent of GDP (a new concept: the US series is an amount);
 - trade balance, goods and services, current US dollars.
 
-Unemployment is not taken for the 19 EU members that Eurostat publishes monthly (rule K), so
+Unemployment is not taken for the 19 EU members that Eurostat publishes monthly (rule 38 (b)), so
 each pair has one source (rule 16); see `gap_ids.py`.
 
-Not taken: consumer prices (the IMF has them monthly for most of these countries, rule K, and a
+Not taken: consumer prices (the IMF has them monthly for most of these countries, rule 38 (b), and a
 second copy would be a duplicate), and total reserves (the World Bank's include gold, the IMF's
 reserves series do not: a different indicator). Only a country-indicator pair whose latest year is
 2024 or later is listed: older annual data would fail the release check (rule 1). Liechtenstein

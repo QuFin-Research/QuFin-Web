@@ -1,4 +1,4 @@
-"""Ingest national-portal series (Rule O tier 3): Brazil's SGS and Singapore's Table Builder.
+"""Ingest national-portal series (Rule 37 tier 3): Brazil's SGS and Singapore's Table Builder.
 
 Both give current values with no vintages, so each period is dated by its usual release lag
 (`app/data/national_calendar.py`), erring late.

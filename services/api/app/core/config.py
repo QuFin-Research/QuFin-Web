@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     # A manual refresh starts at most this often, and a run older than the timeout is treated
     # as interrupted. Each step (one source) is stopped after the step timeout.
     refresh_min_interval_seconds: int = Field(default=600, ge=0)
-    refresh_run_timeout_seconds: int = Field(default=14400, ge=60)  # holds rule L's ladder
+    refresh_run_timeout_seconds: int = Field(default=14400, ge=60)  # holds rule 35's ladder
     refresh_step_timeout_seconds: int = Field(default=1800, ge=60)
     auth_rate_limit: int = Field(default=10, ge=1)
     auth_rate_window_seconds: int = Field(default=900, ge=1)

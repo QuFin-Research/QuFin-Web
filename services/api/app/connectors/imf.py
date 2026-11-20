@@ -1,7 +1,7 @@
 """IMF data connector (SDMX 2.1, keyless): https://data.imf.org
 
-Used where it is the earliest eligible source (rule P). FRED's copies of some IMF series were chosen
-under old rule 17 (FRED first) and have not been re-measured.
+Used where it is the earliest eligible source (rule 38). FRED's copies of some IMF series were
+chosen under old rule 17 (FRED first) and have not been re-measured.
 """
 
 from typing import Any

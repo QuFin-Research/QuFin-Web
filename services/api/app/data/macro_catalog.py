@@ -53,7 +53,7 @@ Cycle = Literal["leading", "coincident", "lagging"]
 # ratios and indexes that can be zero or negative; a percent change of those misleads.
 ChangeKind = Literal["pct", "diff"]
 
-# Rule I: every series loads the deepest history its source holds from 1990, so all series share
+# Rule 33: every series loads the deepest history its source holds from 1990, so all series share
 # one start and indicators compare over the same dates. Earlier would pull vintages since 1939.
 DEFAULT_OBSERVATION_START = date(1990, 1, 1)
 
@@ -98,7 +98,7 @@ class CatalogSeries:
     # growth): taking a change again would be a change of a change. Forces `change="diff"`,
     # and the release check fails if a percent change or y/y transform is configured for it.
     published_as_change: bool = False
-    # Rule I: the first observation to load when the caller asks for the default start.
+    # Rule 33: the first observation to load when the caller asks for the default start.
     history_start: date | None = None
 
 
@@ -196,7 +196,7 @@ def _treasury(id: str) -> CatalogSeries:
 
 
 def _bls(id: str) -> CatalogSeries:
-    """A BLS series (Bureau of Labor Statistics), not on FRED (rule P: where it is the earliest)."""
+    """A BLS series (Bureau of Labor Statistics), not on FRED (rule 38: where it is earliest)."""
     return CatalogSeries(id, "bls", "US", "external", change="diff" if id in DIFF_SERIES else "pct")
 
 
@@ -209,7 +209,7 @@ def _bls(id: str) -> CatalogSeries:
 # Hungary and Korea was verified live on 7 Nov 2026. US business and consumer confidence are
 # left out: the OECD builds them from ISM and Michigan data (licence limits), and Michigan
 # sentiment is already stored (rule 16). The US leading indicator comes from FRED, which
-# carries it live with vintages (old rule 17, not re-measured under rule P).
+# carries it live with vintages (old rule 17, not re-measured under rule 38).
 _OECD_ISO2 = {
     "DEU": "DE",
     "FRA": "FR",
@@ -432,7 +432,7 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     _treasury("TREAS_AVG_RATE_MARKETABLE"),  # Average rate on marketable debt, monthly
     _treasury("TREAS_INTEREST_EXPENSE"),  # Interest expense on the public debt, monthly
     # --- Employment Cost Index (P1-12): FRED carries it SA with vintages, so it is the single
-    # source (old rules 17 and H, not re-measured under rule P); the BLS copy CIS1010000000000I
+    # source (old rules 17 and H, not re-measured under rule 38); the BLS copy CIS1010000000000I
     # was removed as a duplicate. ---
     _us("ECIALLCIV", "labour"),  # ECI, total compensation, civilian workers
     # --- Energy: EIA Weekly Petroleum Status Report (not on FRED), not scored -------------
@@ -465,7 +465,7 @@ _DECLARED: tuple[CatalogSeries, ...] = (
     *(_imf_cpi(series_id) for series_id in IMF_CPI),
     *(_oecd_unemployment(series_id) for series_id in OECD_MACRO),
     # --- Coverage gaps (Sprints 1-4): FRED for other economies, ONS for the UK (old rule H), each
-    # loaded from 1990 where the source goes back that far (Rule I) --------------------------
+    # loaded from 1990 where the source goes back that far (Rule 33) --------------------------
     *(
         CatalogSeries(
             a.id,
@@ -562,7 +562,7 @@ _DECLARED: tuple[CatalogSeries, ...] = (
 
 
 # Series added by the coverage-gap sprints that come from a source whose catalog helper does not
-# set the start itself: they load from 1990 too (Rule I). Series stored before keep their start.
+# set the start itself: they load from 1990 too (Rule 33). Series stored before keep their start.
 _DEEP_HISTORY: frozenset[str] = frozenset(
     {
         sid
