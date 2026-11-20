@@ -452,3 +452,15 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A general check that a native source was considered cannot be written yet | Gap | A test of "every series not from its native source has a reason" would flag 450 European series today: BIS 299, World Bank 80, OECD 34, IMF 28, FRED 9. Most have no Eurostat candidate at all (credit, property prices, annual indicators), so the BIS or the World Bank is the only source. Telling those from real misses needs a table of the candidates that publish each pair (rule 37); it does not exist, so the check stays a record |
 | The refresh order still starts with FRED | Design choice | `SOURCE_COMMAND` runs FRED first because most series come from it. It is a run order, not a source preference |
 
+
+## 4u. Staging, slice 1: timing the IMF against Eurostat's HICP (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The 32 IMF consumer price series are staged again so December can be timed on both sides | Design choice | The 36 Eurostat decisions of 19 Nov are provisional until a release cycle is measured (rule 38). The IMF series that served them are retired and read-only, so they cannot be refreshed; each is loaded as `CAND_IMF_CPI_<area>`, a `staged` series, from 1990 |
+| A staged series never holds the canonical code, is never served and never compared | Done | `lifecycle` is `staged`; `MacroStore.list_series()` leaves it out, the API answers 404 for it, the scorecard and the duplicate check do not read it, and its canonical code is empty because one live series per country and indicator holds the code |
+| The day a period was first read is kept apart from the vintage date | Design choice | `record_latest` dates a period by the earlier of its derived release date and the day it was seen, which understates the lag of a late source. `candidate_sightings` keeps the day itself. Periods present at the first load are `bootstrap`: published before QuFin looked, so they say nothing about timing |
+| The refresh loads staged candidates once a day and never fails on them | Design choice | A step `ingest-staged` is planned only when staged series are stored and none was loaded today (rule 28); a failure is reported as `overdue`, not `failed` (rule 2) |
+| Candidates exist only for the pairs under provisional decision | Open | The BIS and FRED candidates (Malta and Serbia consumer prices, US commercial property), and every other pair, follow with the candidate table of slice 4 |
+| Nothing measures the lag yet | Open | The sightings are kept from the first refresh; slice 2 turns them into a lag per candidate and compares it with the series that serves the pair |
+

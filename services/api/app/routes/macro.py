@@ -80,7 +80,8 @@ _META_FIELDS = (
 
 def _require(store: MacroStore, series_id: str) -> SeriesMeta:
     meta = store.get_series(series_id.upper())
-    if meta is None:
+    # Staged and retired series are never served as current (rules 16 and 38).
+    if meta is None or store.lifecycle_of(meta.id) != "live":
         raise HTTPException(status_code=404, detail="Series not ingested")
     return meta
 

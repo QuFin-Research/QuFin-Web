@@ -228,15 +228,18 @@ class MacroStore:
         observations: Iterable[tuple[date, float | None]],
         release_of: Callable[[date], date],
         today: date,
+        lifecycle: str = "live",
     ) -> int:
         """Store a source's current values when it serves no vintages (e.g. the EIA API).
+
+        `lifecycle="staged"` loads a candidate that is timed but never served (rule 38, Part 0).
 
         A period seen for the first time is dated by its derived release date (never later
         than today, when it is known to be public). A period whose value has changed since the
         last load closes its old row yesterday and opens a new one today, so revisions become
         vintages from the moment they are seen. Returns the number of rows written.
         """
-        series = self._upsert_meta(meta)
+        series = self._upsert_meta(meta, lifecycle)
         self.session.flush()
         current = {
             r.period: r
@@ -285,8 +288,14 @@ class MacroStore:
         self.session.commit()
         return written
 
-    def _upsert_meta(self, meta: SeriesMeta) -> MacroSeriesRow:
-        series = self.session.get(MacroSeriesRow, meta.id) or MacroSeriesRow(id=meta.id)
+    def lifecycle_of(self, series_id: str) -> str | None:
+        """live, retired or staged; None when the series is not stored."""
+        row = self.session.get(MacroSeriesRow, series_id)
+        return row.lifecycle if row is not None else None
+
+    def _upsert_meta(self, meta: SeriesMeta, lifecycle: str = "live") -> MacroSeriesRow:
+        existing = self.session.get(MacroSeriesRow, meta.id)
+        series = existing or MacroSeriesRow(id=meta.id, lifecycle=lifecycle)
         series.source = meta.source
         series.title = meta.title
         series.units = meta.units
@@ -307,6 +316,10 @@ class MacroStore:
             )
         except TaxonomyError as exc:  # a new source wording: load the data, flag the code
             log.warning("%s has no canonical code: %s", meta.id, exc)
+            series.canonical_code = None
+        if series.lifecycle != "live":
+            # One live series per country and indicator holds the code (a unique index): a staged
+            # or retired series never does.
             series.canonical_code = None
         series.pillar = pillar_for(meta.country, meta.id)
         series.scale = scale_of(meta.units)

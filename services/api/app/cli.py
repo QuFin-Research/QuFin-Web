@@ -9,6 +9,8 @@ uv run python -m app.cli ingest-eia                  # EIA weekly oil supply and
 uv run python -m app.cli ingest-ecb                  # euro area series from the ECB
 uv run python -m app.cli ingest-oecd                 # OECD leading indicators, confidence
 uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED lacks them)
+uv run python -m app.cli ingest-staged               # candidate sources, loaded but never served
+uv run python -m app.cli candidates                  # which candidate is timed against which pair
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
 uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
 uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
@@ -57,6 +59,7 @@ from app.connectors.treasury import TreasuryClient
 from app.connectors.worldbank import WorldBankClient
 from app.core.config import get_settings
 from app.data.benchmarks import BENCHMARK_SERIES
+from app.data.candidates import CANDIDATES
 from app.data.macro_catalog import CATALOG, DEFAULT_OBSERVATION_START
 from app.data.positioning_catalog import COT_CONTRACTS, DEFAULT_COT_START
 from app.data.source_baseline import BASELINE
@@ -75,6 +78,7 @@ from app.jobs import (
     ingest_national,
     ingest_oecd,
     ingest_ons,
+    ingest_staged,
     ingest_treasury,
     ingest_worldbank,
     sync_taxonomy,
@@ -82,6 +86,7 @@ from app.jobs import (
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
 from app.jobs.ingest_fred import ingest, prune, stale_series
 from app.jobs.scorecard import bias_backtest, format_bias_report
+from app.stores.candidates import CandidateStore
 from app.stores.db import get_engine, session_scope
 from app.stores.macro import MacroStore
 from app.stores.migrate import upgrade_to_head
@@ -199,6 +204,35 @@ def _ingest_imf(args: argparse.Namespace) -> int:
         print(f"{r.series_id:<16} {status}")
     _finish_report(checks)
     return 0 if all(r.error is None for r in results) and _all_usable(checks) else 1
+
+
+def _ingest_staged(args: argparse.Namespace) -> int:
+    """Load the candidate sources without serving them (rule 38). Reported, never a failed run."""
+    upgrade_to_head(get_engine())
+    chosen = [c for c in CANDIDATES if args.source in (None, c.source)]
+    with ImfClient(raw=_raw_zone()) as imf, session_scope() as session:
+        results = ingest_staged.ingest({"imf": imf}, session, chosen, args.start)
+    for r in results:
+        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        print(f"{r.series_id:<22} {status}")
+    failed = sum(r.error is not None for r in results)
+    print(f"staged: {len(results) - failed} of {len(results)} candidates loaded")
+    return 0 if not failed else 1
+
+
+def _candidates(_args: argparse.Namespace) -> int:
+    """Which candidate serves which pair, and what has been seen of it."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        store, sightings = MacroStore(session), CandidateStore(session)
+        stored = {s.meta.id: s for s in store.list_series(("staged",))}
+        print(f"{'candidate':<22} {'pair':<22} {'serves':<20} {'last period':<12} first reads")
+        for c in CANDIDATES:
+            row = stored.get(c.id)
+            last = row.last_period.isoformat()[:7] if row and row.last_period else "not loaded"
+            reads = len(sightings.measurable(c.id)) if row else 0
+            print(f"{c.id:<22} {c.country + ' ' + c.concept:<22} {c.serves:<20} {last:<12} {reads}")
+    return 0
 
 
 def _ingest_ons(args: argparse.Namespace) -> int:
@@ -610,6 +644,17 @@ def main(argv: list[str] | None = None) -> int:
         help=f"first month to load (default {DEFAULT_OBSERVATION_START})",
     )
     imf.set_defaults(func=_ingest_imf)
+
+    staged = sub.add_parser(
+        "ingest-staged", help="load candidate sources without serving them (rule 38)"
+    )
+    staged.add_argument("--source", choices=["imf"], default=None)
+    staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
+    staged.set_defaults(func=_ingest_staged)
+    sub.add_parser(
+        "candidates",
+        help="the candidate sources, the pair each is timed against, and what was read",
+    ).set_defaults(func=_candidates)
 
     ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
     ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")

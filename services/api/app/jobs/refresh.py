@@ -39,12 +39,14 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.core.config import Settings
 from app.data.macro_catalog import BY_ID
 from app.jobs.check_data import LAG_WINDOW, macro_status
+from app.jobs.ingest_staged import staging_due
 from app.schemas.admin import JobStep
 from app.stores.jobs import FAILED, SUCCEEDED, JobStore
 from app.stores.macro import MacroStore
 
 JOB = "refresh"
 CHECK_COMMAND = "check-data"
+STAGING_COMMAND = "ingest-staged"
 DEFER_ENV = "QUFIN_DEFER_RELEASE_CHECK"
 API_DIR = Path(__file__).resolve().parents[2]
 CHUNK = 100  # series ids per command: a command line has a length limit
@@ -117,6 +119,8 @@ def plan(session: Session, settings: Settings, today: date) -> list[Step]:
             skip = f"no {source.upper()} API key configured"
         for i in range(0, len(ids), CHUNK):
             steps.append(Step(command or "-", source, tuple(ids[i : i + CHUNK]), skip))
+    if staging_due(session, today):
+        steps.append(Step(STAGING_COMMAND, "staging", ()))
     if any(step.skip_reason is None for step in steps):
         steps.append(Step(CHECK_COMMAND, "release check", ()))
     return steps
@@ -126,7 +130,7 @@ def subprocess_executor(step: Step, timeout: int) -> StepResult:
     """Run one ingest command. Exit 1 with a release report is a finished run that found series
     still overdue (the source has not published); anything else non-zero is a failure."""
     cmd = [sys.executable, "-m", "app.cli", step.command, *step.series_ids]
-    ingest = step.command != CHECK_COMMAND
+    ingest = step.command not in (CHECK_COMMAND, STAGING_COMMAND)
     env = {**os.environ, DEFER_ENV: "1"} if ingest else dict(os.environ)
     try:
         done = subprocess.run(  # noqa: S603 - fixed argv, ids come from the catalog
@@ -135,6 +139,10 @@ def subprocess_executor(step: Step, timeout: int) -> StepResult:
     except subprocess.TimeoutExpired:
         return StepResult("failed", f"timed out after {timeout} s")
     lines = [ln for ln in (done.stdout + "\n" + done.stderr).splitlines() if ln.strip()]
+    if step.command == STAGING_COMMAND:
+        summary = next((ln for ln in reversed(lines) if ln.startswith("staged:")), "")
+        # Staged series are measured, not relied on: a failure is reported, never failing the run.
+        return StepResult("ok" if done.returncode == 0 else "overdue", summary[:300])
     if ingest:
         failed = [ln for ln in lines if "FAILED" in ln]
         loaded = len(step.series_ids) - len(failed)

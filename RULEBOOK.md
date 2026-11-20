@@ -458,8 +458,8 @@ The chosen source is read as published (rule 6).
 
 **Cross-references:**
 - Depends on: 0.1, 1, 2, 3, 4, 6, 7, 9, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5
-- Implementation: `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py`
-- Tests: `tests/test_source_selection.py`, `tests/test_source_decisions.py`
+- Implementation: `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py`, `app/data/candidates.py`, `app/jobs/ingest_staged.py`, `app/stores/candidates.py`
+- Tests: `tests/test_source_selection.py`, `tests/test_source_decisions.py`, `tests/test_staged.py`
 
 ---
 
@@ -802,7 +802,7 @@ blocks; this appendix is their sole home.
 | 35 | 0.2, 2, 28 | — | `app/connectors/base.py`, `app/jobs/refresh.py` | `tests/test_connector_framework.py`, `tests/test_admin_api.py` |
 | 36 | 0.1, 2, 12, 16, 26, 29 | — | `app/jobs/doctor.py` | `tests/test_doctor.py` |
 | 37 | 0.1, 1, 2, 3, 7, 28, 38 | 10, 24, 34, 38 | `app/data/country_sources.py` | `tests/test_country_sources.py` |
-| 38 | 0.1, 1, 2, 3, 4, 6, 7, 9, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5 | 6, 9, 10, 16, 20, 24, 26, 29, 34, 37, S5 | `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py` | `tests/test_source_selection.py`, `tests/test_source_decisions.py` |
+| 38 | 0.1, 1, 2, 3, 4, 6, 7, 9, 10, 12, 16, 18, 20, 26, 28, 29, 30, 33, 37, S5 | 6, 9, 10, 16, 20, 24, 26, 29, 34, 37, S5 | `app/domain/source_selection.py`, `app/stores/source_decisions.py`, `app/data/source_baseline.py`, `app/data/candidates.py`, `app/jobs/ingest_staged.py`, `app/stores/candidates.py` | `tests/test_source_selection.py`, `tests/test_source_decisions.py`, `tests/test_staged.py` |
 | S1 | 0.2, 6, 21, 22, S2 | 20, 21, 23, 24, 26, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S2 | 0.1, 3, S5 | 10, 20, 24, 26, S1, S3, S5, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S3 | S2 | 20, 24, 26, S4, S7, S8 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
