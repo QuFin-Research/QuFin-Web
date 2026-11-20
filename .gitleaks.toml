@@ -12,3 +12,8 @@ paths = [
   '''package-lock\.json$''',
   '''uv\.lock$''',
 ]
+
+# Public series identifiers that look like keys to the generic rule (a FRED series id, not a credential).
+regexes = [
+  '''COMREPUSQ159N''',
+]
