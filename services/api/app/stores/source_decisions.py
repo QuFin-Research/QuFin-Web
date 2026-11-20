@@ -116,6 +116,7 @@ class SourceStore:
         reason: str,
         status: str = CONFIRMED,
         recorded_at: datetime | None = None,
+        commit: bool = True,
     ) -> SourceDecision:
         """Record that `series_id` serves the pair from `effective_from`.
 
@@ -154,7 +155,8 @@ class SourceStore:
         )
         self.session.add(row)
         self._lifecycle(series_id, LIVE, None)
-        self.session.commit()
+        if commit:
+            self.session.commit()
         return _decision(row)
 
     def confirm(self, country: str, concept: str) -> None:

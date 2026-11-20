@@ -475,3 +475,14 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | The verdict compares periods won, the action compares median lags | Design choice | `measure-candidates` shows who was earlier in more periods and runs `choose()` on the median lags and the latest periods: a tie goes to the more native source. It records nothing |
 | First real reading, 20 Nov 2026 | Open | Eurostat's October was first read 18 days after the month. The IMF had not shown October for most of the 32 pairs, so each is at least 21 days (a bound); the verdict is "served earlier, confirm" until the IMF publishes and a real lag replaces the bound |
 
+## 4w. Staging, slice 3: from a measurement to a decision (20 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| A lower bound is not a measurement | Design choice | `decide-sources` acts only when at least one period was read on both sides. While the candidate has published nothing the verdict is shown and the action is `wait`; on 20 Nov 2026 all 32 pairs wait |
+| Only a confirmation is recorded by a command | Design choice | A replacement changes the source of a pair, which needs a catalog entry: a reviewed pull request that the owner merges and a row here (rules 26 and 38). `--apply` therefore confirms provisional decisions and never replaces one |
+| A confirmation holds for one database until it is written in the code | Open | `decide-sources --apply` changes the decision in the database it runs on. A fresh database is built from `app/data/source_baseline.py`, so the owner sets `status` there to make it permanent |
+| A winner takes a new series id | Design choice | The series that served the pair before keeps its id, retired, so its history stays readable as of earlier dates; the winner is added to the catalog under an unused id and `promote-candidate` copies the staged values, vintages and first-read days into it in one transaction |
+| The staged copy is removed after the move | Design choice | It never served or scored anything, so no as-of read refers to it; keeping it beside the new series would store the same data twice (rule 16) |
+| Which pairs are confirmed | Open | None yet. The first confirmations come after the IMF publishes November's and December's figures |
+

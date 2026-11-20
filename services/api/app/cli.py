@@ -12,6 +12,8 @@ uv run python -m app.cli ingest-imf                  # IMF reserves (where FRED 
 uv run python -m app.cli ingest-staged               # candidate sources, loaded but never served
 uv run python -m app.cli candidates                  # which candidate is timed against which pair
 uv run python -m app.cli measure-candidates          # their release lags, and what rule 38 would do
+uv run python -m app.cli decide-sources [--apply]    # confirm the provisional decisions it supports
+uv run python -m app.cli promote-candidate ID --as NEW --from DATE --reason TEXT  # a winner
 uv run python -m app.cli ingest-eurostat             # Eurostat: industrial production, core HICP
 uv run python -m app.cli ingest-worldbank           # World Bank annual indicators (new economies)
 uv run python -m app.cli ingest-bcb                  # Brazil: unemployment, goods trade balance
@@ -68,6 +70,7 @@ from app.domain.versioning import SCORECARD_VERSION, catalog_version
 from app.jobs import (
     build_calendar,
     coverage_matrix,
+    decide_sources,
     doctor,
     ingest_bis,
     ingest_bls,
@@ -83,6 +86,7 @@ from app.jobs import (
     ingest_treasury,
     ingest_worldbank,
     measure_candidates,
+    promote,
     sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
@@ -259,6 +263,47 @@ def _measure_candidates(_args: argparse.Namespace) -> int:
         )
     waiting = sum(m.served_median is None for m in measured)
     print(f"{len(measured) - waiting} of {len(measured)} measured; {waiting} waiting for a release")
+    return 0
+
+
+def _decide_sources(args: argparse.Namespace) -> int:
+    """Rule 38: what the measurement means for each provisional decision. --apply confirms only."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        outcomes = decide_sources.plan(session, CANDIDATES)
+        print(f"{'candidate':<22} {'pair':<22} {'decision':<12} {'action':<12} why")
+        for o in outcomes:
+            c = o.candidate
+            pair = f"{c.country} {c.concept}"
+            print(f"{c.id:<22} {pair:<22} {o.status or '-':<12} {o.action:<12} {o.why}")
+        counts = {a: sum(o.action == a for o in outcomes) for a in decide_sources.ACTIONS}
+        print(", ".join(f"{n} {a}" for a, n in counts.items() if n))
+        if args.apply:
+            done = decide_sources.apply(session, outcomes)
+            print(
+                f"confirmed {len(done)} decisions in this database; to keep them for every "
+                "database set status to confirmed in app/data/source_baseline.py"
+            )
+        elif counts[decide_sources.CONFIRM]:
+            print("nothing recorded; run again with --apply to confirm them")
+    return 0
+
+
+def _promote_candidate(args: argparse.Namespace) -> int:
+    """Move a winning staged candidate into the catalog series a reviewed pull request added."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        try:
+            done = promote.promote(
+                session, args.candidate, args.series, args.effective_from, reason=args.reason
+            )
+        except promote.PromotionError as exc:
+            print(f"refused: {exc}")
+            return 2
+    print(
+        f"{done.candidate_id} -> {done.series_id}: {done.observations} observations and "
+        f"{done.sightings} first reads moved; {done.retired} is retired from {args.effective_from}"
+    )
     return 0
 
 
@@ -686,6 +731,19 @@ def main(argv: list[str] | None = None) -> int:
         "measure-candidates",
         help="each candidate release lag against the series it is timed against",
     ).set_defaults(func=_measure_candidates)
+    decide = sub.add_parser(
+        "decide-sources", help="what the measurement means for each provisional decision"
+    )
+    decide.add_argument("--apply", action="store_true", help="confirm the decisions it supports")
+    decide.set_defaults(func=_decide_sources)
+    promo = sub.add_parser(
+        "promote-candidate", help="move a winning staged candidate into its new catalog series"
+    )
+    promo.add_argument("candidate", help="the staged candidate id, e.g. CAND_IMF_CPI_DEU")
+    promo.add_argument("--as", dest="series", required=True, help="the new catalog series id")
+    promo.add_argument("--from", dest="effective_from", type=date.fromisoformat, required=True)
+    promo.add_argument("--reason", required=True, help="the measurement, per rule 38")
+    promo.set_defaults(func=_promote_candidate)
 
     ons = sub.add_parser("ingest-ons", help="ingest UK ONS series (unemployment, GDP, core CPI)")
     ons.add_argument("series", nargs="*", help="series ids (default: every ONS series)")
