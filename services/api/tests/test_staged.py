@@ -274,3 +274,71 @@ def test_a_source_without_a_loader_is_reported(db_session):
     odd = Candidate(**{**CPP.__dict__, "source": "oecd"})
     [r] = ingest({"oecd": object()}, db_session, [odd], today=TODAY)
     assert r.error == "no loader for source oecd"
+
+
+# --- the BLS candidates for the US series FRED serves --------------------------------------------
+
+
+def test_every_bls_candidate_names_a_us_series_fred_serves_and_its_own_bls_id():
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+
+    bls = [c for c in CANDIDATES if c.source == "bls"]
+    assert len(bls) == 11 and len({c.key for c in bls}) == 11
+    for c in bls:
+        served = BY_ID[c.serves]
+        assert served.source == "fred" and served.country == c.country == "US"
+        assert c.producer == "original" and c.id.startswith(PREFIX) and c.id not in BY_ID
+        assert c.concept == SERIES_CONCEPTS[("US", c.serves)]
+    assert {c.serves: c.months for c in bls}["ECIALLCIV"] == 3  # quarterly
+
+
+class FakeBls:
+    def __init__(self, observations):
+        self.observations = observations
+        self.asked = []
+
+    def series(self, series_id, start_year=2000, end_year=None):
+        self.asked.append((series_id, start_year))
+        return self.observations
+
+
+UNRATE = next(c for c in CANDIDATES if c.serves == "UNRATE")
+
+
+def _store_served(session):
+    MacroStore(session).replace_series(
+        SeriesMeta(
+            "UNRATE",
+            "fred",
+            "Unemployment Rate",
+            "Percent",
+            "Monthly",
+            "Seasonally Adjusted",
+            country="US",
+            dimension="labour",
+            last_updated=None,
+            cycle="lagging",
+        ),
+        [_vintage(date(2026, 9, 1), date(2026, 10, 2), 4.1)],
+    )
+
+
+def test_a_bls_candidate_is_described_like_the_series_it_is_timed_against(db_session):
+    _store_served(db_session)
+    bls = FakeBls([(date(2026, 8, 1), 4.0), (date(2026, 9, 1), 4.1), (date(2026, 7, 1), None)])
+    [r] = ingest({"bls": bls}, db_session, [UNRATE], today=TODAY)
+    assert (
+        r.error is None and r.rows == 2 and bls.asked == [(UNRATE.key, 1990)]
+    )  # the default start
+    store = MacroStore(db_session)
+    assert store.lifecycle_of(UNRATE.id) == "staged"
+    meta = store.get_series(UNRATE.id)
+    assert meta.source == "bls" and meta.frequency == "Monthly" and meta.dimension == "labour"
+    assert "BLS candidate" in meta.title
+    assert store.lifecycle_of("UNRATE") == "live"  # the served series is untouched
+
+
+def test_a_bls_candidate_is_not_loaded_while_the_series_it_describes_is_missing(db_session):
+    [r] = ingest({"bls": FakeBls([(date(2026, 9, 1), 4.1)])}, db_session, [UNRATE], today=TODAY)
+    assert r.error and "UNRATE is not stored" in r.error
+    assert MacroStore(db_session).lifecycle_of(UNRATE.id) is None
