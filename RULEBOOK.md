@@ -403,7 +403,7 @@ Rule 28 governs where it differs: a `Retry-After` longer than a step is honoured
 
 **Text:** QuFin keeps a fast, deterministic command line check with automatic repair, `uv run python -m app.cli doctor --fix`, that runs after every ingestion job and in continuous integration. It verifies and, where it can do so safely, repairs: (a) no duplicate country-indicator mapping (rule 16); staged series are exempt as in rule 16; (b) no orphaned vintage rows and no null or NaN corruption; (c) strictly increasing dates; (d) the `SA` and `NSA` tags are accurate; (e) release-schedule freshness (rule 2); and (f) upstream series that have frozen are quarantined or flagged.
 
-**A repair to a database row is restricted to:** (i) deleting an orphaned vintage row whose parent series no longer exists (after backup); (ii) deleting a corrupted row whose date is out of order, whose value is null, or whose value is NaN, **so the next ingest re-fetches a clean value from the source — never imputing or rewriting a numeric value**; (iii) reporting a series as `review` (Part 0, §0.1) when its upstream source has frozen: the status is computed by the release check (rule 2), so the doctor stores nothing for it. **No other mutation is permitted.** A repair to **catalog metadata** (SA/NSA tag, change kind, source decision, concept, variant) is never applied by `doctor --fix`; it fails loudly and requires a reviewed PR that updates the catalog and `docs/assumptions-register.md` (rule 12), under Rule 26's process and Rule 29's variant rule. A repair never deletes data without a backup and a report line saying what was done.
+**A repair to a database row is restricted to:** (i) deleting an orphaned vintage row whose parent series no longer exists (after backup); (ii) deleting a corrupted row whose vintage dates are reversed (start after end), whose value is null, NaN or not finite, **so the next ingest re-fetches a clean value from the source — never imputing or rewriting a numeric value**; (iii) reporting a series as `review` (Part 0, §0.1) when its upstream source has frozen: the status is computed by the release check (rule 2), so the doctor stores nothing for it; (iv) re-deriving a series' canonical code from its stored frequency and adjustment (a label computed from stored fields, never a data value). **No other mutation is permitted.** Series the catalog no longer lists are reported, never removed by the doctor; removing them is the separate, explicit command `prune-stale --yes`, which backs up first. A repair to **catalog metadata** (SA/NSA tag, change kind, source decision, concept, variant) is never applied by `doctor --fix`; it fails loudly and requires a reviewed PR that updates the catalog and `docs/assumptions-register.md` (rule 12), under Rule 26's process and Rule 29's variant rule. A repair never deletes data without a backup and a report line saying what was done.
 
 **Cross-references:**
 - Depends on: 0.1, 2, 12, 16, 26, 29
@@ -580,12 +580,12 @@ A delayed or missing indicator must make a score **less certain, never more bull
 
 **Force:** Mandatory (within the scorecard mechanism).
 
-**Text:** Size trade ideas by confidence (S3).
+**Text:** Size trade ideas by confidence (S3): the share of a normal position a trade idea may take is the confidence of the score it rests on, from 0 (none) to 1 (full), and for a currency pair the confidence of the weaker side (S8). The score itself is never changed. The API carries it as `sizeFactor` beside `overallConfidence`.
 
 **Cross-references:**
-- Depends on: S3
-- Implementation: —
-- Tests: —
+- Depends on: S3, S8
+- Implementation: `app/domain/scorecard.py`, `app/jobs/scorecard.py`
+- Tests: `tests/test_scorecard.py`
 
 ### S5. Fix delays at the source where the licence allows it
 
@@ -806,11 +806,11 @@ blocks; this appendix is their sole home.
 | S1 | 0.2, 6, 21, 22, S2 | 20, 21, 23, 24, 26, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S2 | 0.1, 3, S5 | 10, 20, 24, 26, S1, S3, S5, S7 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S3 | S2 | 20, 24, 26, S4, S7, S8 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
-| S4 | S3 | 20, 24, 26 | — | — |
+| S4 | S3, S8 | 20, 24, 26 | `app/domain/scorecard.py`, `app/jobs/scorecard.py` | `tests/test_scorecard.py` |
 | S5 | 0.1, 1, 3, 8, 12, 20, 29, 38, S2 | 10, 20, 24, 26, 29, 38, S2 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S6 | 4, 9 | 20, 24, 26 | `app/routes/market.py` | `tests/test_market_api.py` |
 | S7 | 0.1, 0.2, S1, S2, S3 | 20, 24, 26 | `app/jobs/scorecard.py` | `tests/test_scorecard.py` |
-| S8 | S3 | 20, 24, 26 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
+| S8 | S3 | 20, 24, 26, S4 | `app/domain/scorecard.py` | `tests/test_scorecard.py` |
 | S9 | 8 | 20, 24, 26 | `app/routes/market.py` | `tests/test_market_api.py` |
 
 ---

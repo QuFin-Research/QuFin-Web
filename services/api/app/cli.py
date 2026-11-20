@@ -20,6 +20,7 @@ uv run python -m app.cli sync-taxonomy               # canonical codes, pillars 
 uv run python -m app.cli build-calendar              # releases: previous, actual, next due
 uv run python -m app.cli seed-benchmarks             # the 15 benchmark G20/GCC indicators
 uv run python -m app.cli doctor [--fix]           # database health check and safe repair
+uv run python -m app.cli prune-stale [--yes]         # remove series the catalog no longer lists
 uv run python -m app.cli coverage-matrix --out FILE  # every country against every indicator (CSV)
 uv run python -m app.cli check-data                  # release-schedule check of every source
 uv run python -m app.cli source-decision ...         # record, confirm or stage a source (rule 38)
@@ -79,7 +80,7 @@ from app.jobs import (
     sync_taxonomy,
 )
 from app.jobs.check_data import DataCheck, check_all, check_macro, check_positioning, format_report
-from app.jobs.ingest_fred import ingest, prune
+from app.jobs.ingest_fred import ingest, prune, stale_series
 from app.jobs.scorecard import bias_backtest, format_bias_report
 from app.stores.db import get_engine, session_scope
 from app.stores.macro import MacroStore
@@ -344,6 +345,25 @@ def _doctor_summary() -> None:
         f"doctor: {len(report.errors)} errors, {len(report.warnings)} warnings "
         "(uv run python -m app.cli doctor for the list)"
     )
+
+
+def _prune_stale(args: argparse.Namespace) -> int:
+    """Remove the series the catalog no longer lists, after a backup. The doctor only reports them
+    (rule 36); removing data is a decision, so it needs --yes."""
+    upgrade_to_head(get_engine())
+    with session_scope() as session:
+        stale = stale_series(MacroStore(session))
+        if not stale:
+            print("no stale series")
+            return 0
+        print("stale series: " + ", ".join(stale))
+        if not args.yes:
+            print("nothing removed; run again with --yes to back up the database and remove them")
+            return 1
+        backup = doctor.backup_database(session)
+        removed = prune(session)
+        print(f"removed {len(removed)} series; backup: {backup}")
+    return 0
 
 
 def _doctor(args: argparse.Namespace) -> int:
@@ -660,6 +680,11 @@ def main(argv: list[str] | None = None) -> int:
         )
         nat.set_defaults(func=func)
 
+    stale = sub.add_parser(
+        "prune-stale", help="remove series the catalog no longer lists (backs up first)"
+    )
+    stale.add_argument("--yes", action="store_true", help="really remove them")
+    stale.set_defaults(func=_prune_stale)
     doc = sub.add_parser("doctor", help="check the database's health; --fix repairs what is safe")
     doc.add_argument("--fix", action="store_true", help="repair (a backup is taken first)")
     doc.add_argument("--quick", action="store_true", help="skip the vintage overlap scan")
