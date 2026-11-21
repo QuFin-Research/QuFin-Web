@@ -375,8 +375,8 @@ Source selection (rules 29–38) governs **how a source is chosen**; all other r
 
 **Cross-references:**
 - Depends on: 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38
-- Implementation: `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py`
-- Tests: `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py`
+- Implementation: `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py`, `app/data/probes.py`, `app/jobs/discover.py`
+- Tests: `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py`, `tests/test_discover.py`
 
 ### Rule 35. Release-calendar precision and a resilient retry policy
 
@@ -804,7 +804,7 @@ blocks; this appendix is their sole home.
 | 31 | 22, 23, 30 | 32 | `app/routes/studio.py` | `tests/test_studio.py` |
 | 32 | 30, 31 | — | `app/domain/harmonize.py`, `apps/web/src/features/macro/components/studio-view.tsx` | `tests/test_studio.py`, `apps/web/src/features/macro/lib/studio.test.ts` |
 | 33 | 0.1, 0.2, 16 | 16, 34, 38 | `app/data/macro_catalog.py` | — |
-| 34 | 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38 | 26 | `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py` | `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py` |
+| 34 | 0.1, 0.2, 1, 2, 3, 7, 10, 12, 18, 26, 28, 29, 33, 37, 38 | 26 | `app/data/taxonomy.py`, `app/jobs/coverage_matrix.py`, `app/data/probes.py`, `app/jobs/discover.py` | `tests/test_taxonomy.py`, `tests/test_coverage_matrix.py`, `tests/test_discover.py` |
 | 35 | 0.2, 2, 28 | — | `app/connectors/base.py`, `app/jobs/refresh.py` | `tests/test_connector_framework.py`, `tests/test_admin_api.py` |
 | 36 | 0.1, 2, 12, 16, 26, 29 | — | `app/jobs/doctor.py` | `tests/test_doctor.py` |
 | 37 | 0.1, 1, 2, 3, 7, 28, 38 | 10, 24, 34, 38 | `app/data/country_sources.py` | `tests/test_country_sources.py` |

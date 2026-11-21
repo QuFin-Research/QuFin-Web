@@ -540,6 +540,29 @@ def _coverage_matrix(args: argparse.Namespace) -> int:
     return 0
 
 
+def _discover(args: argparse.Namespace) -> int:
+    """The discovery probe (rule 34): what each source publishes, against what QuFin holds. It
+    stores nothing."""
+    from app.connectors.eurostat import EurostatClient
+    from app.connectors.oecd import OecdClient
+    from app.jobs import discover
+
+    upgrade_to_head(get_engine())
+    with (
+        OecdClient(raw=_raw_zone()) as oecd,
+        EurostatClient(raw=_raw_zone()) as eurostat,
+        session_scope() as session,
+    ):
+        findings = discover.sweep(
+            {"oecd": oecd, "eurostat": eurostat}, session, args.concept, _today()
+        )
+    print(discover.format_report(findings))
+    if args.out:
+        discover.write_csv(findings, Path(args.out))
+        print(f"wrote {len(findings)} rows to {args.out}")
+    return 0
+
+
 def _check_data(_args: argparse.Namespace) -> int:
     upgrade_to_head(get_engine())
     with session_scope() as session:
@@ -886,6 +909,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     matrix.add_argument("--out", help="write the full matrix to this CSV file")
     matrix.set_defaults(func=_coverage_matrix)
+    probe = sub.add_parser(
+        "discover", help="probe the sources for indicators QuFin lacks (rule 34); stores nothing"
+    )
+    probe.add_argument("--concept", action="append", help="limit to this indicator (repeatable)")
+    probe.add_argument("--out", help="write every finding to this CSV file")
+    probe.set_defaults(func=_discover)
 
     bls = sub.add_parser("ingest-bls", help="ingest BLS series (Employment Cost Index)")
     bls.add_argument("series", nargs="*", help="series ids (default: every BLS series)")

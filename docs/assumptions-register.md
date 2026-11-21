@@ -514,3 +514,14 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A tie goes to the BLS if the lags are level | Per rule 38 | The original producer outranks the bloc aggregator (FRED) in the tie-break (Part 0). Changing a source is a reviewed pull request and `promote-candidate`, never a command |
 | No source decision exists for these pairs yet | Open | `decide-sources` reports "not what serves it" until a baseline decision records FRED as serving each pair. `measure-candidates` is unaffected and shows the lags |
 | The measurement needs a release cycle | Open | All 11 were staged on 21 Nov 2026 and have published nothing since. The FRED series are timed from their own vintages; the BLS from the day each period first appears |
+
+## 5a. Discovery probe, report first (21 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The probe stores nothing | Design choice | It reports what each source publishes against what QuFin holds. Staging and serving stay decisions for a reviewed pull request (rules 26, 34, 38) |
+| Three indicators, two sources | Design choice | Industrial production, core consumer prices and money supply, against the OECD (one wildcard request answers for every economy) and Eurostat (one request per economy it serves). The keys were checked live on 21 Nov 2026. Other sources and indicators are added as probes in `app/data/probes.py` |
+| Eurostat's answer wins for its economies | Per rule 38 | For an economy Eurostat serves, a Eurostat series would serve the pair whatever the OECD shows (Bloc aggregator first) |
+| A series is current if its latest period is within 150 days | Design choice | A recent window of eight months is read; this is a screen for the report, not the release check of rule 2 |
+| First report, 21 Nov 2026 | Result | Eurostat publishes 33 core CPI and 30 industrial production series QuFin lacks. The OECD adds industrial production for GB, CA, IN, MX, BR and CL, core CPI for AU, and money supply for 10 economies (GB, JP, CA, AU, NO, HU, ZA, KR, IS, CO). Eurostat could not be read for Iceland and Kosovo (the selection holds more than one series). OECD series for 24 other economies are behind schedule and are not counted |
+| Eurostat has no money supply | Open | Euro area money comes from the ECB (already held); other Eurostat economies need their central banks or the IMF |
