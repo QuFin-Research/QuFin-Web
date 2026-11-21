@@ -1,0 +1,129 @@
+"""Rule 34: the discovery probe reports what each source publishes and stores nothing."""
+
+# Fixtures imported from test_macro_api are used by name, which ruff reads as redefinition.
+# ruff: noqa: F811
+
+import time
+from datetime import date
+from types import SimpleNamespace
+
+from app.connectors.eurostat import EurostatError
+from app.connectors.sdmx import SdmxError
+from app.data.probes import PROBES, Probe
+from app.jobs import discover
+from app.stores.macro import MacroStore
+from tests.test_macro_api import db_session  # noqa: F401  (fixture)
+
+TODAY = date(2026, 11, 21)
+OECD = Probe("money_supply", "oecd", "m", flow="F", key=".M.X")
+EUROSTAT = Probe("core_consumer_prices", "eurostat", "c", dataset="ds", filters={"freq": "M"})
+
+
+class FakeOecd:
+    def __init__(self, result=None, error=None):
+        self.result, self.error = result, error
+
+    def _data(self, flow, key, start):
+        if self.error:
+            raise self.error
+        return self.result
+
+
+def fake_series(area_last):
+    """parse_all is exercised elsewhere; here it is replaced by ready-made series."""
+    return [
+        SimpleNamespace(
+            dimensions={"REF_AREA": area}, observations=[(date(2026, 1, 1), 1.0), (last, 2.0)]
+        )
+        for area, last in area_last.items()
+    ]
+
+
+def test_an_oecd_wildcard_answers_for_every_economy_and_maps_the_euro_area(monkeypatch):
+    monkeypatch.setattr(
+        discover,
+        "parse_all",
+        lambda *a: fake_series({"JPN": date(2026, 9, 1), "EA20": date(2026, 2, 1), "ZZZ": TODAY}),
+    )
+    found = discover.probe_oecd(FakeOecd({}), OECD, {"money_supply": {"JPN"}}, TODAY)
+    by = {f.iso3: f for f in found}
+    assert by["JPN"].status == "published" and by["JPN"].current and by["JPN"].held
+    assert by["EMU"].status == "published" and not by["EMU"].current  # February is behind
+    assert by["USA"].status == "absent" and not by["USA"].bloc_first
+    assert len(found) == len(
+        {f.iso3 for f in found}
+    )  # one finding per economy, unknown areas dropped
+
+
+def test_an_oecd_404_means_nothing_matches_and_any_other_error_fails_every_economy():
+    absent = discover.probe_oecd(
+        FakeOecd(error=SdmxError("oecd returned 404: Not Found")), OECD, {}, TODAY
+    )
+    assert {f.status for f in absent} == {"absent"}
+    failed = discover.probe_oecd(FakeOecd(error=SdmxError("oecd returned 429")), OECD, {}, TODAY)
+    assert {f.status for f in failed} == {"failed"} and failed[0].detail
+
+
+class FakeEurostat:
+    def __init__(self, last=date(2026, 10, 1), missing=(), broken=()):
+        self.last, self.missing, self.broken = last, missing, broken
+
+    def series(self, dataset, filters, start):
+        if filters["geo"] in self.missing:
+            raise EurostatError("Eurostat returned no observations")
+        if filters["geo"] in self.broken:
+            raise EurostatError("The selection holds more than one series")
+        return SimpleNamespace(observations=[(self.last, 1.0)])
+
+
+def test_eurostat_is_asked_for_each_economy_it_serves_and_would_serve_them_first():
+    found = discover.probe_eurostat(
+        FakeEurostat(missing=("AL",), broken=("IS",)), EUROSTAT, {}, TODAY, time.monotonic() + 60
+    )
+    by = {f.iso3: f for f in found}
+    assert by["DEU"].status == "published" and by["DEU"].current and by["DEU"].bloc_first
+    assert by["ALB"].status == "absent" and by["ISL"].status == "failed"
+    assert len(found) == 36  # the economies Eurostat serves
+
+
+def test_a_sweep_out_of_time_marks_the_rest_pending_not_failed():
+    found = discover.probe_eurostat(FakeEurostat(), EUROSTAT, {}, TODAY, time.monotonic() - 1)
+    assert {f.status for f in found} == {"pending"}
+
+
+def test_the_sweep_reports_held_pairs_limits_to_concepts_and_stores_nothing(
+    db_session, monkeypatch
+):
+    monkeypatch.setattr(discover, "parse_all", lambda *a: fake_series({"JPN": TODAY}))
+    clients = {"oecd": FakeOecd({}), "eurostat": FakeEurostat()}
+    before = len(MacroStore(db_session).list_series(("staged", "live")))
+    only_money = discover.sweep(clients, db_session, ["money_supply"], TODAY)
+    assert {f.concept for f in only_money} == {"money_supply"}
+    everything = discover.sweep(clients, db_session, None, TODAY)
+    assert {f.concept for f in everything} == {p.concept for p in PROBES}
+    assert discover.sweep({}, db_session, None, TODAY) == []  # no client, no probe
+    assert len(MacroStore(db_session).list_series(("staged", "live"))) == before
+
+
+def test_the_report_counts_current_behind_absent_and_new():
+    findings = [
+        discover.Finding("c", "oecd", "AAA", "published", TODAY, current=True),
+        discover.Finding("c", "oecd", "BBB", "published", date(2025, 1, 1)),
+        discover.Finding("c", "oecd", "CCC", "published", TODAY, current=True, held=True),
+        discover.Finding("c", "oecd", "DDD", "absent"),
+        discover.Finding("c", "eurostat", "EEE", "pending"),
+    ]
+    summary = discover.summarize(findings)["c"]
+    assert summary["oecd"] == {
+        "current": 2, "behind": 1, "absent": 1, "pending": 0, "failed": 0, "new": 1,
+    }  # fmt: skip
+    assert summary["eurostat"]["pending"] == 1
+    text = discover.format_report(findings)
+    assert "nothing was stored" in text and "1 pending" in text
+
+
+def test_the_findings_are_written_to_csv(tmp_path):
+    path = tmp_path / "out.csv"
+    discover.write_csv([discover.Finding("c", "oecd", "AAA", "published", TODAY, True)], path)
+    head, row = path.read_text(encoding="utf-8").splitlines()[:2]
+    assert head.startswith("concept,source,iso3,status") and row.startswith("c,oecd,AAA,published")
