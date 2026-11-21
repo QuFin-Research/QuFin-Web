@@ -27,6 +27,7 @@ def measure_all(
     """One measurement per candidate that is stored. `loaded` overrides the day a series was last
     loaded (tests); by default it is the day the series was last ingested."""
     today = today or datetime.now(UTC).date()
+    candidates = [c for c in candidates if c.serves]  # a gap candidate has nothing to time
     store, sightings = MacroStore(session), CandidateStore(session)
     staged = {s.meta.id: s for s in store.list_series(("staged",))}
     served_rows = {s.meta.id: s for s in store.list_series()}

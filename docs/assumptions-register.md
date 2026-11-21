@@ -525,3 +525,14 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A series is current if its latest period is within 150 days | Design choice | A recent window of eight months is read; this is a screen for the report, not the release check of rule 2 |
 | First report, 21 Nov 2026 | Result | Eurostat publishes 33 core CPI and 30 industrial production series QuFin lacks. The OECD adds industrial production for GB, CA, IN, MX, BR and CL, core CPI for AU, and money supply for 10 economies (GB, JP, CA, AU, NO, HU, ZA, KR, IS, CO). Eurostat could not be read for Iceland and Kosovo (the selection holds more than one series). OECD series for 24 other economies are behind schedule and are not counted |
 | Eurostat has no money supply | Open | Euro area money comes from the ECB (already held); other Eurostat economies need their central banks or the IMF |
+
+## 5b. Gap candidates staged from the probe's findings (21 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| 80 series are staged | Result | From the 21 Nov 2026 probe: Eurostat core consumer prices for 33 economies and industrial production for 30; OECD industrial production for GB, CA, IN, MX, BR and CL, core consumer prices for AU, and broad money for GB, JP, CA, AU, NO, HU, ZA, KR, IS and CO. Each series loaded live on 21 Nov 2026 (to 440 months for most) |
+| Staged is not served | Per rule 34 | No gap candidate is served, scored or compared, and coverage stayed at 944 of 2,697 cells. A reviewed pull request that verifies licence, definition and release schedule promotes one (rules 26 and 34) |
+| A gap candidate has nothing to time | Design choice | `serves` is empty, so `measure-candidates` and `decide-sources` skip it. For an economy Eurostat serves, Eurostat wins by rule 38 (Bloc aggregator first); no measurement decides it |
+| A gap candidate describes itself | Design choice | Title, units, adjustment, dimension and cycle are written in `app/data/candidates.py`. The dimension and cycle of money supply (`policy`, `leading`) and of the OECD series are my classification and need the owner's review before promotion (rule S5-style review of cycle) |
+| Only current economies were staged | Design choice | The probe's `current` flag (latest period within 150 days). OECD series that are behind schedule (24 economies) and Eurostat's Iceland and Kosovo industrial production (the selection holds more than one series) are not staged |
+| The daily refresh loads them | Open | `ingest-staged` now has 92 candidates, about 4 minutes a day at the suppliers' own pace (Eurostat 2 s, OECD 3 s per series). If that crowds the run, split the staging step from the refresh |

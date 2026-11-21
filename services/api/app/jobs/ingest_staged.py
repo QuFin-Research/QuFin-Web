@@ -21,11 +21,14 @@ from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
 from app.connectors.bls import BlsError
+from app.connectors.eurostat import EurostatError
 from app.connectors.fred import FredError
 from app.connectors.sdmx import SdmxError
 from app.data.candidates import CANDIDATES, Candidate
+from app.data.eurostat_calendar import release_of as eurostat_release_of
 from app.data.imf_calendar import imf_release
 from app.data.macro_catalog import DEFAULT_OBSERVATION_START
+from app.data.oecd_calendar import oecd_release
 from app.jobs.ingest_fred import IngestResult
 from app.stores.candidates import CandidateSightingRow, CandidateStore
 from app.stores.macro import MacroObservationRow, MacroSeriesRow, MacroStore, SeriesMeta
@@ -82,6 +85,41 @@ def _load_bls(client: Any, store: MacroStore, c: Candidate, start: date, today: 
     return observations, rows
 
 
+def _gap_meta(c: Candidate, source_name: str, release: str) -> SeriesMeta:
+    return SeriesMeta(
+        id=c.id,
+        source=c.source,
+        title=f"{c.title} (candidate)",
+        units=c.units,
+        frequency=c.frequency,
+        seasonal_adjustment=c.adjustment,
+        country=c.country,
+        dimension=c.dimension,
+        last_updated=None,
+        cycle=c.cycle or None,
+        source_name=source_name,
+        release_name=release,
+    )
+
+
+def _load_eurostat(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
+    filters = dict(part.split("=", 1) for part in c.key.split(","))
+    fetched = client.series(c.flow, filters, start)
+    meta = _gap_meta(c, "Eurostat (from national statistical institutes)", c.flow)
+    rows = store.record_latest(
+        meta, fetched.observations, eurostat_release_of(c.flow), today, STAGED
+    )
+    return fetched.observations, rows
+
+
+def _load_oecd(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
+    fetched = client.series(c.flow, c.key, start)
+    observations = [(p, v) for p, v in fetched.observations if v is not None]
+    meta = _gap_meta(c, "OECD (from national sources)", c.flow)
+    rows = store.record_latest(meta, observations, oecd_release, today, STAGED)
+    return observations, rows
+
+
 def _load_fred(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
     """FRED's current value of each period, dated by the first vintage that carried it."""
     info = client.series(c.key)
@@ -115,7 +153,10 @@ def ingest(
     results: list[IngestResult] = []
     for i, c in enumerate(candidates):
         client = clients.get(c.source)
-        if client is None or c.source not in ("imf", "fred", "bls"):
+        known = c.source in ("imf", "fred", "bls", "eurostat") or (
+            c.source == "oecd" and not c.serves
+        )
+        if client is None or not known:
             results.append(IngestResult(c.id, None, f"no loader for source {c.source}"))
             continue
         if i:
@@ -126,12 +167,16 @@ def ingest(
                 observations, rows = _load_fred(client, store, c, start, today)
             elif c.source == "bls":
                 observations, rows = _load_bls(client, store, c, start, today)
+            elif c.source == "eurostat":
+                observations, rows = _load_eurostat(client, store, c, start, today)
+            elif c.source == "oecd":
+                observations, rows = _load_oecd(client, store, c, start, today)
             else:
                 fetched = client.series(c.flow, c.key, start)
                 observations = [(p, v) for p, v in fetched.observations if v is not None]
                 rows = store.record_latest(_imf_meta(c), observations, imf_release, today, STAGED)
             new = sightings.record(c.id, [p for p, _ in observations], today, bootstrap=first_load)
-        except (SdmxError, FredError, BlsError, KeyError) as exc:
+        except (SdmxError, FredError, BlsError, EurostatError, KeyError) as exc:
             session.rollback()
             log.warning("staged load of %s failed: %s", c.id, exc)
             results.append(IngestResult(c.id, None, str(exc)))

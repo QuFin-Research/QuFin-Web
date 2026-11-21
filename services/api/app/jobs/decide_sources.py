@@ -57,7 +57,7 @@ def plan(
 ) -> list[Outcome]:
     today = today or datetime.now(UTC).date()
     sources = SourceStore(session)
-    items = list(candidates)
+    items = [c for c in candidates if c.serves]
     outcomes = []
     for c, m in zip(items, measure_all(session, items, today, loaded), strict=True):
         decision = sources.in_force(c.country, c.concept, today)
