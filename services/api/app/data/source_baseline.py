@@ -15,8 +15,9 @@ from dataclasses import dataclass
 from datetime import date
 
 from app.data.bis_ids import BATCH_A, BIS_COUNTRY
-from app.data.gap_ids import HICP_GEO
-from app.data.indicator_concepts import BIS_CONCEPT
+from app.data.gap_ids import BATCH_B_CORE, BATCH_B_IP, HICP_GEO
+from app.data.indicator_concepts import _OECD_CONCEPT, BIS_CONCEPT
+from app.data.macro_catalog import _OECD_BATCH_B, _OECD_ID, _OECD_ISO2
 from app.data.macro_ids import ISO3_TO_ISO2
 
 CONCEPT = "consumer_prices"
@@ -143,10 +144,50 @@ def _batch_a(code: str, area: str) -> BaselineDecision:
     )
 
 
+def _batch_b_eurostat(concept: str, series_id: str, country: str, month: str) -> BaselineDecision:
+    return BaselineDecision(
+        country,
+        concept,
+        series_id,
+        "eurostat",
+        BATCH_A_DATE,
+        "confirmed",
+        f"Bloc aggregator first (rule 38): Eurostat serves the pair whenever it publishes it; "
+        f"its latest month was {month} on 22 Nov 2026.",
+    )
+
+
+def _batch_b_oecd(concept: str, series_id: str, country: str) -> BaselineDecision:
+    return BaselineDecision(
+        country,
+        concept,
+        series_id,
+        "oecd",
+        BATCH_A_DATE,
+        "provisional",
+        "A new pair: the OECD is the only candidate with a current feed (probe of 21 Nov 2026; "
+        "latest month 2026-09 or 2026-10), so it serves from the start. Provisional until a "
+        "release cycle is measured (rule 38).",
+    )
+
+
 BASELINE: tuple[BaselineDecision, ...] = (
     *(_decision(i, g) for i, g in HICP_GEO.items()),
     _US_COMMERCIAL_PROPERTY,
     *(_batch_a(code, area) for code, areas in BATCH_A.items() for area in areas),
+    *(
+        _batch_b_eurostat("core_consumer_prices", f"ESTAT_CORE_{g}", i, "2026-10")
+        for g, i in BATCH_B_CORE.items()
+    ),
+    *(
+        _batch_b_eurostat("industrial_production", f"ESTAT_IP_{g}", i, "2026-09")
+        for g, i in BATCH_B_IP.items()
+    ),
+    *(
+        _batch_b_oecd(_OECD_CONCEPT[m], f"OECD_{_OECD_ID[m]}_{a}", _OECD_ISO2[a])
+        for m, areas in _OECD_BATCH_B.items()
+        for a in areas
+    ),
 )
 
 # Series kept although they are no longer in the catalog: the pair's history stays readable as of

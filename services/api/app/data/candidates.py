@@ -102,73 +102,8 @@ CANDIDATES = (
 # currently for an economy QuFin holds nothing for. Each is loaded as `staged`, never served, until
 # a reviewed pull request verifies its eligibility (rules 26 and 34). Eurostat's economies are
 # Eurostat's to serve (rule 38, Bloc aggregator first); the OECD fills the others.
-_ESTAT_CORE = (
-    "AL",
-    "AT",
-    "BE",
-    "BG",
-    "CH",
-    "CY",
-    "CZ",
-    "DK",
-    "EE",
-    "ES",
-    "FI",
-    "GR",
-    "HR",
-    "HU",
-    "IE",
-    "IS",
-    "LT",
-    "LU",
-    "LV",
-    "ME",
-    "MK",
-    "MT",
-    "NL",
-    "NO",
-    "PL",
-    "PT",
-    "RO",
-    "RS",
-    "SE",
-    "SI",
-    "SK",
-    "TR",
-    "XK",
-)
-_ESTAT_IP = (
-    "AT",
-    "BE",
-    "BG",
-    "CH",
-    "CY",
-    "CZ",
-    "DK",
-    "EE",
-    "ES",
-    "FI",
-    "GR",
-    "HR",
-    "HU",
-    "IE",
-    "LT",
-    "LU",
-    "LV",
-    "ME",
-    "MK",
-    "MT",
-    "NL",
-    "NO",
-    "PL",
-    "PT",
-    "RO",
-    "RS",
-    "SE",
-    "SI",
-    "SK",
-    "TR",
-)
+_ESTAT_CORE: tuple[str, ...] = ()
+_ESTAT_IP = ("BE",)
 _OECD_CORE = {"AU": "AUS"}
 _OECD_IP = {"GB": "GBR", "CA": "CAN", "IN": "IND", "MX": "MEX", "BR": "BRA", "CL": "CHL"}
 _OECD_MONEY = {
@@ -294,7 +229,10 @@ CANDIDATES = (*CANDIDATES, *GAP_CANDIDATES)
 # Gaps the second discovery sweep found on 21 Nov 2026 (rule 34): series the BIS or the OECD
 # publishes currently for an economy QuFin holds nothing for. The 98 BIS series on six served
 # measures were promoted on 22 Nov 2026 (`_BATCH_A` in `bis_ids.py`); the BIS ones left here were
-# held back (Russia, the United States, missing or stale periods). Loaded as `staged`, never served,
+# held back (Russia, the United States, missing or stale periods). Batch B (22 Nov 2026) promoted
+# the Eurostat core HICP (33) and industrial production (29) and the OECD survey series (10)
+# (`BATCH_B_*` in `gap_ids.py`, `_OECD_BATCH_B` in `macro_catalog.py`); Belgium's production, a
+# month behind, stays staged. Loaded as `staged`, never served,
 # until a reviewed pull request verifies eligibility (rules 26 and 34). An economy Eurostat serves
 # is left out where Eurostat also publishes the indicator (residential property prices, business
 # and consumer confidence, unemployment): that is Eurostat's to serve (rule 38).
@@ -357,11 +295,7 @@ _BIS_GAP = {
     ),
     "DSSFIN": ("US",),
 }
-_OECD_SURVEY_GAP = {
-    "leading_index": {"CN": "CHN"},
-    "business_confidence": {"BR": "BRA", "ZA": "ZAF", "ID": "IDN", "IL": "ISR", "CO": "COL"},
-    "consumer_sentiment": {"IN": "IND", "ZA": "ZAF", "ID": "IDN", "IL": "ISR"},
-}
+_OECD_SURVEY_GAP: dict[str, dict[str, str]] = {}
 _OECD_SURVEY = {  # concept -> (OECD measure, title, dimension)
     "leading_index": ("LI", "Composite leading indicator", "growth"),
     "business_confidence": ("BCICP", "Business confidence indicator", "growth"),
