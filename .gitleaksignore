@@ -1,2 +1,4 @@
 # A FRED series id, not a credential (generic-api-key false positive)
 8fea890d7cf7fdef13b5beb6f91380f429618928:services/api/app/data/candidates.py:generic-api-key:49
+# An OECD series key, not a credential (generic-api-key false positive)
+70c147ee4d0c469ab7aa21949f3c45c362c14dbe:services/api/app/data/probes.py:generic-api-key:89
