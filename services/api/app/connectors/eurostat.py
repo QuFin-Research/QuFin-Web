@@ -22,6 +22,7 @@ PATH = "/eurostat/api/dissemination/statistics/1.0/data"
 _DATASET = re.compile(r"^[a-z0-9_]+$")
 _VALUE = re.compile(r"^[A-Za-z0-9_.-]+$")
 _MONTH = re.compile(r"^(\d{4})-(\d{2})$")
+_QUARTER = re.compile(r"^(\d{4})-Q([1-4])$")
 
 
 class EurostatError(SourceError):
@@ -44,16 +45,25 @@ class EurostatClient(HttpSource):
         super().__init__(base_url, **kwargs)
 
     def series(
-        self, dataset: str, filters: dict[str, str], start: date | None = None
+        self,
+        dataset: str,
+        filters: dict[str, str],
+        start: date | None = None,
+        quarterly: bool = False,
     ) -> EurostatSeries:
-        """Monthly observations of one fully specified series from `start`."""
+        """Observations of one fully specified series from `start`: monthly, or quarterly (dated
+        at the first month of the quarter) for a quarterly dataset."""
         if not _DATASET.fullmatch(dataset) or not all(
             _VALUE.fullmatch(k) and _VALUE.fullmatch(v) for k, v in filters.items()
         ):
             raise EurostatError("Not a valid Eurostat dataset or filter")
         params: dict[str, str] = {"format": "JSON", "lang": "EN", **filters}
         if start is not None:
-            params["sinceTimePeriod"] = f"{start.year}-{start.month:02d}"
+            params["sinceTimePeriod"] = (
+                f"{start.year}-Q{(start.month - 1) // 3 + 1}"
+                if quarterly
+                else f"{start.year}-{start.month:02d}"
+            )
         body = self.get_json(f"{PATH}/{dataset}", params, f"{dataset}-{filters.get('geo', '')}")
         return parse(body)
 
@@ -75,10 +85,15 @@ def parse(body: dict) -> EurostatSeries:
         pos = int(pos)
         if value is None:
             continue
-        match = _MONTH.match(by_position[pos])
-        if not match:
-            raise EurostatError(f"Unsupported Eurostat period {by_position[pos]!r}")
-        observations.append((date(int(match[1]), int(match[2]), 1), float(value)))
+        label = by_position[pos]
+        match = _MONTH.match(label)
+        if match:
+            observations.append((date(int(match[1]), int(match[2]), 1), float(value)))
+            continue
+        quarter = _QUARTER.match(label)
+        if not quarter:
+            raise EurostatError(f"Unsupported Eurostat period {label!r}")
+        observations.append((date(int(quarter[1]), 3 * (int(quarter[2]) - 1) + 1, 1), float(value)))
     if not observations:
         raise EurostatError("Eurostat returned no observations")
     return EurostatSeries(str(body.get("label", "")), sorted(observations))

@@ -152,7 +152,10 @@ def probe_eurostat(
             found.append(_finding(probe, iso3, held, None, today, PENDING))
             continue
         try:
-            series = client.series(probe.dataset, {**probe.filters, "geo": geo}, _window(today))
+            extra = {"quarterly": True} if probe.quarterly else {}
+            series = client.series(
+                probe.dataset, {**probe.filters, "geo": geo}, _window(today, probe.months), **extra
+            )
         except EurostatError as exc:
             absent = "no observations" in str(exc) or "no data" in str(exc)
             found.append(

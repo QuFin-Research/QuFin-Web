@@ -68,7 +68,8 @@ class FakeEurostat:
     def __init__(self, last=date(2026, 10, 1), missing=(), broken=()):
         self.last, self.missing, self.broken = last, missing, broken
 
-    def series(self, dataset, filters, start):
+    def series(self, dataset, filters, start, **kwargs):
+        self.kwargs = kwargs
         if filters["geo"] in self.missing:
             raise EurostatError("Eurostat returned no observations")
         if filters["geo"] in self.broken:
@@ -169,3 +170,26 @@ def test_every_bis_probe_leaves_the_economy_open_and_names_a_known_concept():
     assert len(bis) >= 15
     for p in bis:
         assert "{" not in p.key and p.concept in CONCEPTS and p.flow
+
+
+def test_a_quarterly_eurostat_probe_asks_for_a_quarter_and_a_longer_window():
+    quarterly = Probe(
+        "real_gdp", "eurostat", "g", dataset="namq_10_gdp", filters={"freq": "Q"}, months=18,
+        quarterly=True,
+    )  # fmt: skip
+    client = FakeEurostat(last=date(2026, 7, 1))
+    found = discover.probe_eurostat(client, quarterly, {}, TODAY, time.monotonic() + 60)
+    assert client.kwargs == {"quarterly": True}
+    assert all(f.current for f in found if f.status == "published")  # 2026 Q3 within 345 days
+
+
+def test_the_macro_flow_probes_name_trade_the_current_account_and_real_gdp():
+    probes = [
+        p for p in PROBES if p.concept in ("real_gdp", "current_account_to_gdp", "trade_balance")
+    ]
+    assert {(p.concept, p.source) for p in probes} >= {
+        ("real_gdp", "oecd"), ("real_gdp", "eurostat"), ("current_account_to_gdp", "oecd"),
+        ("current_account_to_gdp", "eurostat"), ("trade_balance", "oecd"),
+    }  # fmt: skip
+    for p in probes:
+        assert p.months and (p.source != "oecd" or p.key.count(".") >= 7)

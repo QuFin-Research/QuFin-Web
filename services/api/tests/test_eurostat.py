@@ -144,3 +144,17 @@ def test_a_failing_series_is_reported_and_rolled_back(db_session):
     )
     assert results[0].rows is None and "no data" in results[0].error
     assert MacroStore(db_session).list_series() == []
+
+
+def test_a_quarterly_dataset_is_read_with_each_quarter_dated_at_its_first_month():
+    body = {
+        "id": ["freq", "time"],
+        "size": [1, 2],
+        "dimension": {"time": {"category": {"index": {"2026-Q1": 0, "2026-Q2": 1}}}},
+        "value": {"0": 1.5, "1": 1.6},
+    }
+    from datetime import date
+
+    from app.connectors.eurostat import parse
+
+    assert parse(body).observations == [(date(2026, 1, 1), 1.5), (date(2026, 4, 1), 1.6)]
