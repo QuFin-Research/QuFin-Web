@@ -13,12 +13,14 @@ relied on (rule 2).
 import logging
 import time
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import replace
 from datetime import UTC, date, datetime
 from typing import Any
 
 from sqlalchemy import delete
 from sqlalchemy.orm import Session
 
+from app.connectors.bls import BlsError
 from app.connectors.fred import FredError
 from app.connectors.sdmx import SdmxError
 from app.data.candidates import CANDIDATES, Candidate
@@ -68,6 +70,18 @@ def _fred_meta(c: Candidate, info: Any) -> SeriesMeta:
     )
 
 
+def _load_bls(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
+    """BLS serves current values only: a period is first read on the day it first appears. The
+    series is described like the one it is timed against."""
+    served = store.get_series(c.serves)
+    if served is None:
+        raise KeyError(f"{c.serves} is not stored, so {c.id} cannot be described")
+    observations = [(p, v) for p, v in client.series(c.key, start.year) if v is not None]
+    meta = replace(served, id=c.id, source="bls", title=f"{served.title} (BLS candidate)")
+    rows = store.record_latest(meta, observations, lambda _p: today, today, STAGED)
+    return observations, rows
+
+
 def _load_fred(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
     """FRED's current value of each period, dated by the first vintage that carried it."""
     info = client.series(c.key)
@@ -101,7 +115,7 @@ def ingest(
     results: list[IngestResult] = []
     for i, c in enumerate(candidates):
         client = clients.get(c.source)
-        if client is None or c.source not in ("imf", "fred"):
+        if client is None or c.source not in ("imf", "fred", "bls"):
             results.append(IngestResult(c.id, None, f"no loader for source {c.source}"))
             continue
         if i:
@@ -110,12 +124,14 @@ def ingest(
         try:
             if c.source == "fred":
                 observations, rows = _load_fred(client, store, c, start, today)
+            elif c.source == "bls":
+                observations, rows = _load_bls(client, store, c, start, today)
             else:
                 fetched = client.series(c.flow, c.key, start)
                 observations = [(p, v) for p, v in fetched.observations if v is not None]
                 rows = store.record_latest(_imf_meta(c), observations, imf_release, today, STAGED)
             new = sightings.record(c.id, [p for p, _ in observations], today, bootstrap=first_load)
-        except (SdmxError, FredError, KeyError) as exc:
+        except (SdmxError, FredError, BlsError, KeyError) as exc:
             session.rollback()
             log.warning("staged load of %s failed: %s", c.id, exc)
             results.append(IngestResult(c.id, None, str(exc)))

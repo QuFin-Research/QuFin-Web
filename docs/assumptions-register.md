@@ -504,3 +504,13 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A FRED candidate is dated by its own vintages | Design choice | The first vintage that carried a period is its release date; the value stored is the latest vintage. First-read days (`candidate_sightings`) are still the day QuFin saw the period |
 | Quarterly lags count from the end of the quarter | Design choice | `Candidate.months` (3 here) goes to `read_period`, so both lags are measured from the quarter's end and are comparable |
 | The first measurement is preliminary | Open | One period was read on both sides on 20 Nov 2026 (BIS 142 days, FRED at least 144): too few to confirm. `decide-sources` waits until the verdict rests on a release cycle |
+
+## 4z. US series chosen under the retired rule 17 are re-measured against the BLS (21 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| Eleven US series FRED serves are timed against the BLS | Design choice | The BLS is their original producer: payrolls, unemployment rate, average weeks unemployed, manufacturing hours, CPI (all items, core, services), PPI final demand, job openings, quits rate and the Employment Cost Index. Each BLS series id was fetched live on 21 Nov 2026. Other FRED series have other original producers (DOL, BEA, the Federal Reserve) with no connector yet, so they wait for slice 4b |
+| A BLS candidate is described like the series it is timed against | Design choice | The BLS API returns current values and no vintages; title, units, frequency, adjustment, dimension and cycle come from the stored FRED series. The first-read day of a period is the day it first appears |
+| A tie goes to the BLS if the lags are level | Per rule 38 | The original producer outranks the bloc aggregator (FRED) in the tie-break (Part 0). Changing a source is a reviewed pull request and `promote-candidate`, never a command |
+| No source decision exists for these pairs yet | Open | `decide-sources` reports "not what serves it" until a baseline decision records FRED as serving each pair. `measure-candidates` is unaffected and shows the lags |
+| The measurement needs a release cycle | Open | All 11 were staged on 21 Nov 2026 and have published nothing since. The FRED series are timed from their own vintages; the BLS from the day each period first appears |

@@ -15,6 +15,7 @@ pairs are measured.
 
 from dataclasses import dataclass
 
+from app.data.indicator_concepts import SERIES_CONCEPTS
 from app.domain.source_selection import Producer
 
 PREFIX = "CAND_"
@@ -48,6 +49,41 @@ CANDIDATES: tuple[Candidate, ...] = (
         flow="",
         key="COMREPUSQ159N",
         months=3,
+    ),
+)
+
+# FRED serves these United States series, chosen under the retired rule 17 (FRED first). The BLS is
+# the original producer of each; its own series (ids checked live on 21 Nov 2026) is the candidate.
+# FRED series id -> (BLS series id, months in a period).
+_BLS_RIVALS: dict[str, tuple[str, int]] = {
+    "PAYEMS": ("CES0000000001", 1),  # all employees, total nonfarm
+    "UNRATE": ("LNS14000000", 1),  # unemployment rate
+    "UEMPMEAN": ("LNS13008275", 1),  # average weeks unemployed
+    "AWHMAN": ("CES3000000007", 1),  # average weekly hours, manufacturing
+    "CPIAUCSL": ("CUSR0000SA0", 1),  # CPI, all items
+    "CPILFESL": ("CUSR0000SA0L1E", 1),  # CPI, all items less food and energy
+    "CUSR0000SAS": ("CUSR0000SAS", 1),  # CPI, services
+    "PPIFIS": ("WPSFD4", 1),  # PPI, final demand
+    "JTSJOL": ("JTS000000000000000JOL", 1),  # job openings
+    "JTSQUR": ("JTS000000000000000QUR", 1),  # quits rate
+    "ECIALLCIV": ("CIS1010000000000I", 3),  # employment cost index, civilian (quarterly)
+}
+CANDIDATES = (
+    *CANDIDATES,
+    *(
+        Candidate(
+            id=f"{PREFIX}BLS_{fred_id}_US",
+            country="US",
+            concept=SERIES_CONCEPTS[("US", fred_id)],
+            source="bls",
+            producer="original",
+            area="US",
+            serves=fred_id,
+            flow="",
+            key=bls_id,
+            months=months,
+        )
+        for fred_id, (bls_id, months) in _BLS_RIVALS.items()
     ),
 )
 CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}

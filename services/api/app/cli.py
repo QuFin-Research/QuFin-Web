@@ -238,6 +238,11 @@ def _ingest_staged(args: argparse.Namespace) -> int:
                     raw=_raw_zone(),
                 )
             )
+        if "bls" in needed:
+            bls_key = settings.bls_api_key
+            clients["bls"] = stack.enter_context(
+                BlsClient(bls_key.get_secret_value() if bls_key else None, raw=_raw_zone())
+            )
         session = stack.enter_context(session_scope())
         results = ingest_staged.ingest(clients, session, chosen, args.start)
     for r in results:
@@ -764,7 +769,7 @@ def main(argv: list[str] | None = None) -> int:
     staged = sub.add_parser(
         "ingest-staged", help="load candidate sources without serving them (rule 38)"
     )
-    staged.add_argument("--source", choices=["imf"], default=None)
+    staged.add_argument("--source", choices=["imf", "fred", "bls"], default=None)
     staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
     staged.set_defaults(func=_ingest_staged)
     sub.add_parser(
