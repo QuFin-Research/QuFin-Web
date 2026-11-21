@@ -455,7 +455,7 @@ def test_the_second_sweeps_gap_candidates_describe_themselves_and_leave_eurostat
     from app.domain.source_selection import bloc_aggregator_of
 
     gaps = _bis_oecd_gaps()
-    assert len(gaps) == 145 and len({c.id for c in gaps}) == 145
+    assert len(gaps) == 47 and len({c.id for c in gaps}) == 47
     for c in gaps:
         assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID and c.measure
         assert c.title and c.units and c.adjustment and c.dimension and c.cycle and "{" not in c.key
@@ -484,17 +484,23 @@ def test_a_bis_gap_candidate_is_staged_with_its_measure_and_a_wrong_answer_is_re
             self.asked.append((flow, key, version))
             return self.series
 
-    cand = next(c for c in _bis_oecd_gaps() if c.id == "CAND_BIS_CBPOL_ID")
+    cand = next(c for c in _bis_oecd_gaps() if c.id == "CAND_BIS_CBTA_KR")
+    from app.data.bis_ids import MEASURES
+
+    stated = {
+        "UNIT_MEASURE": MEASURES[cand.measure].unit_measure,
+        "UNIT_MULT": MEASURES[cand.measure].unit_mult,
+    }
     cand_unit = SimpleNamespace(
-        observations=[(date(2026, 1, 1), 5.0), (date(2026, 4, 1), None)], attributes={}
+        observations=[(date(2026, 1, 1), 5.0), (date(2026, 4, 1), None)], attributes=stated
     )
     client = Bis([cand_unit])
     [r] = ingest({"bis": client}, db_session, [cand], today=TODAY)
     assert r.error is None and r.rows == 1  # a period with no value is not stored
-    assert client.asked == [("WS_CBPOL", "M.ID", "1.0")]
-    meta = MacroStore(db_session).get_series("CAND_BIS_CBPOL_ID")
-    assert meta.country == "ID" and meta.dimension == "policy" and "candidate" in meta.title
-    assert MacroStore(db_session).lifecycle_of("CAND_BIS_CBPOL_ID") == "staged"
+    assert client.asked == [(cand.flow, cand.key, "1.0")]
+    meta = MacroStore(db_session).get_series("CAND_BIS_CBTA_KR")
+    assert meta.country == "KR" and meta.dimension == cand.dimension and "candidate" in meta.title
+    assert MacroStore(db_session).lifecycle_of("CAND_BIS_CBTA_KR") == "staged"
     two = Bis([cand_unit, cand_unit])
     [bad] = ingest({"bis": two}, db_session, [cand], today=TODAY)
     assert bad.error and "expected one" in bad.error

@@ -303,7 +303,9 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
         assert SERIES_CONCEPTS[(b.country, b.series_id)] == b.concept
         if b.predecessor:
             assert b.predecessor.series_id not in BY_ID  # no longer declared beside it
-    assert len(BASELINE) == 37 and len(PREDECESSORS) == 35  # Kosovo and US property: no predecessor
+    # 37 until the 98 BIS pairs of batch A (22 Nov 2026); Kosovo, US property and those have no
+    # predecessor.
+    assert len(BASELINE) == 135 and len(PREDECESSORS) == 35
 
     put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
     put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
@@ -311,8 +313,8 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
     assert cli.main(["source-decision", "--baseline"]) == 0
     assert cli.main(["source-decision", "--baseline"]) == 0
     out = capsys.readouterr().out
-    assert "baseline: 37 decisions recorded, 0 already there" in out
-    assert "baseline: 0 decisions recorded, 37 already there" in out
+    assert "baseline: 135 decisions recorded, 0 already there" in out
+    assert "baseline: 0 decisions recorded, 135 already there" in out
 
     old, new = SourceStore(db_session).history("DE", "consumer_prices")
     assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
@@ -377,8 +379,10 @@ def test_a_retired_series_gives_up_its_canonical_code_to_the_series_that_replace
 def test_every_eurostat_pair_is_confirmed_by_bloc_aggregator_first_and_only_us_property_waits():
     from app.data.source_baseline import BASELINE
 
-    waiting = [b.country for b in BASELINE if b.status != "confirmed"]
-    assert waiting == ["US"]  # BIS commercial property: the measures still decide it
+    waiting = [b.series_id for b in BASELINE if b.status != "confirmed"]
+    # BIS commercial property of the US, and the 98 BIS pairs of batch A: the measures still decide
+    assert waiting[0] == "BIS_CPP_US" and len(waiting) == 99
+    assert all(w.startswith("BIS_") for w in waiting)
     hicp = [b for b in BASELINE if b.source == "eurostat"]
     assert len(hicp) == 36 and all("Bloc aggregator first" in b.reason for b in hicp)
     tied = {b.country for b in hicp if "also held October 2026" in b.reason}

@@ -550,3 +550,16 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | Classification of the OECD series | Open | Dimension and cycle copy the served OECD series (`growth`/`leading`, `sentiment`/`leading`); the owner reviews them before promotion |
 | The daily refresh loads 237 candidates | Open | Several more minutes a day at the suppliers' own pace (not timed). Split the staging step from the refresh if it crowds the run |
 
+## 5d. Eligibility, batch A: 98 BIS series on six served measures (22 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| 98 BIS series become served series | Per rule 34 | Policy rate 7 (ID, IS, IL, MK, MY, RO, RS), nominal and real effective exchange rate 29 each, credit to GDP and its gap 15 each, residential property prices 3 (IL, MY, CO). They are added to the area lists in `app/data/bis_ids.py` (`BATCH_A`), so the catalog, the taxonomy and `ingest-bis` take them from there |
+| The measures were already verified | Basis | Key, units, adjustment, cycle and release rule were verified when the measure was added (12 and 17 Nov 2026); batch A only adds economies to them. Each series was staged and loaded over its full history on 22 Nov 2026 with no missing period and the latest period in line with the economies already served (2026-10 monthly, 2026-01 and 2026-04 quarterly) |
+| Licence (rule 7) | Open | The BIS terms were read on 12 Nov 2026 and cover these series. The BIS marks some property-price sub-series as proprietary or third-party; the owner confirms before the three new property-price series are relied on commercially |
+| The BIS is the only candidate, so it serves from the start | Per rule 38 | Eurostat does not publish effective exchange rates, credit ratios or policy rates, and no other candidate has a current feed for these pairs. Each pair gets a provisional decision dated 22 Nov 2026 (`app/data/source_baseline.py`) until a release cycle is measured |
+| Residential property prices of Eurostat's economies are not served | Per rule 38 | 23 economies wait for a Eurostat probe of that indicator |
+| 37 staged BIS series are held back | Open | Russia (10): the BIS stopped receiving official data in Feb 2022 and coverage-universe.md marks it undecided. United States (13): FRED may also serve those pairs, so rule 38 times the two first. Missing periods (10): Kuwait, Oman, Kenya, Liechtenstein, Cambodia, Nigeria and the Congo on international debt securities or central bank assets, Latvia and Lithuania on corporate debt securities. A quarter behind (4): Chile's property prices and central bank assets of South Korea, Indonesia and Israel. They stay staged, and the registry keeps them |
+| The staged copies of the 98 are pruned | Design choice | Once served, a candidate has done its job. `prune-staged --yes` removes the 98 staged copies (after a backup); their first-read days are lost, since `promote-candidate` handles only candidates that replace a series |
+| Scorecard effect | Open | A new series reaches a score only if its indicator is in the private recipe. The owner checks which of these six indicators the recipe uses (rule 20). Past scores keep the catalog version they were computed with |
+
