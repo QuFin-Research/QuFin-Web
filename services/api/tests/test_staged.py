@@ -514,3 +514,49 @@ def test_a_bis_gap_candidate_is_staged_with_its_measure_and_a_wrong_answer_is_re
     two = Bis([cand_unit, cand_unit])
     [bad] = ingest({"bis": two}, db_session, [cand], today=TODAY)
     assert bad.error and "expected one" in bad.error
+
+
+def test_the_trade_current_account_and_gdp_candidates_describe_themselves_and_respect_rule_38():
+    from app.data.candidates import FLOW_GAP_CANDIDATES
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+    from app.domain.source_selection import bloc_aggregator_of
+
+    gaps = FLOW_GAP_CANDIDATES
+    assert len(gaps) == 96 and len({c.id for c in gaps}) == 96
+    held = {
+        (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
+    }
+    for c in gaps:
+        assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID
+        assert c.title and c.units and c.adjustment and c.dimension and c.cycle
+        assert (c.country, c.concept) not in held
+        assert c.frequency == ("Monthly" if c.months == 1 else "Quarterly")
+        assert "{" not in c.key
+        if c.source == "oecd" and c.concept == "trade_balance":
+            assert bloc_aggregator_of(c.country) is None  # Eurostat was not probed for it
+    # the quarterly balance of payments is pinned to one series (unadjusted)
+    assert all(c.key.endswith(".N") for c in gaps if c.concept in ("trade_balance",))
+
+
+def test_a_quarterly_gap_candidate_is_read_by_quarter_and_dated_by_a_quarterly_rule(db_session):
+    from datetime import date as d
+
+    from app.data.candidates import FLOW_GAP_CANDIDATES
+
+    class Eurostat:
+        def __init__(self):
+            self.kwargs = None
+
+        def series(self, dataset, filters, start, **kwargs):
+            self.kwargs = kwargs
+            return SimpleNamespace(observations=[(d(2026, 4, 1), 1.0)])
+
+    cand = next(c for c in FLOW_GAP_CANDIDATES if c.id == "CAND_ESTAT_GDP_CH")
+    client = Eurostat()
+    [r] = ingest({"eurostat": client}, db_session, [cand], today=TODAY)
+    assert r.error is None and client.kwargs == {"quarterly": True}
+    from app.data.eurostat_calendar import quarterly_release
+    from app.data.oecd_calendar import oecd_quarterly_release
+
+    assert quarterly_release(d(2026, 1, 1)) == d(2026, 6, 30)  # last weekday of June
+    assert oecd_quarterly_release(d(2026, 1, 1)) == d(2026, 7, 15)

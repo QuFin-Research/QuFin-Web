@@ -217,7 +217,11 @@ def _ingest_imf(args: argparse.Namespace) -> int:
 def _ingest_staged(args: argparse.Namespace) -> int:
     """Load the candidate sources without serving them (rule 38). Reported, never a failed run."""
     upgrade_to_head(get_engine())
-    chosen = [c for c in CANDIDATES if args.source in (None, c.source)]
+    chosen = [
+        c
+        for c in CANDIDATES
+        if args.source in (None, c.source) and (not args.only or c.id in args.only)
+    ]
     if not chosen:
         print("no candidates: nothing is staged (rule 38, Bloc aggregator first)")
         return 0
@@ -804,6 +808,12 @@ def main(argv: list[str] | None = None) -> int:
         "--source", choices=["imf", "fred", "bls", "eurostat", "oecd", "bis"], default=None
     )
     staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
+    staged.add_argument(
+        "--only",
+        action="append",
+        metavar="CANDIDATE",
+        help="load only this candidate id (repeatable), e.g. after a supplier's rate limit",
+    )
     staged.set_defaults(func=_ingest_staged)
     sub.add_parser(
         "candidates",

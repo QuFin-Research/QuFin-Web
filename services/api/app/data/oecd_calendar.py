@@ -10,6 +10,17 @@ weekday): late for most series, never early for the slower ones (rule 9).
 from datetime import date, timedelta
 
 
+def oecd_quarterly_release(period: date) -> date:
+    """A quarter (dated at its first month): the 15th of the fourth month after its end, next
+    weekday. Quarterly accounts and the balance of payments reach the OECD about three months
+    after the quarter; the API serves no release dates, so this errs late (rule 9)."""
+    months = period.month + 6
+    day = date(period.year + (months - 1) // 12, (months - 1) % 12 + 1, 15)
+    while day.weekday() > 4:
+        day += timedelta(days=1)
+    return day
+
+
 def oecd_release(period: date) -> date:
     months = period.month + 1  # zero-based month index two months on
     day = date(period.year + months // 12, months % 12 + 1, 15)

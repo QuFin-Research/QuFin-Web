@@ -577,3 +577,15 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | The staged copies are pruned | Design choice | `prune-staged --yes` removes the 72 staged copies; their first-read days are lost |
 | Scorecard effect | Open | Core CPI, industrial production, leading index and confidence feed a score only if the private recipe uses them (rule 20) |
 
+## 5f. Findings staged: trade balance, current account and real GDP (22 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| 96 series are registered as candidates | Result | From the 21 Nov 2026 probe: Eurostat real GDP for 8 economies, current account for 11 and trade balance for 24; OECD real GDP for 5, current account for 12, goods balance for 19 and goods-and-services balance for 17. Each is for an economy QuFin holds nothing for |
+| 60 are loaded as staged | Result | All 43 Eurostat series and the OECD real GDP (5) and current account (12) series, loaded live on 22 Nov 2026 |
+| 36 OECD balances are not loaded yet | Open | The OECD answered 429 after about 70 requests in a row and `OecdClient` stopped for the run (rule 28). They load after the hourly limit resets, with `ingest-staged --only <id>`. The goods balance key matched two series (adjusted and unadjusted) for some economies, so the keys now pin the unadjusted one (`N`); an economy that has none is reported when loaded |
+| Decided at the eligibility step | Open | Eurostat's trade balance is monthly and in euro, the OECD's balances are the quarterly balance of payments in US dollars; the trade concept holds monthly dollar series today. Real GDP is in national currency, chained volumes, as the series already served; the current account is percent of GDP |
+| Eurostat's economies stay with Eurostat | Per rule 38 | The goods-and-services balance of 12 of its economies (EA, DE, FR, IT, CH, NO, SE, DK, CZ, HU, PL, TR) is not staged: Eurostat publishes it in its balance of payments and has not been probed for it |
+| Release dates | Design choice | Quarterly series are dated by a rule that errs late (rule 9): the last weekday of the third month after the quarter for Eurostat, the 15th of the fourth month for the OECD (`eurostat_calendar.py`, `oecd_calendar.py`) |
+| Classification | Open | Dimension and cycle (`growth`/`coincident` for GDP, `external`/`lagging` for the balances) copy the series already served; the owner reviews them before promotion |
+

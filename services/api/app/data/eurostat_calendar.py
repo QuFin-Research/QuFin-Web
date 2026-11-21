@@ -36,7 +36,16 @@ def hicp_release(period: date) -> date:
     return _last_weekday_before(_first_of(period.year, period.month + 2))
 
 
+def quarterly_release(period: date) -> date:
+    """A quarter (dated at its first month): the last weekday of the third month after it.
+    GDP is out about 65 days after the quarter and the balance of payments about 85."""
+    return _last_weekday_before(_first_of(period.year, period.month + 6))
+
+
 RELEASES: dict[str, Callable[[date], date]] = {
+    "namq_10_gdp": quarterly_release,
+    "ei_bpm6ca_q": quarterly_release,
+    "ei_eteu27_2020_m": production_release,  # trade is out about six weeks after the month
     "sts_inpr_m": production_release,
     "prc_hicp_minr": hicp_release,
     "une_rt_m": hicp_release,  # unemployment follows the month by about four weeks

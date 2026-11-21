@@ -29,7 +29,7 @@ from app.data.candidates import CANDIDATES, Candidate
 from app.data.eurostat_calendar import release_of as eurostat_release_of
 from app.data.imf_calendar import imf_release
 from app.data.macro_catalog import DEFAULT_OBSERVATION_START
-from app.data.oecd_calendar import oecd_release
+from app.data.oecd_calendar import oecd_quarterly_release, oecd_release
 from app.jobs.ingest_bis import PUBLISHER, RELEASE_RULES, RELEASES, _check_units
 from app.jobs.ingest_fred import IngestResult
 from app.stores.candidates import CandidateSightingRow, CandidateStore
@@ -106,7 +106,8 @@ def _gap_meta(c: Candidate, source_name: str, release: str) -> SeriesMeta:
 
 def _load_eurostat(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
     filters = dict(part.split("=", 1) for part in c.key.split(","))
-    fetched = client.series(c.flow, filters, start)
+    extra = {"quarterly": True} if c.frequency == "Quarterly" else {}
+    fetched = client.series(c.flow, filters, start, **extra)
     meta = _gap_meta(c, "Eurostat (from national statistical institutes)", c.flow)
     rows = store.record_latest(
         meta, fetched.observations, eurostat_release_of(c.flow), today, STAGED
@@ -118,7 +119,8 @@ def _load_oecd(client: Any, store: MacroStore, c: Candidate, start: date, today:
     fetched = client.series(c.flow, c.key, start)
     observations = [(p, v) for p, v in fetched.observations if v is not None]
     meta = _gap_meta(c, "OECD (from national sources)", c.flow)
-    rows = store.record_latest(meta, observations, oecd_release, today, STAGED)
+    release = oecd_quarterly_release if c.frequency == "Quarterly" else oecd_release
+    rows = store.record_latest(meta, observations, release, today, STAGED)
     return observations, rows
 
 

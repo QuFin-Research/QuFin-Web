@@ -353,3 +353,267 @@ OECD_SURVEY_GAP_CANDIDATES: tuple[Candidate, ...] = tuple(
 )
 CANDIDATES = (*CANDIDATES, *BIS_GAP_CANDIDATES, *OECD_SURVEY_GAP_CANDIDATES)
 CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
+
+
+# Trade, the current account and real GDP (probe of 21 Nov 2026, rule 34): economies QuFin holds
+# nothing for. Eurostat's economies are Eurostat's where it publishes (rule 38); the OECD fills
+# the others. Staged only, to be decided at the eligibility step: the OECD balances are the
+# quarterly balance of payments in US dollars and Eurostat's trade balance is monthly in euro,
+# unlike the monthly dollar series the trade concept holds today. The goods-and-services balance
+# of Eurostat's economies waits for a Eurostat probe of it.
+_ESTAT_FLOWS = {
+    "real_gdp": {
+        "CH": "CH",
+        "NO": "NO",
+        "SE": "SE",
+        "DK": "DK",
+        "CZ": "CZ",
+        "HU": "HU",
+        "PL": "PL",
+        "TR": "TR",
+    },
+    "current_account_to_gdp": {
+        "DE": "DE",
+        "FR": "FR",
+        "IT": "IT",
+        "CH": "CH",
+        "NO": "NO",
+        "SE": "SE",
+        "DK": "DK",
+        "CZ": "CZ",
+        "HU": "HU",
+        "PL": "PL",
+        "TR": "TR",
+    },
+    "merchandise_trade_balance": {
+        "SE": "SE",
+        "DK": "DK",
+        "CZ": "CZ",
+        "HU": "HU",
+        "PL": "PL",
+        "AT": "AT",
+        "BE": "BE",
+        "BG": "BG",
+        "HR": "HR",
+        "CY": "CY",
+        "EE": "EE",
+        "FI": "FI",
+        "GR": "EL",
+        "IE": "IE",
+        "LV": "LV",
+        "LT": "LT",
+        "LU": "LU",
+        "MT": "MT",
+        "NL": "NL",
+        "PT": "PT",
+        "RO": "RO",
+        "SK": "SK",
+        "SI": "SI",
+        "ES": "ES",
+    },
+}
+_OECD_FLOWS = {
+    "real_gdp": {"EA": "EA", "NZ": "NZL", "BR": "BRA", "SA": "SAU", "CO": "COL"},
+    "current_account_to_gdp": {
+        "US": "USA",
+        "EA": "EA",
+        "GB": "GBR",
+        "JP": "JPN",
+        "CN": "CHN",
+        "IN": "IND",
+        "BR": "BRA",
+        "ZA": "ZAF",
+        "AR": "ARG",
+        "ID": "IDN",
+        "SA": "SAU",
+        "CL": "CHL",
+    },
+    "merchandise_trade_balance": {
+        "US": "USA",
+        "EA": "EA",
+        "NZ": "NZL",
+        "CH": "CHE",
+        "NO": "NOR",
+        "CN": "CHN",
+        "IN": "IND",
+        "MX": "MEX",
+        "TR": "TUR",
+        "ZA": "ZAF",
+        "KR": "KOR",
+        "AR": "ARG",
+        "ID": "IDN",
+        "RU": "RUS",
+        "SA": "SAU",
+        "IS": "ISL",
+        "IL": "ISR",
+        "CL": "CHL",
+        "CO": "COL",
+    },
+    "trade_balance": {
+        "GB": "GBR",
+        "JP": "JPN",
+        "CA": "CAN",
+        "AU": "AUS",
+        "NZ": "NZL",
+        "CN": "CHN",
+        "IN": "IND",
+        "MX": "MEX",
+        "BR": "BRA",
+        "ZA": "ZAF",
+        "KR": "KOR",
+        "AR": "ARG",
+        "ID": "IDN",
+        "RU": "RUS",
+        "SA": "SAU",
+        "CL": "CHL",
+        "CO": "COL",
+    },
+}
+
+
+def _k(*parts: str) -> str:
+    return ".".join(parts)
+
+
+# concept -> Eurostat (series code, dataset, filters, units, adjustment, dimension, cycle, title)
+_ESTAT_FLOW_SPEC = {
+    "real_gdp": (
+        "GDP",
+        "namq_10_gdp",
+        {"freq": "Q", "unit": "CLV20_MNAC", "s_adj": "SCA", "na_item": "B1GQ"},
+        "National currency, chain linked volumes (2020)",
+        "Seasonally and Calendar Adjusted",
+        "growth",
+        "coincident",
+        "Real GDP, chain linked volumes",
+    ),
+    "current_account_to_gdp": (
+        "CA",
+        "ei_bpm6ca_q",
+        {
+            "freq": "Q",
+            "unit": "PC_GDP",
+            "s_adj": "NSA",
+            "sector10": "S1",
+            "sectpart": "S1",
+            "partner": "WRL_REST",
+            "stk_flow": "BAL",
+            "bop_item": "CA",
+        },
+        "Percent of GDP",
+        "Not Seasonally Adjusted",
+        "external",
+        "lagging",
+        "Current account balance, percent of GDP",
+    ),
+    "merchandise_trade_balance": (
+        "TRADE",
+        "ei_eteu27_2020_m",
+        {
+            "freq": "M",
+            "stk_flow": "BAL_RT",
+            "unit": "MIO-EUR-SA",
+            "partner": "WORLD",
+            "indic": "ET-T",
+        },
+        "Million euro",
+        "Seasonally Adjusted",
+        "external",
+        "lagging",
+        "Trade balance with the world",
+    ),
+}
+# concept -> OECD (series code, flow, key template, units, dimension, cycle, title)
+_OECD_BOP_FLOW = "OECD.SDD.TPS,DSD_BOP@DF_BOP,"
+_OECD_FLOW_SPEC = {
+    "real_gdp": (
+        "GDP",
+        "OECD.SDD.NAD,DSD_NAMAIN1@DF_QNA_EXPENDITURE_NATIO_CURR,",
+        _k("Q", "Y", "{a}", "S1", "S1", "B1GQ", "", "", "", "XDC", "L", "N", ""),
+        "National currency, chained volumes",
+        "growth",
+        "coincident",
+        "Real GDP, chained volumes, seasonally adjusted",
+    ),
+    "current_account_to_gdp": (
+        "CA",
+        _OECD_BOP_FLOW,
+        _k("{a}", "WXD", "CA", "B", "T", "Q", "PT_B1GQ", ""),
+        "Percent of GDP",
+        "external",
+        "lagging",
+        "Current account balance, percent of GDP",
+    ),
+    "merchandise_trade_balance": (
+        "TRADE",
+        _OECD_BOP_FLOW,
+        _k("{a}", "WXD", "G", "B", "T", "Q", "USD_EXC", "N"),
+        "US dollars",
+        "external",
+        "lagging",
+        "Balance of goods, balance of payments basis",
+    ),
+    "trade_balance": (
+        "TRADEGS",
+        _OECD_BOP_FLOW,
+        _k("{a}", "WXD", "G_S", "B", "T", "Q", "USD_EXC", "N"),
+        "US dollars",
+        "external",
+        "lagging",
+        "Balance of goods and services, balance of payments basis",
+    ),
+}
+_QUARTERLY_FLOWS = {"real_gdp", "current_account_to_gdp"}
+
+FLOW_GAP_CANDIDATES: tuple[Candidate, ...] = (
+    *(
+        Candidate(
+            id=f"{PREFIX}ESTAT_{code}_{iso2}",
+            country=iso2,
+            concept=concept,
+            source="eurostat",
+            producer="bloc",
+            area=geo,
+            serves="",
+            flow=dataset,
+            key=_estat_key({**filters, "geo": geo}),
+            months=3 if concept in _QUARTERLY_FLOWS else 1,
+            title=f"{title}, {iso2}",
+            units=units,
+            adjustment=adjustment,
+            dimension=dimension,
+            cycle=cycle,
+            frequency="Quarterly" if concept in _QUARTERLY_FLOWS else "Monthly",
+        )
+        for concept, economies in _ESTAT_FLOWS.items()
+        for code, dataset, filters, units, adjustment, dimension, cycle, title in [
+            _ESTAT_FLOW_SPEC[concept]
+        ]
+        for iso2, geo in economies.items()
+    ),
+    *(
+        Candidate(
+            id=f"{PREFIX}OECD_{code}_{area}",
+            country=iso2,
+            concept=concept,
+            source="oecd",
+            producer="global",
+            area=area,
+            serves="",
+            flow=flow,
+            key=key.format(a=area),
+            months=3,
+            title=f"{title}, {iso2}",
+            units=units,
+            adjustment="As published by the OECD",
+            dimension=dimension,
+            cycle=cycle,
+            frequency="Quarterly",
+        )
+        for concept, economies in _OECD_FLOWS.items()
+        for code, flow, key, units, dimension, cycle, title in [_OECD_FLOW_SPEC[concept]]
+        for iso2, area in economies.items()
+    ),
+)
+CANDIDATES = (*CANDIDATES, *FLOW_GAP_CANDIDATES)
+CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
