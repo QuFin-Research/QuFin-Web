@@ -16,7 +16,7 @@ Three dates keep the record honest:
 are exact; the registration page of each supplier was not looked up.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal
 
@@ -57,6 +57,8 @@ def _p(
 
 
 _CHECKED = date(2026, 11, 13)
+_ADDED = date(2026, 11, 21)
+_FROM_TABLE = "registered from the supplier table of 21 Nov 2026; not verified"
 _SOURCES: tuple[CountrySources, ...] = (
     CountrySources(
         "USA",
@@ -84,7 +86,13 @@ _SOURCES: tuple[CountrySources, ...] = (
             verified=_CHECKED,
             note="in use: unemployment, GDP, core CPI, goods trade",
         ),
-        _p("Bank of England", "https://www.bankofengland.co.uk/boeapps/database", "keyless"),
+        _p(
+            "Bank of England",
+            "https://www.bankofengland.co.uk/boeapps/database",
+            "keyless",
+            verified=_ADDED,
+            note="connector `boe` (IADB CSV), verified on M4; terms not read",
+        ),
     ),
     CountrySources(
         "FRA",
@@ -113,13 +121,39 @@ _SOURCES: tuple[CountrySources, ...] = (
     ),
     CountrySources(
         "AUS",
-        _p("Australian Bureau of Statistics", "https://data.api.abs.gov.au", "keyless"),
-        _p("Reserve Bank of Australia", "https://www.rba.gov.au/statistics", "bulk_file"),
+        _p(
+            "Australian Bureau of Statistics",
+            "https://data.api.abs.gov.au",
+            "keyless",
+            verified=_ADDED,
+            note="connector `abs` (SDMX), verified on the CPI; terms not read",
+        ),
+        _p(
+            "Reserve Bank of Australia",
+            "https://www.rba.gov.au/statistics",
+            "keyless",
+            verified=_ADDED,
+            note="connector `rba` (CSV tables), verified on D3; the site refuses an unnamed "
+            "client; terms not read",
+        ),
     ),
     CountrySources(
         "CAN",
-        _p("Statistics Canada", "https://www150.statcan.gc.ca/t1/wds/rest", "keyless"),
-        _p("Bank of Canada Valet", "https://www.bankofcanada.ca/valet", "keyless"),
+        _p(
+            "Statistics Canada",
+            "https://www150.statcan.gc.ca/t1/wds/rest",
+            "keyless",
+            note="no connector: on 21 Nov 2026 the API answered a named client with a security "
+            "challenge (403); rule 28 forbids getting round it, so Canada comes from the "
+            "aggregators until StatCan allows access",
+        ),
+        _p(
+            "Bank of Canada Valet",
+            "https://www.bankofcanada.ca/valet",
+            "keyless",
+            verified=_ADDED,
+            note="connector `bankofcanada`, verified on the Bank Rate; terms not read",
+        ),
     ),
     CountrySources(
         "JPN",
@@ -229,6 +263,101 @@ _SOURCES: tuple[CountrySources, ...] = (
         _p("Banco de la Republica", "https://www.banrep.gov.co", "bulk_file"),
     ),
 )
+_ADDED_SOURCES = (
+    CountrySources(
+        "EMU",
+        _p(
+            "Eurostat",
+            "https://ec.europa.eu/eurostat",
+            "keyless",
+            note="in use; served first (rule 38)",
+        ),
+        _p("European Central Bank", "https://data-api.ecb.europa.eu", "keyless", note="in use"),
+    ),
+    CountrySources(
+        "SWE",
+        _p("Statistics Sweden (SCB)", "https://api.scb.se", "keyless", note=_FROM_TABLE),
+        _p(
+            "Sveriges Riksbank",
+            "https://api.riksbank.se",
+            "free_key",
+            "QUFIN_RIKSBANK_API_KEY",
+            note=_FROM_TABLE,
+        ),
+    ),
+    CountrySources(
+        "DNK",
+        _p("Statistics Denmark (StatBank)", "https://api.statbank.dk", "keyless", note=_FROM_TABLE),
+        _p("Danmarks Nationalbank", "https://www.nationalbanken.dk", "keyless", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "CZE",
+        _p(
+            "Czech Statistical Office (CZSO)",
+            "https://data.csu.gov.cz",
+            "keyless",
+            note=_FROM_TABLE,
+        ),
+        _p("Czech National Bank", "https://api.cnb.cz", "keyless", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "HUN",
+        _p(
+            "Hungarian Central Statistical Office (KSH)",
+            "https://www.ksh.hu",
+            "bulk_file",
+            note=_FROM_TABLE,
+        ),
+        _p("Magyar Nemzeti Bank", "https://www.mnb.hu", "keyless", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "POL",
+        _p(
+            "Statistics Poland (GUS BDL)",
+            "https://bdl.stat.gov.pl/api",
+            "keyless",
+            note=_FROM_TABLE,
+        ),
+        _p("Narodowy Bank Polski", "https://api.nbp.pl", "keyless", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "HKG",
+        _p(
+            "Census and Statistics Department",
+            "https://api.data.gov.hk",
+            "keyless",
+            note=_FROM_TABLE,
+        ),
+        _p("Hong Kong Monetary Authority", "https://api.hkma.gov.hk", "keyless", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "IDN",
+        _p(
+            "Statistics Indonesia (BPS)",
+            "https://webapi.bps.go.id",
+            "free_key",
+            "QUFIN_BPS_API_KEY",
+            note=_FROM_TABLE,
+        ),
+        _p("Bank Indonesia", "https://www.bi.go.id", "bulk_file", note=_FROM_TABLE),
+    ),
+    CountrySources(
+        "RUS",
+        _p(
+            "Rosstat",
+            "https://rosstat.gov.ru",
+            "bulk_file",
+            note=_FROM_TABLE + "; owner decision before any use: sanctions and licensing",
+        ),
+        _p(
+            "Central Bank of the Russian Federation",
+            "https://www.cbr.ru",
+            "bulk_file",
+            note=_FROM_TABLE + "; owner decision before any use",
+        ),
+    ),
+)
+_SOURCES = (*_SOURCES, *(replace(c, registered=_ADDED) for c in _ADDED_SOURCES))
 COUNTRY_SOURCES: dict[str, CountrySources] = {c.iso3: c for c in _SOURCES}
 
 # Regional and multilateral portals used where a country has no registered national one.
