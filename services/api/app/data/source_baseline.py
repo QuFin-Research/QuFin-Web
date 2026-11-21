@@ -14,7 +14,9 @@ indicator), which the new series takes.
 from dataclasses import dataclass
 from datetime import date
 
+from app.data.bis_ids import BATCH_A, BIS_COUNTRY
 from app.data.gap_ids import HICP_GEO
+from app.data.indicator_concepts import BIS_CONCEPT
 from app.data.macro_ids import ISO3_TO_ISO2
 
 CONCEPT = "consumer_prices"
@@ -124,9 +126,27 @@ _US_COMMERCIAL_PROPERTY = BaselineDecision(
     "(rule 38).",
 )
 
+BATCH_A_DATE = date(2026, 11, 22)
+
+
+def _batch_a(code: str, area: str) -> BaselineDecision:
+    return BaselineDecision(
+        BIS_COUNTRY.get(area, area),
+        BIS_CONCEPT[code],
+        f"BIS_{code}_{area}",
+        "bis",
+        BATCH_A_DATE,
+        "provisional",
+        "A new pair: the BIS is the only candidate with a current feed (probe of 21 Nov 2026; "
+        "latest period 2026-01 to 2026-10), so it serves from the start. Provisional until a "
+        "release cycle is measured (rule 38).",
+    )
+
+
 BASELINE: tuple[BaselineDecision, ...] = (
     *(_decision(i, g) for i, g in HICP_GEO.items()),
     _US_COMMERCIAL_PROPERTY,
+    *(_batch_a(code, area) for code, areas in BATCH_A.items() for area in areas),
 )
 
 # Series kept although they are no longer in the catalog: the pair's history stays readable as of

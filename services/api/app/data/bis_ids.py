@@ -53,9 +53,23 @@ out, and why:
   private sector minus households, so both are derived and not stored (rule 16);
 - Japan's commercial property index (it ends two quarters before the others), Greece's (half-yearly)
   and Poland's and Portugal's (annual): `Frequency` here is monthly or quarterly only.
+
+Added 22 Nov 2026 (batch A, from the discovery probe; docs/assumptions-register.md, section 5d):
+98 further economy series on six measures already served (policy rate, effective exchange rates,
+credit to GDP and its gap, residential property prices). Each was staged first and checked over
+its full history. Left out, and why (they stay staged):
+
+- Russia, as before (the BIS stopped receiving Russian official data in Feb 2022);
+- the United States for the measures where FRED may also serve the pair: rule 38 times the two
+  before one is chosen;
+- a series with missing periods in the BIS response (Kuwait, Oman, Kenya, Liechtenstein and others
+  on international debt securities; Latvia and Lithuania on corporate debt securities), and the
+  ones a quarter behind the rest (Chile's property prices; central bank total assets of South
+  Korea, Indonesia and Israel);
+- an economy Eurostat serves, for residential property prices (Eurostat's, rule 38).
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from typing import Literal
 
@@ -869,6 +883,124 @@ KNOWN_GAPS: dict[str, tuple[tuple[date, date], ...]] = {
 def country_of(area: str) -> str:
     return BIS_COUNTRY.get(area, area)
 
+
+# Batch A, 22 Nov 2026: economies added to measures already served. A measure's key, units and
+# release rule were verified for the economies it had; these only add economies to it.
+BATCH_A: dict[str, tuple[str, ...]] = {
+    "CBPOL": (
+        "ID",
+        "IS",
+        "IL",
+        "MK",
+        "MY",
+        "RO",
+        "RS",
+    ),
+    "NEER": (
+        "AR",
+        "ID",
+        "AT",
+        "BE",
+        "BA",
+        "BG",
+        "HR",
+        "CY",
+        "EE",
+        "FI",
+        "GR",
+        "IS",
+        "IE",
+        "IL",
+        "LV",
+        "LT",
+        "LU",
+        "MK",
+        "MY",
+        "MT",
+        "NL",
+        "PT",
+        "RO",
+        "RS",
+        "SK",
+        "SI",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "REER": (
+        "AR",
+        "ID",
+        "AT",
+        "BE",
+        "BA",
+        "BG",
+        "HR",
+        "CY",
+        "EE",
+        "FI",
+        "GR",
+        "IS",
+        "IE",
+        "IL",
+        "LV",
+        "LT",
+        "LU",
+        "MK",
+        "MY",
+        "MT",
+        "NL",
+        "PT",
+        "RO",
+        "RS",
+        "SK",
+        "SI",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "CREDIT": (
+        "AR",
+        "ID",
+        "AT",
+        "BE",
+        "FI",
+        "GR",
+        "IE",
+        "IL",
+        "LU",
+        "MY",
+        "NL",
+        "PT",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "CREDGAP": (
+        "AR",
+        "ID",
+        "AT",
+        "BE",
+        "FI",
+        "GR",
+        "IE",
+        "IL",
+        "LU",
+        "MY",
+        "NL",
+        "PT",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "SPP": (
+        "IL",
+        "MY",
+        "CO",
+    ),
+}
+MEASURES = {
+    code: replace(m, areas=(*m.areas, *BATCH_A.get(code, ()))) for code, m in MEASURES.items()
+}
 
 # QuFin id -> (measure code, BIS area).
 BIS_SERIES: dict[str, tuple[str, str]] = {

@@ -158,7 +158,9 @@ def test_quarterly_release_is_the_last_weekday_of_the_sixth_month_after(period, 
 def test_every_bis_series_is_in_the_catalog_with_a_unit_a_cycle_and_a_name():
     # 155 policy rate, effective exchange rate, credit and property series, and 385 added on
     # 17 Nov 2026 (each economy checked live for a current, complete series).
-    assert len(BIS_SERIES) == 539  # 540 until Malta and Serbia moved to Eurostat, then US property
+    # 539 until the 98 economies of batch A (22 Nov 2026) were added; 540 before Malta and Serbia
+    # moved to Eurostat, then US property.
+    assert len(BIS_SERIES) == 637
     for series_id, (code, _area) in BIS_SERIES.items():
         entry = BY_ID[series_id]
         assert entry.source == "bis"
