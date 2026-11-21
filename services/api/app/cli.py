@@ -242,6 +242,8 @@ def _ingest_staged(args: argparse.Namespace) -> int:
             clients["eurostat"] = stack.enter_context(EurostatClient(raw=_raw_zone()))
         if "oecd" in needed:
             clients["oecd"] = stack.enter_context(OecdClient(raw=_raw_zone()))
+        if "bis" in needed:
+            clients["bis"] = stack.enter_context(BisClient(raw=_raw_zone()))
         if "bls" in needed:
             bls_key = settings.bls_api_key
             clients["bls"] = stack.enter_context(
@@ -799,7 +801,7 @@ def main(argv: list[str] | None = None) -> int:
         "ingest-staged", help="load candidate sources without serving them (rule 38)"
     )
     staged.add_argument(
-        "--source", choices=["imf", "fred", "bls", "eurostat", "oecd"], default=None
+        "--source", choices=["imf", "fred", "bls", "eurostat", "oecd", "bis"], default=None
     )
     staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
     staged.set_defaults(func=_ingest_staged)

@@ -443,3 +443,58 @@ def test_gap_candidates_are_not_timed_and_no_decision_is_asked_of_them(db_sessio
     gaps = _gaps()
     assert measure_all(db_session, gaps, TODAY) == []  # nothing to be timed against
     assert plan(db_session, gaps, TODAY) == []
+
+
+def _bis_oecd_gaps():
+    from app.data.candidates import BIS_GAP_CANDIDATES, OECD_SURVEY_GAP_CANDIDATES
+
+    return [*BIS_GAP_CANDIDATES, *OECD_SURVEY_GAP_CANDIDATES]
+
+
+def test_the_second_sweeps_gap_candidates_describe_themselves_and_leave_eurostats_economies():
+    from app.domain.source_selection import bloc_aggregator_of
+
+    gaps = _bis_oecd_gaps()
+    assert len(gaps) == 145 and len({c.id for c in gaps}) == 145
+    for c in gaps:
+        assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID and c.measure
+        assert c.title and c.units and c.adjustment and c.dimension and c.cycle and "{" not in c.key
+        if c.concept in {
+            "residential_property_prices",
+            "business_confidence",
+            "consumer_sentiment",
+            "unemployment_rate",
+        }:
+            assert bloc_aggregator_of(c.country) is None  # Eurostat's to serve (rule 38)
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+
+    held = {
+        (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
+    }
+    assert not [c.id for c in gaps if (c.country, c.concept) in held]
+    assert {c.id for c in gaps}.isdisjoint({c.id for c in _gaps()})
+
+
+def test_a_bis_gap_candidate_is_staged_with_its_measure_and_a_wrong_answer_is_reported(db_session):
+    class Bis:
+        def __init__(self, series):
+            self.series, self.asked = series, []
+
+        def many(self, flow, key, start, version):
+            self.asked.append((flow, key, version))
+            return self.series
+
+    cand = next(c for c in _bis_oecd_gaps() if c.id == "CAND_BIS_CBPOL_ID")
+    cand_unit = SimpleNamespace(
+        observations=[(date(2026, 1, 1), 5.0), (date(2026, 4, 1), None)], attributes={}
+    )
+    client = Bis([cand_unit])
+    [r] = ingest({"bis": client}, db_session, [cand], today=TODAY)
+    assert r.error is None and r.rows == 1  # a period with no value is not stored
+    assert client.asked == [("WS_CBPOL", "M.ID", "1.0")]
+    meta = MacroStore(db_session).get_series("CAND_BIS_CBPOL_ID")
+    assert meta.country == "ID" and meta.dimension == "policy" and "candidate" in meta.title
+    assert MacroStore(db_session).lifecycle_of("CAND_BIS_CBPOL_ID") == "staged"
+    two = Bis([cand_unit, cand_unit])
+    [bad] = ingest({"bis": two}, db_session, [cand], today=TODAY)
+    assert bad.error and "expected one" in bad.error
