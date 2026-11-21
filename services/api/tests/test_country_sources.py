@@ -1,4 +1,4 @@
-"""The tier 3 registry (Rule 37): the 23 national portals, the supranational ones, honest dates."""
+"""The tier 3 registry (Rule 37): the national portals, the supranational ones, honest dates."""
 
 from datetime import date
 
@@ -36,10 +36,12 @@ NATIONAL = [
     "CHL",
     "COL",
 ]
+ADDED_21_NOV = ["EMU", "SWE", "DNK", "CZE", "HUN", "POL", "HKG", "IDN", "RUS"]
 
 
-def test_all_23_national_portals_and_the_three_regional_ones_are_registered():
-    assert set(COUNTRY_SOURCES) == set(NATIONAL) and len(NATIONAL) == 23
+def test_the_national_portals_and_the_three_regional_ones_are_registered():
+    assert set(COUNTRY_SOURCES) == set(NATIONAL) | set(ADDED_21_NOV)
+    assert len(NATIONAL) == 23 and len(COUNTRY_SOURCES) == 32
     assert set(SUPRANATIONAL) == {"ECB", "UNECE", "WTO"}
     assert all(iso3 in COUNTRY_BY_ISO3 for iso3 in COUNTRY_SOURCES)
 
@@ -65,7 +67,9 @@ def test_no_terms_are_claimed_checked_that_were_not_read():
         if c.statistics_office.terms_checked
     }
     assert checked == {"GBR": date(2026, 11, 13)}
-    assert all(c.registered == REGISTERED == date(2026, 11, 13) for c in COUNTRY_SOURCES.values())
+    assert date(2026, 11, 13) == REGISTERED
+    for iso3, c in COUNTRY_SOURCES.items():
+        assert c.registered == (date(2026, 11, 21) if iso3 in ADDED_21_NOV else REGISTERED)
 
 
 def test_the_portals_in_use_say_so_and_carry_a_verification_date():
