@@ -95,7 +95,7 @@ def test_the_sweep_reports_held_pairs_limits_to_concepts_and_stores_nothing(
     db_session, monkeypatch
 ):
     monkeypatch.setattr(discover, "parse_all", lambda *a: fake_series({"JPN": TODAY}))
-    clients = {"oecd": FakeOecd({}), "eurostat": FakeEurostat()}
+    clients = {"oecd": FakeOecd({}), "eurostat": FakeEurostat(), "bis": FakeBis()}
     before = len(MacroStore(db_session).list_series(("staged", "live")))
     only_money = discover.sweep(clients, db_session, ["money_supply"], TODAY)
     assert {f.concept for f in only_money} == {"money_supply"}
@@ -127,3 +127,45 @@ def test_the_findings_are_written_to_csv(tmp_path):
     discover.write_csv([discover.Finding("c", "oecd", "AAA", "published", TODAY, True)], path)
     head, row = path.read_text(encoding="utf-8").splitlines()[:2]
     assert head.startswith("concept,source,iso3,status") and row.startswith("c,oecd,AAA,published")
+
+
+BIS = Probe("household_credit_to_gdp", "bis", "h", flow="WS_TC", key="Q..H", months=18)
+
+
+class FakeBis:
+    def __init__(self, series=(), error=None):
+        self.series, self.error, self.asked = series, error, []
+
+    def many(self, flow, key, start, version):
+        self.asked.append((flow, key, version))
+        if self.error:
+            raise self.error
+        return list(self.series)
+
+
+def test_a_bis_wildcard_maps_two_letter_areas_and_gives_a_quarter_a_longer_window():
+    series = [
+        SimpleNamespace(dimensions={"REF_AREA": area}, observations=[(date(2026, 1, 1), 1.0)])
+        for area in ("US", "XM", "ZZ")
+    ]
+    client = FakeBis(series)
+    found = discover.probe_bis(client, BIS, {"household_credit_to_gdp": {"USA"}}, TODAY)
+    by = {f.iso3: f for f in found}
+    assert by["USA"].status == "published" and by["USA"].current and by["USA"].held
+    assert by["EMU"].status == "published"  # the BIS's XM is the euro area
+    assert by["JPN"].status == "absent" and client.asked == [("WS_TC", "Q..H", "1.0")]
+    assert not discover._finding(Probe("x", "bis", "n"), "USA", {}, date(2026, 1, 1), TODAY).current
+
+
+def test_a_bis_error_fails_every_economy_without_stopping_the_sweep():
+    found = discover.probe_bis(FakeBis(error=SdmxError("bis returned 500")), BIS, {}, TODAY)
+    assert {f.status for f in found} == {"failed"}
+
+
+def test_every_bis_probe_leaves_the_economy_open_and_names_a_known_concept():
+    from app.data.indicator_concepts import CONCEPTS
+
+    bis = [p for p in PROBES if p.source == "bis"]
+    assert len(bis) >= 15
+    for p in bis:
+        assert "{" not in p.key and p.concept in CONCEPTS and p.flow

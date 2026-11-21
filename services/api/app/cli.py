@@ -547,6 +547,7 @@ def _coverage_matrix(args: argparse.Namespace) -> int:
 def _discover(args: argparse.Namespace) -> int:
     """The discovery probe (rule 34): what each source publishes, against what QuFin holds. It
     stores nothing."""
+    from app.connectors.bis import BisClient
     from app.connectors.eurostat import EurostatClient
     from app.connectors.oecd import OecdClient
     from app.jobs import discover
@@ -555,10 +556,11 @@ def _discover(args: argparse.Namespace) -> int:
     with (
         OecdClient(raw=_raw_zone()) as oecd,
         EurostatClient(raw=_raw_zone()) as eurostat,
+        BisClient(raw=_raw_zone()) as bis,
         session_scope() as session,
     ):
         findings = discover.sweep(
-            {"oecd": oecd, "eurostat": eurostat}, session, args.concept, _today()
+            {"oecd": oecd, "eurostat": eurostat, "bis": bis}, session, args.concept, _today()
         )
     print(discover.format_report(findings))
     if args.out:

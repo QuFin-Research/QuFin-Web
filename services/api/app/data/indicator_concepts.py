@@ -623,7 +623,7 @@ SERIES_CONCEPTS |= {(country, series_id): "fx_reserves" for series_id, country i
 SERIES_CONCEPTS |= {(BY_ID[sid].country, sid): "consumer_prices" for sid in IMF_CPI}
 SERIES_CONCEPTS |= {(BY_ID[sid].country, sid): "unemployment_rate" for sid in OECD_MACRO}
 
-_BIS_CONCEPT = {
+BIS_CONCEPT = {
     "CBPOL": "policy_rate",
     "NEER": "nominal_effective_exchange_rate",
     "REER": "real_effective_exchange_rate",
@@ -645,7 +645,7 @@ _BIS_CONCEPT = {
     "CPI": "consumer_prices",
 }
 SERIES_CONCEPTS |= {
-    (BIS_COUNTRIES[series_id], series_id): _BIS_CONCEPT[code]
+    (BIS_COUNTRIES[series_id], series_id): BIS_CONCEPT[code]
     for series_id, (code, _area) in BIS_SERIES.items()
 }
 
