@@ -55,10 +55,11 @@ class FakeImf:
 def test_the_registry_holds_no_economy_eurostat_serves_and_names_the_series_it_is_timed_against():
     from app.domain.source_selection import bloc_aggregator_of
 
-    # rule 38 (v3.5): nothing is staged for an economy Eurostat serves
-    assert CANDIDATES and all(bloc_aggregator_of(c.country) is None for c in CANDIDATES)
-    assert all(c.id.startswith(PREFIX) and BY_ID[c.serves].country == c.country for c in CANDIDATES)
-    [property_prices] = [c for c in CANDIDATES if c.concept == "commercial_property_prices"]
+    # rule 38 (v3.5): nothing is timed for an economy Eurostat serves
+    timed = [c for c in CANDIDATES if c.serves]
+    assert timed and all(bloc_aggregator_of(c.country) is None for c in timed)
+    assert all(c.id.startswith(PREFIX) and BY_ID[c.serves].country == c.country for c in timed)
+    [property_prices] = [c for c in timed if c.concept == "commercial_property_prices"]
     assert (property_prices.source, property_prices.serves) == ("fred", "BIS_CPP_US")
     assert property_prices.months == 3 and property_prices.key == "COMREPUSQ159N"
 
@@ -271,9 +272,9 @@ def test_a_fred_candidate_that_fails_is_reported_not_raised(db_session):
 
 
 def test_a_source_without_a_loader_is_reported(db_session):
-    odd = Candidate(**{**CPP.__dict__, "source": "oecd"})
-    [r] = ingest({"oecd": object()}, db_session, [odd], today=TODAY)
-    assert r.error == "no loader for source oecd"
+    odd = Candidate(**{**CPP.__dict__, "source": "bis"})
+    [r] = ingest({"bis": object()}, db_session, [odd], today=TODAY)
+    assert r.error == "no loader for source bis"
 
 
 # --- the BLS candidates for the US series FRED serves --------------------------------------------
@@ -342,3 +343,103 @@ def test_a_bls_candidate_is_not_loaded_while_the_series_it_describes_is_missing(
     [r] = ingest({"bls": FakeBls([(date(2026, 9, 1), 4.1)])}, db_session, [UNRATE], today=TODAY)
     assert r.error and "UNRATE is not stored" in r.error
     assert MacroStore(db_session).lifecycle_of(UNRATE.id) is None
+
+
+# --- gap candidates: published by a source, held by nobody, timed against nothing ---------------
+
+
+def _gaps():
+    from app.data.candidates import GAP_CANDIDATES
+
+    return GAP_CANDIDATES
+
+
+def test_the_gap_candidates_are_the_probes_findings_and_describe_themselves():
+    gaps = _gaps()
+    assert len(gaps) == 80 and len({c.id for c in gaps}) == 80
+    by = {}
+    for c in gaps:
+        by.setdefault((c.concept, c.source), []).append(c)
+        assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID
+        assert c.title and c.units and c.adjustment and c.dimension and c.cycle
+    assert {k: len(v) for k, v in by.items()} == {
+        ("core_consumer_prices", "eurostat"): 33,
+        ("industrial_production", "eurostat"): 30,
+        ("core_consumer_prices", "oecd"): 1,
+        ("industrial_production", "oecd"): 6,
+        ("money_supply", "oecd"): 10,
+    }
+    greece = next(c for c in gaps if c.id == "CAND_ESTAT_CORE_GR")
+    assert greece.area == "EL" and "geo=EL" in greece.key  # Eurostat's code for Greece
+
+
+def test_a_gap_candidate_is_for_an_economy_nothing_holds_a_series_of():
+    """The pair is a gap today; once a series serves it, the candidate has done its job."""
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+
+    held = {
+        (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
+    }
+    assert not [c.id for c in _gaps() if (c.country, c.concept) in held]
+
+
+class FakeEurostat:
+    def __init__(self, fail=()):
+        self.fail, self.asked = set(fail), []
+
+    def series(self, dataset, filters, start):
+        from app.connectors.eurostat import EurostatError
+
+        self.asked.append((dataset, dict(filters)))
+        if filters["geo"] in self.fail:
+            raise EurostatError("Eurostat returned no observations")
+        return SimpleNamespace(observations=[(date(2026, 8, 1), 1.5), (date(2026, 9, 1), 1.6)])
+
+
+def _gap(candidate_id):
+    return next(c for c in _gaps() if c.id == candidate_id)
+
+
+def test_a_eurostat_gap_candidate_is_staged_with_its_own_description(db_session):
+    fe = FakeEurostat()
+    [r] = ingest({"eurostat": fe}, db_session, [_gap("CAND_ESTAT_CORE_GR")], today=TODAY)
+    assert r.error is None and r.rows == 2
+    assert fe.asked == [
+        ("prc_hicp_minr", {"freq": "M", "unit": "RCH_A", "coicop18": "TOT_X_NRG_FOOD", "geo": "EL"})
+    ]
+    store = MacroStore(db_session)
+    assert store.lifecycle_of("CAND_ESTAT_CORE_GR") == "staged"
+    meta = store.get_series("CAND_ESTAT_CORE_GR")
+    assert meta.country == "GR" and meta.dimension == "inflation" and meta.cycle == "lagging"
+    assert "candidate" in meta.title and meta.units == "Percentage change"
+    assert len(CandidateStore(db_session).sightings("CAND_ESTAT_CORE_GR")) == 2
+
+
+def test_an_oecd_gap_candidate_uses_its_own_key_and_a_missing_one_is_reported(db_session):
+    class Oecd:
+        def __init__(self):
+            self.asked = []
+
+        def series(self, flow, key, start):
+            self.asked.append((flow, key))
+            return SimpleNamespace(
+                observations=[(date(2026, 8, 1), 100.0), (date(2026, 9, 1), None)]
+            )
+
+    oecd = Oecd()
+    [r] = ingest({"oecd": oecd}, db_session, [_gap("CAND_OECD_MONEY_GBR")], today=TODAY)
+    assert r.error is None and r.rows == 1  # a month with no value is not stored
+    assert oecd.asked == [("OECD.SDD.STES,DSD_STES@DF_MONAGG,", "GBR.M.MABM.XDC._Z.Y._Z._Z.N")]
+    [bad] = ingest(
+        {"eurostat": FakeEurostat(fail=["EL"])}, db_session, [_gap("CAND_ESTAT_IP_GR")], today=TODAY
+    )
+    assert bad.error and MacroStore(db_session).lifecycle_of("CAND_ESTAT_IP_GR") is None
+
+
+def test_gap_candidates_are_not_timed_and_no_decision_is_asked_of_them(db_session):
+    from app.jobs.decide_sources import plan
+    from app.jobs.measure_candidates import measure_all
+
+    gaps = _gaps()
+    assert measure_all(db_session, gaps, TODAY) == []  # nothing to be timed against
+    assert plan(db_session, gaps, TODAY) == []

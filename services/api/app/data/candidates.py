@@ -15,6 +15,7 @@ pairs are measured.
 
 from dataclasses import dataclass
 
+from app.data.gap_ids import HICP_GEO
 from app.data.indicator_concepts import SERIES_CONCEPTS
 from app.domain.source_selection import Producer
 
@@ -33,6 +34,14 @@ class Candidate:
     flow: str  # the source's dataset
     key: str  # the source's series key (FRED: the series id)
     months: int = 1  # months in a period: 1 monthly, 3 quarterly
+    # A gap candidate has nothing to be timed against (`serves` is empty) and describes
+    # itself; one that is timed copies its description from the series it serves.
+    title: str = ""
+    units: str = ""
+    adjustment: str = ""
+    dimension: str = ""
+    cycle: str = ""
+    frequency: str = "Monthly"
 
 
 CANDIDATES: tuple[Candidate, ...] = (
@@ -86,4 +95,197 @@ CANDIDATES = (
         for fred_id, (bls_id, months) in _BLS_RIVALS.items()
     ),
 )
+
+# Gaps the discovery probe found on 21 Nov 2026 (`discover`, rule 34): series a source publishes
+# currently for an economy QuFin holds nothing for. Each is loaded as `staged`, never served, until
+# a reviewed pull request verifies its eligibility (rules 26 and 34). Eurostat's economies are
+# Eurostat's to serve (rule 38, Bloc aggregator first); the OECD fills the others.
+_ESTAT_CORE = (
+    "AL",
+    "AT",
+    "BE",
+    "BG",
+    "CH",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "ES",
+    "FI",
+    "GR",
+    "HR",
+    "HU",
+    "IE",
+    "IS",
+    "LT",
+    "LU",
+    "LV",
+    "ME",
+    "MK",
+    "MT",
+    "NL",
+    "NO",
+    "PL",
+    "PT",
+    "RO",
+    "RS",
+    "SE",
+    "SI",
+    "SK",
+    "TR",
+    "XK",
+)
+_ESTAT_IP = (
+    "AT",
+    "BE",
+    "BG",
+    "CH",
+    "CY",
+    "CZ",
+    "DK",
+    "EE",
+    "ES",
+    "FI",
+    "GR",
+    "HR",
+    "HU",
+    "IE",
+    "LT",
+    "LU",
+    "LV",
+    "ME",
+    "MK",
+    "MT",
+    "NL",
+    "NO",
+    "PL",
+    "PT",
+    "RO",
+    "RS",
+    "SE",
+    "SI",
+    "SK",
+    "TR",
+)
+_OECD_CORE = {"AU": "AUS"}
+_OECD_IP = {"GB": "GBR", "CA": "CAN", "IN": "IND", "MX": "MEX", "BR": "BRA", "CL": "CHL"}
+_OECD_MONEY = {
+    "GB": "GBR",
+    "JP": "JPN",
+    "CA": "CAN",
+    "AU": "AUS",
+    "NO": "NOR",
+    "HU": "HUN",
+    "ZA": "ZAF",
+    "KR": "KOR",
+    "IS": "ISL",
+    "CO": "COL",
+}
+
+
+def _estat_key(geo_filters: dict[str, str]) -> str:
+    return ",".join(f"{k}={v}" for k, v in geo_filters.items())
+
+
+_CORE = {"freq": "M", "unit": "RCH_A", "coicop18": "TOT_X_NRG_FOOD"}
+_IP = {"freq": "M", "indic_bt": "PRD", "nace_r2": "B-D", "s_adj": "SCA", "unit": "I21"}
+_OECD_FLOW = "OECD.SDD.STES,DSD_STES@"
+GAP_CANDIDATES: tuple[Candidate, ...] = (
+    *(
+        Candidate(
+            id=f"{PREFIX}ESTAT_CORE_{iso2}",
+            country=iso2,
+            concept="core_consumer_prices",
+            source="eurostat",
+            producer="bloc",
+            area=HICP_GEO[iso2],
+            serves="",
+            flow="prc_hicp_minr",
+            key=_estat_key({**_CORE, "geo": HICP_GEO[iso2]}),
+            title=f"HICP excluding energy, food, alcohol and tobacco: annual rate, {iso2}",
+            units="Percentage change",
+            adjustment="Not Seasonally Adjusted",
+            dimension="inflation",
+            cycle="lagging",
+        )
+        for iso2 in _ESTAT_CORE
+    ),
+    *(
+        Candidate(
+            id=f"{PREFIX}ESTAT_IP_{iso2}",
+            country=iso2,
+            concept="industrial_production",
+            source="eurostat",
+            producer="bloc",
+            area=HICP_GEO[iso2],
+            serves="",
+            flow="sts_inpr_m",
+            key=_estat_key({**_IP, "geo": HICP_GEO[iso2]}),
+            title=f"Production in industry, seasonally and calendar adjusted, {iso2}",
+            units="Index, 2021=100",
+            adjustment="Seasonally and Calendar Adjusted",
+            dimension="growth",
+            cycle="coincident",
+        )
+        for iso2 in _ESTAT_IP
+    ),
+    *(
+        Candidate(
+            id=f"{PREFIX}OECD_CORE_{iso3}",
+            country=iso2,
+            concept="core_consumer_prices",
+            source="oecd",
+            producer="global",
+            area=iso3,
+            serves="",
+            flow="OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,",
+            key=f"{iso3}.M.N.CPI.IX._TXCP01_NRG.N._Z",
+            title=f"CPI excluding food and energy, index, {iso2}",
+            units="Index",
+            adjustment="Not Seasonally Adjusted",
+            dimension="inflation",
+            cycle="lagging",
+        )
+        for iso2, iso3 in _OECD_CORE.items()
+    ),
+    *(
+        Candidate(
+            id=f"{PREFIX}OECD_IP_{iso3}",
+            country=iso2,
+            concept="industrial_production",
+            source="oecd",
+            producer="global",
+            area=iso3,
+            serves="",
+            flow=f"{_OECD_FLOW}DF_INDSERV,",
+            key=f"{iso3}.M.PRVM.IX.BTE.Y._Z._Z.N",
+            title=f"Production volume, industry excluding construction, {iso2}",
+            units="Index",
+            adjustment="Seasonally Adjusted",
+            dimension="growth",
+            cycle="coincident",
+        )
+        for iso2, iso3 in _OECD_IP.items()
+    ),
+    *(
+        Candidate(
+            id=f"{PREFIX}OECD_MONEY_{iso3}",
+            country=iso2,
+            concept="money_supply",
+            source="oecd",
+            producer="global",
+            area=iso3,
+            serves="",
+            flow=f"{_OECD_FLOW}DF_MONAGG,",
+            key=f"{iso3}.M.MABM.XDC._Z.Y._Z._Z.N",
+            title=f"Broad money, national currency, {iso2}",
+            units="National currency",
+            adjustment="Seasonally Adjusted",
+            dimension="policy",
+            cycle="leading",
+        )
+        for iso2, iso3 in _OECD_MONEY.items()
+    ),
+)
+CANDIDATES = (*CANDIDATES, *GAP_CANDIDATES)
 CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
