@@ -20,6 +20,8 @@ HICP = "HICP, all items"
 HICP_CANDIDATE = "HICP, all items (candidate economy: comparability not fully evaluated)"
 _CANDIDATES = frozenset({"AL", "ME", "MK", "RS", "TR", "XK"})
 NATIONAL_CORE_CPI = "National core CPI"
+HICP_CORE = "HICP, excluding energy, food, alcohol and tobacco"
+HICP_CORE_CANDIDATE = f"{HICP_CORE} (candidate economy: comparability not fully evaluated)"
 
 VARIANT_CONCEPTS = frozenset({"consumer_prices", "core_consumer_prices"})
 
@@ -43,6 +45,11 @@ def variant_of(series_id: str, country: str) -> str | None:
         return None
     if series_id in _KNOWN:
         return _KNOWN[series_id]
+    if series_id.startswith(
+        "ESTAT_CORE_"
+    ):  # batch B, 22 Nov 2026: the same measure as the three above
+        geo = series_id.removeprefix("ESTAT_CORE_")
+        return HICP_CORE_CANDIDATE if geo in _CANDIDATES else HICP_CORE
     if series_id.startswith("ESTAT_HICP_"):
         geo = series_id.removeprefix("ESTAT_HICP_")
         return HICP_CANDIDATE if geo in _CANDIDATES else HICP

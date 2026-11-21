@@ -563,3 +563,17 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | The staged copies of the 98 are pruned | Design choice | Once served, a candidate has done its job. `prune-staged --yes` removes the 98 staged copies (after a backup); their first-read days are lost, since `promote-candidate` handles only candidates that replace a series |
 | Scorecard effect | Open | A new series reaches a score only if its indicator is in the private recipe. The owner checks which of these six indicators the recipe uses (rule 20). Past scores keep the catalog version they were computed with |
 
+## 5e. Eligibility, batch B: Eurostat core HICP and production, and OECD survey series (22 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| 72 series become served series | Per rule 34 | Eurostat core HICP for 33 economies and industrial production for 29, and the OECD's leading indicator for China, business confidence for Brazil, South Africa, Indonesia, Israel and Colombia, consumer confidence for India, South Africa, Indonesia and Israel. They are declared in `BATCH_B_CORE` and `BATCH_B_IP` (`gap_ids.py`) and `_OECD_BATCH_B` (`macro_catalog.py`), so the catalog, units, concepts and the existing ingestion take them |
+| The measures were already verified | Basis | Eurostat's `prc_hicp_minr` (core) and `sts_inpr_m` (production) are the datasets and filters of the series served for Germany, France, Italy and the euro area since 13 Nov 2026; the OECD keys are the ones of the served survey series. Each new series was staged and loaded over its full history on 22 Nov 2026: no missing month, latest month 2026-10 (core) and 2026-09 (production and OECD surveys) in line with the rest |
+| Eurostat's economies are served by Eurostat | Per rule 38 | Eurostat publishes the indicator for them, so each pair has a confirmed decision, "Bloc aggregator first", dated 22 Nov 2026 (`app/data/source_baseline.py`). The OECD pairs are provisional until a release cycle is measured |
+| Candidate economies carry a definition notice | Per rules 10 and 23 | Core HICP of Albania, Montenegro, North Macedonia, Serbia, Turkey and Kosovo is marked "candidate economy: comparability not fully evaluated" (`app/data/series_variants.py`), as their headline HICP already is |
+| Belgium's production stays staged | Open | Its latest month is 2026-08, a month behind the other 29; it is not served until it catches up (rule 3) |
+| 17 OECD series are not in this batch | Open | Industrial production for GB, CA, IN, MX, BR, CL, core CPI for AU and broad money for ten economies stay staged: the OECD loader reads only the leading-indicator, confidence and unemployment flows. They need a generic OECD loader and, for money supply, your classification of dimension and cycle (`policy`, `leading` are my proposal) |
+| Licence (rule 7) | Open | Eurostat's reuse decision (CC BY 4.0) and the OECD terms are in the licence register and cover these series; some Eurostat third-party sub-series are restricted. The OECD builds some survey data from licensed sources (the US ones are left out for that reason): the owner confirms the six new economies are not affected |
+| The staged copies are pruned | Design choice | `prune-staged --yes` removes the 72 staged copies; their first-read days are lost |
+| Scorecard effect | Open | Core CPI, industrial production, leading index and confidence feed a score only if the private recipe uses them (rule 20) |
+

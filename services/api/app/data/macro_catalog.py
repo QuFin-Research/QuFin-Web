@@ -228,6 +228,22 @@ _OECD_ISO2 = {
     "CZE": "CZ",
     "HUN": "HU",
     "POL": "PL",
+    # Batch B, 22 Nov 2026
+    "CHN": "CN",
+    "BRA": "BR",
+    "ZAF": "ZA",
+    "IDN": "ID",
+    "ISR": "IL",
+    "COL": "CO",
+    "IND": "IN",
+}
+# Batch B, 22 Nov 2026 (docs/assumptions-register.md, section 5e): the OECD's own series for
+# economies that had none, each staged and loaded first (no missing month, latest 2026-09 or
+# 2026-10). Brazil, Colombia, India, Indonesia, Israel and South Africa had no survey series.
+_OECD_BATCH_B = {
+    "LI": ("CHN",),
+    "BCICP": ("BRA", "ZAF", "IDN", "ISR", "COL"),
+    "CCICP": ("IND", "ZAF", "IDN", "ISR"),
 }
 _OECD_LIVE = {
     "LI": ("GBR", "JPN", "CAN", "AUS", "MEX", "TUR", "KOR", "DEU", "FRA", "ITA"),
@@ -269,6 +285,7 @@ _OECD_LIVE = {
         "KOR",
     ),
 }
+_OECD_LIVE = {m: (*_OECD_LIVE[m], *_OECD_BATCH_B.get(m, ())) for m in _OECD_LIVE}
 _OECD_DIMENSION: dict[str, Dimension] = {"LI": "growth", "BCICP": "growth", "CCICP": "sentiment"}
 _OECD_ID = {"LI": "CLI", "BCICP": "BCI", "CCICP": "CCI"}
 
@@ -576,7 +593,7 @@ _DEEP_HISTORY: frozenset[str] = frozenset(
         f"OECD_{_OECD_ID[m]}_{a}"
         for m in _OECD_LIVE
         for a in _OECD_LIVE[m]
-        if a in ("DEU", "FRA", "ITA")
+        if a in ("DEU", "FRA", "ITA") or a in _OECD_BATCH_B.get(m, ())
     }
     | {"IMF_RES_KWT", "IMF_RES_QAT"}
 )

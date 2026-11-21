@@ -356,21 +356,21 @@ def _gaps():
 
 def test_the_gap_candidates_are_the_probes_findings_and_describe_themselves():
     gaps = _gaps()
-    assert len(gaps) == 80 and len({c.id for c in gaps}) == 80
+    # 80 until batch B (22 Nov 2026) served Eurostat's core HICP and 29 of its 30 production series
+    assert len(gaps) == 18 and len({c.id for c in gaps}) == 18
     by = {}
     for c in gaps:
         by.setdefault((c.concept, c.source), []).append(c)
         assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID
         assert c.title and c.units and c.adjustment and c.dimension and c.cycle
     assert {k: len(v) for k, v in by.items()} == {
-        ("core_consumer_prices", "eurostat"): 33,
-        ("industrial_production", "eurostat"): 30,
+        ("industrial_production", "eurostat"): 1,  # Belgium: a month behind the rest
         ("core_consumer_prices", "oecd"): 1,
         ("industrial_production", "oecd"): 6,
         ("money_supply", "oecd"): 10,
     }
-    greece = next(c for c in gaps if c.id == "CAND_ESTAT_CORE_GR")
-    assert greece.area == "EL" and "geo=EL" in greece.key  # Eurostat's code for Greece
+    belgium = next(c for c in gaps if c.id == "CAND_ESTAT_IP_BE")
+    assert belgium.area == "BE" and "geo=BE" in belgium.key
 
 
 def test_a_gap_candidate_is_for_an_economy_nothing_holds_a_series_of():
@@ -402,17 +402,27 @@ def _gap(candidate_id):
 
 def test_a_eurostat_gap_candidate_is_staged_with_its_own_description(db_session):
     fe = FakeEurostat()
-    [r] = ingest({"eurostat": fe}, db_session, [_gap("CAND_ESTAT_CORE_GR")], today=TODAY)
+    [r] = ingest({"eurostat": fe}, db_session, [_gap("CAND_ESTAT_IP_BE")], today=TODAY)
     assert r.error is None and r.rows == 2
     assert fe.asked == [
-        ("prc_hicp_minr", {"freq": "M", "unit": "RCH_A", "coicop18": "TOT_X_NRG_FOOD", "geo": "EL"})
+        (
+            "sts_inpr_m",
+            {
+                "freq": "M",
+                "indic_bt": "PRD",
+                "nace_r2": "B-D",
+                "s_adj": "SCA",
+                "unit": "I21",
+                "geo": "BE",
+            },
+        )
     ]
     store = MacroStore(db_session)
-    assert store.lifecycle_of("CAND_ESTAT_CORE_GR") == "staged"
-    meta = store.get_series("CAND_ESTAT_CORE_GR")
-    assert meta.country == "GR" and meta.dimension == "inflation" and meta.cycle == "lagging"
-    assert "candidate" in meta.title and meta.units == "Percentage change"
-    assert len(CandidateStore(db_session).sightings("CAND_ESTAT_CORE_GR")) == 2
+    assert store.lifecycle_of("CAND_ESTAT_IP_BE") == "staged"
+    meta = store.get_series("CAND_ESTAT_IP_BE")
+    assert meta.country == "BE" and meta.dimension == "growth" and meta.cycle == "coincident"
+    assert "candidate" in meta.title and meta.units == "Index, 2021=100"
+    assert len(CandidateStore(db_session).sightings("CAND_ESTAT_IP_BE")) == 2
 
 
 def test_an_oecd_gap_candidate_uses_its_own_key_and_a_missing_one_is_reported(db_session):
@@ -431,9 +441,9 @@ def test_an_oecd_gap_candidate_uses_its_own_key_and_a_missing_one_is_reported(db
     assert r.error is None and r.rows == 1  # a month with no value is not stored
     assert oecd.asked == [("OECD.SDD.STES,DSD_STES@DF_MONAGG,", "GBR.M.MABM.XDC._Z.Y._Z._Z.N")]
     [bad] = ingest(
-        {"eurostat": FakeEurostat(fail=["EL"])}, db_session, [_gap("CAND_ESTAT_IP_GR")], today=TODAY
+        {"eurostat": FakeEurostat(fail=["BE"])}, db_session, [_gap("CAND_ESTAT_IP_BE")], today=TODAY
     )
-    assert bad.error and MacroStore(db_session).lifecycle_of("CAND_ESTAT_IP_GR") is None
+    assert bad.error and MacroStore(db_session).lifecycle_of("CAND_ESTAT_IP_BE") is None
 
 
 def test_gap_candidates_are_not_timed_and_no_decision_is_asked_of_them(db_session):
@@ -455,7 +465,7 @@ def test_the_second_sweeps_gap_candidates_describe_themselves_and_leave_eurostat
     from app.domain.source_selection import bloc_aggregator_of
 
     gaps = _bis_oecd_gaps()
-    assert len(gaps) == 47 and len({c.id for c in gaps}) == 47
+    assert len(gaps) == 37 and len({c.id for c in gaps}) == 37
     for c in gaps:
         assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID and c.measure
         assert c.title and c.units and c.adjustment and c.dimension and c.cycle and "{" not in c.key

@@ -358,6 +358,119 @@ EUROSTAT_SERIES = (
         for iso2, geo in HICP_GEO.items()
     ),
 )
+# Batch B, 22 Nov 2026: industrial production and core HICP, the same measures as above, for the
+# economies Eurostat serves (rule 38, Bloc aggregator first) that had none. Each was staged and
+# loaded over its full history with no missing month and the latest month in line with the
+# others (production 2026-09, core HICP 2026-10). Belgium's production ended a month earlier and
+# stays staged. Greece is "EL" at Eurostat. See docs/assumptions-register.md, section 5e.
+BATCH_B_CORE: dict[str, str] = {
+    "AL": "AL",
+    "AT": "AT",
+    "BE": "BE",
+    "BG": "BG",
+    "CH": "CH",
+    "CY": "CY",
+    "CZ": "CZ",
+    "DK": "DK",
+    "EE": "EE",
+    "ES": "ES",
+    "FI": "FI",
+    "EL": "GR",
+    "HR": "HR",
+    "HU": "HU",
+    "IE": "IE",
+    "IS": "IS",
+    "LT": "LT",
+    "LU": "LU",
+    "LV": "LV",
+    "ME": "ME",
+    "MK": "MK",
+    "MT": "MT",
+    "NL": "NL",
+    "NO": "NO",
+    "PL": "PL",
+    "PT": "PT",
+    "RO": "RO",
+    "RS": "RS",
+    "SE": "SE",
+    "SI": "SI",
+    "SK": "SK",
+    "TR": "TR",
+    "XK": "XK",
+}
+BATCH_B_IP: dict[str, str] = {
+    "AT": "AT",
+    "BG": "BG",
+    "CH": "CH",
+    "CY": "CY",
+    "CZ": "CZ",
+    "DK": "DK",
+    "EE": "EE",
+    "ES": "ES",
+    "FI": "FI",
+    "EL": "GR",
+    "HR": "HR",
+    "HU": "HU",
+    "IE": "IE",
+    "LT": "LT",
+    "LU": "LU",
+    "LV": "LV",
+    "ME": "ME",
+    "MK": "MK",
+    "MT": "MT",
+    "NL": "NL",
+    "NO": "NO",
+    "PL": "PL",
+    "PT": "PT",
+    "RO": "RO",
+    "RS": "RS",
+    "SE": "SE",
+    "SI": "SI",
+    "SK": "SK",
+    "TR": "TR",
+}
+EUROSTAT_SERIES = (
+    *EUROSTAT_SERIES,
+    *(
+        EurostatSeries(
+            f"ESTAT_IP_{geo}",
+            iso2,
+            "sts_inpr_m",
+            {**_IP, "geo": geo},
+            f"Production in industry, seasonally and calendar adjusted, {geo}",
+            "Index, 2021=100",
+            "Seasonally and Calendar Adjusted",
+            "industrial_production",
+            "growth",
+            "index",
+            "coincident",
+            "Output is the cycle itself: production moves with it.",
+            "pct",
+            release="Eurostat Short-term business statistics",
+        )
+        for geo, iso2 in BATCH_B_IP.items()
+    ),
+    *(
+        EurostatSeries(
+            f"ESTAT_CORE_{geo}",
+            iso2,
+            "prc_hicp_minr",
+            {**_CORE, "geo": geo},
+            f"HICP excluding energy, food, alcohol and tobacco: annual rate of change, {geo}",
+            "Percentage change",
+            "Not Seasonally Adjusted",
+            "core_consumer_prices",
+            "inflation",
+            "rate_percent",
+            "lagging",
+            "Prices follow activity with a lag.",
+            "diff",
+            published_as_change=True,
+            release="Eurostat HICP",
+        )
+        for geo, iso2 in BATCH_B_CORE.items()
+    ),
+)
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}
 
 
