@@ -10,7 +10,10 @@ Eurostat comes first for the economies it serves (rule 38, *Bloc aggregator firs
 from dataclasses import dataclass, field
 from typing import Literal
 
-Kind = Literal["oecd", "eurostat"]
+from app.data.bis_ids import MEASURES
+from app.data.indicator_concepts import BIS_CONCEPT
+
+Kind = Literal["oecd", "eurostat", "bis"]
 
 
 @dataclass(frozen=True)
@@ -24,12 +27,67 @@ class Probe:
     # Eurostat: the dataset and the filters (the economy is added to them).
     dataset: str = ""
     filters: dict[str, str] = field(default_factory=dict)
+    # BIS: the dataflow is `flow`, the key has the economy left open, and these two say which
+    # dimension names the economy and which version of the dataflow to ask.
+    area_dimension: str = "REF_AREA"
+    version: str = "1.0"
+    months: int = 0  # a longer window than the default, for a quarterly indicator
 
 
 OECD_STES = "OECD.SDD.STES,DSD_STES@"
 OECD_PRICES = "OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,"
 
+OECD_CLI = "OECD.SDD.STES,DSD_STES@DF_CLI,"
+_BIS_QUARTERLY_MONTHS = 18  # the latest quarter can sit more than 8 months back
+
+# One wildcard request per BIS measure: the economy position of the key is left empty. The
+# commercial property measure has a template of its own (`{part}`) and no wildcard, so it is not
+# probed yet.
+_BIS_PROBES = tuple(
+    Probe(
+        BIS_CONCEPT[m.code],
+        "bis",
+        m.title,
+        flow=m.flow,
+        key=m.key.replace("{areas}", ""),
+        area_dimension=m.area_dimension,
+        version=m.version,
+        months=_BIS_QUARTERLY_MONTHS if m.frequency == "Quarterly" else 0,
+    )
+    for m in MEASURES.values()
+    if "{areas}" in m.key and "{part}" not in m.key and m.code in BIS_CONCEPT
+)
+
 PROBES: tuple[Probe, ...] = (
+    *_BIS_PROBES,
+    Probe(
+        "leading_index",
+        "oecd",
+        "Composite leading indicator, amplitude adjusted",
+        flow=OECD_CLI,
+        key=".M.LI.IX..AA.IX..H",
+    ),
+    Probe(
+        "business_confidence",
+        "oecd",
+        "Business confidence indicator, amplitude adjusted",
+        flow=OECD_CLI,
+        key=".M.BCICP.IX..AA.IX..H",
+    ),
+    Probe(
+        "consumer_sentiment",
+        "oecd",
+        "Consumer confidence indicator, amplitude adjusted",
+        flow=OECD_CLI,
+        key=".M.CCICP.IX..AA.IX..H",
+    ),
+    Probe(
+        "unemployment_rate",
+        "oecd",
+        "Unemployment rate, 15 years and over, monthly",
+        flow="OECD.SDD.TPS,DSD_LFS@DF_IALFS_UNE_M,",
+        key=".UNE_LF_M.PT_LF_SUB._Z.Y._T.Y_GE15._Z.M",
+    ),
     Probe(
         "industrial_production",
         "eurostat",

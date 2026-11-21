@@ -15,8 +15,9 @@ pairs are measured.
 
 from dataclasses import dataclass
 
+from app.data.bis_ids import MEASURES
 from app.data.gap_ids import HICP_GEO
-from app.data.indicator_concepts import SERIES_CONCEPTS
+from app.data.indicator_concepts import BIS_CONCEPT, SERIES_CONCEPTS
 from app.domain.source_selection import Producer
 
 PREFIX = "CAND_"
@@ -42,6 +43,7 @@ class Candidate:
     dimension: str = ""
     cycle: str = ""
     frequency: str = "Monthly"
+    measure: str = ""  # BIS: the measure code that says its version, units and release rule
 
 
 CANDIDATES: tuple[Candidate, ...] = (
@@ -288,4 +290,230 @@ GAP_CANDIDATES: tuple[Candidate, ...] = (
     ),
 )
 CANDIDATES = (*CANDIDATES, *GAP_CANDIDATES)
+
+# Gaps the second discovery sweep found on 21 Nov 2026 (rule 34): series the BIS or the OECD
+# publishes currently for an economy QuFin holds nothing for. Loaded as `staged`, never served,
+# until a reviewed pull request verifies eligibility (rules 26 and 34). An economy Eurostat serves
+# is left out where Eurostat also publishes the indicator (residential property prices, business
+# and consumer confidence, unemployment): that is Eurostat's to serve (rule 38).
+_BIS_GAP = {
+    "CBPOL": (
+        "ID",
+        "RU",
+        "IS",
+        "IL",
+        "MK",
+        "MY",
+        "RO",
+        "RS",
+    ),
+    "NEER": (
+        "US",
+        "AR",
+        "ID",
+        "RU",
+        "AT",
+        "BE",
+        "BA",
+        "BG",
+        "HR",
+        "CY",
+        "EE",
+        "FI",
+        "GR",
+        "IS",
+        "IE",
+        "IL",
+        "LV",
+        "LT",
+        "LU",
+        "MK",
+        "MY",
+        "MT",
+        "NL",
+        "PT",
+        "RO",
+        "RS",
+        "SK",
+        "SI",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "REER": (
+        "US",
+        "AR",
+        "ID",
+        "RU",
+        "AT",
+        "BE",
+        "BA",
+        "BG",
+        "HR",
+        "CY",
+        "EE",
+        "FI",
+        "GR",
+        "IS",
+        "IE",
+        "IL",
+        "LV",
+        "LT",
+        "LU",
+        "MK",
+        "MY",
+        "MT",
+        "NL",
+        "PT",
+        "RO",
+        "RS",
+        "SK",
+        "SI",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "CREDIT": (
+        "US",
+        "AR",
+        "ID",
+        "RU",
+        "AT",
+        "BE",
+        "FI",
+        "GR",
+        "IE",
+        "IL",
+        "LU",
+        "MY",
+        "NL",
+        "PT",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "CREDGAP": (
+        "US",
+        "AR",
+        "ID",
+        "RU",
+        "AT",
+        "BE",
+        "FI",
+        "GR",
+        "IE",
+        "IL",
+        "LU",
+        "MY",
+        "NL",
+        "PT",
+        "ES",
+        "CL",
+        "CO",
+    ),
+    "SPP": (
+        "RU",
+        "IL",
+        "MY",
+        "CL",
+        "CO",
+    ),
+    "TCHH": (
+        "US",
+        "RU",
+    ),
+    "TCGOV": ("US",),
+    "DSRP": (
+        "US",
+        "RU",
+    ),
+    "DSRH": ("US",),
+    "DSRN": ("US",),
+    "GLIUSD": ("RU",),
+    "CBTA": (
+        "KR",
+        "ID",
+        "KW",
+        "IL",
+    ),
+    "IDS": (
+        "US",
+        "RU",
+        "KW",
+        "OM",
+        "KH",
+        "KE",
+        "LI",
+        "NG",
+        "CG",
+    ),
+    "DSSGOV": ("US",),
+    "DSSNFC": (
+        "US",
+        "LV",
+        "LT",
+    ),
+    "DSSFIN": ("US",),
+}
+_OECD_SURVEY_GAP = {
+    "leading_index": {"CN": "CHN"},
+    "business_confidence": {"BR": "BRA", "ZA": "ZAF", "ID": "IDN", "IL": "ISR", "CO": "COL"},
+    "consumer_sentiment": {"IN": "IND", "ZA": "ZAF", "ID": "IDN", "IL": "ISR"},
+}
+_OECD_SURVEY = {  # concept -> (OECD measure, title, dimension)
+    "leading_index": ("LI", "Composite leading indicator", "growth"),
+    "business_confidence": ("BCICP", "Business confidence indicator", "growth"),
+    "consumer_sentiment": ("CCICP", "Consumer confidence indicator", "sentiment"),
+}
+
+
+def _bis_area(iso2: str) -> str:
+    return "XM" if iso2 == "EA" else iso2
+
+
+BIS_GAP_CANDIDATES: tuple[Candidate, ...] = tuple(
+    Candidate(
+        id=f"{PREFIX}BIS_{code}_{iso2}",
+        country=iso2,
+        concept=BIS_CONCEPT[code],
+        source="bis",
+        producer="global",
+        area=_bis_area(iso2),
+        serves="",
+        flow=MEASURES[code].flow,
+        key=MEASURES[code].key.format(areas=_bis_area(iso2)),
+        months=1 if MEASURES[code].frequency == "Monthly" else 3,
+        title=f"{MEASURES[code].title}, {iso2}",
+        units=MEASURES[code].units,
+        adjustment=MEASURES[code].seasonal_adjustment,
+        dimension=MEASURES[code].dimension,
+        cycle=MEASURES[code].cycle,
+        frequency=MEASURES[code].frequency,
+        measure=code,
+    )
+    for code, economies in _BIS_GAP.items()
+    for iso2 in economies
+)
+OECD_SURVEY_GAP_CANDIDATES: tuple[Candidate, ...] = tuple(
+    Candidate(
+        id=f"{PREFIX}OECD_{measure}_{iso3}",
+        country=iso2,
+        concept=concept,
+        source="oecd",
+        producer="global",
+        area=iso3,
+        serves="",
+        flow="OECD.SDD.STES,DSD_STES@DF_CLI,",
+        key=f"{iso3}.M.{measure}.IX..AA.IX..H",
+        title=f"{title} (amplitude adjusted), {iso2}",
+        units="Index, long-term average = 100",
+        adjustment="Amplitude Adjusted (OECD)",
+        dimension=dimension,
+        cycle="leading",
+        measure=measure,
+    )
+    for concept, (measure, title, dimension) in _OECD_SURVEY.items()
+    for iso2, iso3 in _OECD_SURVEY_GAP.get(concept, {}).items()
+)
+CANDIDATES = (*CANDIDATES, *BIS_GAP_CANDIDATES, *OECD_SURVEY_GAP_CANDIDATES)
 CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}

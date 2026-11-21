@@ -24,11 +24,13 @@ from app.connectors.bls import BlsError
 from app.connectors.eurostat import EurostatError
 from app.connectors.fred import FredError
 from app.connectors.sdmx import SdmxError
+from app.data.bis_ids import MEASURES
 from app.data.candidates import CANDIDATES, Candidate
 from app.data.eurostat_calendar import release_of as eurostat_release_of
 from app.data.imf_calendar import imf_release
 from app.data.macro_catalog import DEFAULT_OBSERVATION_START
 from app.data.oecd_calendar import oecd_release
+from app.jobs.ingest_bis import PUBLISHER, RELEASE_RULES, RELEASES, _check_units
 from app.jobs.ingest_fred import IngestResult
 from app.stores.candidates import CandidateSightingRow, CandidateStore
 from app.stores.macro import MacroObservationRow, MacroSeriesRow, MacroStore, SeriesMeta
@@ -120,6 +122,20 @@ def _load_oecd(client: Any, store: MacroStore, c: Candidate, start: date, today:
     return observations, rows
 
 
+def _load_bis(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
+    measure = MEASURES[c.measure]
+    series = client.many(c.flow, c.key, start, measure.version)
+    if len(series) != 1:
+        raise SdmxError(f"{c.id}: the BIS returned {len(series)} series, expected one")
+    _check_units(c.id, measure, series[0])
+    observations = [(p, v) for p, v in series[0].observations if v is not None]
+    release_of = RELEASE_RULES[
+        measure.release or ("monthly" if measure.frequency == "Monthly" else "quarterly")
+    ]
+    meta = _gap_meta(c, PUBLISHER, RELEASES[measure.flow])
+    return observations, store.record_latest(meta, observations, release_of, today, STAGED)
+
+
 def _load_fred(client: Any, store: MacroStore, c: Candidate, start: date, today: date):
     """FRED's current value of each period, dated by the first vintage that carried it."""
     info = client.series(c.key)
@@ -154,7 +170,7 @@ def ingest(
     for i, c in enumerate(candidates):
         client = clients.get(c.source)
         known = c.source in ("imf", "fred", "bls", "eurostat") or (
-            c.source == "oecd" and not c.serves
+            c.source in ("oecd", "bis") and not c.serves
         )
         if client is None or not known:
             results.append(IngestResult(c.id, None, f"no loader for source {c.source}"))
@@ -169,6 +185,8 @@ def ingest(
                 observations, rows = _load_bls(client, store, c, start, today)
             elif c.source == "eurostat":
                 observations, rows = _load_eurostat(client, store, c, start, today)
+            elif c.source == "bis":
+                observations, rows = _load_bis(client, store, c, start, today)
             elif c.source == "oecd":
                 observations, rows = _load_oecd(client, store, c, start, today)
             else:

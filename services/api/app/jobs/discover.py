@@ -32,6 +32,7 @@ PUBLISHED, ABSENT, PENDING, FAILED = "published", "absent", "pending", "failed"
 HELD_STATUSES = ("HAVE", "OVERDUE")
 PROBE_START_MONTHS = 8  # a recent window is enough to see the latest period
 CURRENT_WITHIN = timedelta(days=150)  # latest period no older than this: publishing on schedule
+CURRENT_WITHIN_QUARTERLY = timedelta(days=345)  # a quarter dated at its start, plus its lag
 SWEEP_BUDGET_SECONDS = 21600  # DISCOVERY_SWEEP_TIME_BUDGET_SECONDS (Part 0, 0.2)
 _ISO3_BY_ISO2 = {c.iso2: c.iso3 for c in COUNTRIES}
 
@@ -52,13 +53,17 @@ class Finding:
 def _iso3_of(area: str) -> str | None:
     if area in COUNTRY_BY_ISO3:
         return area
+    if area in _ISO3_BY_ISO2:  # the BIS names an economy by its two-letter code
+        return _ISO3_BY_ISO2[area]
+    if area == "XM":  # the BIS's euro area
+        return _ISO3_BY_ISO2["EA"]
     if area.startswith("EA"):  # the OECD's EA20 and the like
         return _ISO3_BY_ISO2["EA"]
     return None
 
 
-def _window(today: date) -> date:
-    months = today.year * 12 + today.month - 1 - PROBE_START_MONTHS
+def _window(today: date, months_back: int = 0) -> date:
+    months = today.year * 12 + today.month - 1 - (months_back or PROBE_START_MONTHS)
     return date(months // 12, months % 12 + 1, 1)
 
 
@@ -87,7 +92,9 @@ def _finding(
         iso3,
         status or (PUBLISHED if last else ABSENT),
         last,
-        current=bool(last and today - last <= CURRENT_WITHIN),
+        current=bool(
+            last and today - last <= (CURRENT_WITHIN_QUARTERLY if probe.months else CURRENT_WITHIN)
+        ),
         held=iso3 in held.get(probe.concept, set()),
         bloc_first=probe.source == "eurostat" and bloc_aggregator_of(iso2) == "eurostat",
         detail=detail,
@@ -100,7 +107,7 @@ def probe_oecd(
     """One wildcard request answers for every economy the dataflow covers."""
     try:
         series = parse_all(
-            probe.flow, probe.key, client._data(probe.flow, probe.key, _window(today))
+            probe.flow, probe.key, client._data(probe.flow, probe.key, _window(today, probe.months))
         )
     except SdmxError as exc:
         if "404" not in str(exc):  # the OECD answers 404 when nothing matches
@@ -109,6 +116,23 @@ def probe_oecd(
     last: dict[str, date] = {}
     for s in series:
         iso3 = _iso3_of(s.dimensions.get("REF_AREA", ""))
+        periods = [p for p, v in s.observations if v is not None]
+        if iso3 and periods:
+            last[iso3] = max([*periods, last.get(iso3, date.min)])
+    return [_finding(probe, c.iso3, held, last.get(c.iso3), today) for c in COUNTRIES]
+
+
+def probe_bis(
+    client: Any, probe: Probe, held: Mapping[str, set[str]], today: date
+) -> list[Finding]:
+    """One wildcard request answers for every economy the dataflow covers."""
+    try:
+        series = client.many(probe.flow, probe.key, _window(today, probe.months), probe.version)
+    except SdmxError as exc:
+        return [_finding(probe, c.iso3, held, None, today, FAILED, str(exc)) for c in COUNTRIES]
+    last: dict[str, date] = {}
+    for s in series:
+        iso3 = _iso3_of(s.dimensions.get(probe.area_dimension, ""))
         periods = [p for p, v in s.observations if v is not None]
         if iso3 and periods:
             last[iso3] = max([*periods, last.get(iso3, date.min)])
@@ -161,6 +185,8 @@ def sweep(
             continue
         if probe.source == "oecd":
             findings += probe_oecd(client, probe, held, today)
+        elif probe.source == "bis":
+            findings += probe_bis(client, probe, held, today)
         else:
             findings += probe_eurostat(client, probe, held, today, deadline)
     return findings

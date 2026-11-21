@@ -536,3 +536,17 @@ was read live first: see `docs/bis-probe-2026-11-17.md`.
 | A gap candidate describes itself | Design choice | Title, units, adjustment, dimension and cycle are written in `app/data/candidates.py`. The dimension and cycle of money supply (`policy`, `leading`) and of the OECD series are my classification and need the owner's review before promotion (rule S5-style review of cycle) |
 | Only current economies were staged | Design choice | The probe's `current` flag (latest period within 150 days). OECD series that are behind schedule (24 economies) and Eurostat's Iceland and Kosovo industrial production (the selection holds more than one series) are not staged |
 | The daily refresh loads them | Open | `ingest-staged` now has 92 candidates, about 4 minutes a day at the suppliers' own pace (Eurostat 2 s, OECD 3 s per series). If that crowds the run, split the staging step from the refresh |
+
+## 5c. Probe extended to BIS and the OECD; its findings staged (22 Nov 2026)
+
+| Judgement | Status | Basis |
+|---|---|---|
+| The probe now covers 21 more indicators | Result | 18 BIS measures (one wildcard request each) and OECD leading index, business confidence, consumer sentiment and unemployment, in `app/data/probes.py`. Commercial property prices (a key per economy) and the IMF (licence open) are not probed |
+| A quarter counts as current within 345 days | Design choice | A BIS quarter is dated at its start and published about a quarter and a half later; 150 days would mark every quarterly series behind. A screen for the report, not the release check of rule 2 |
+| 145 series are staged | Result | BIS: 135 (effective exchange rates 31 + 31, credit to GDP 17 and its gap 17, policy rate 8, international debt securities 9, central bank balance sheet 4, property prices 5, other debt and credit measures 12). OECD: leading index for CN, business confidence for BR, ZA, ID, IL, CO, consumer confidence for IN, ZA, ID, IL. Each loaded live on 22 Nov 2026 |
+| Eurostat's economies are left out where Eurostat also publishes | Per rule 38 | Residential property prices, business and consumer confidence and unemployment are not staged for an economy Eurostat serves (23 property-price, 5 business-confidence, 2 consumer-confidence economies). They wait for a Eurostat probe of those indicators, which is not built |
+| Staged is not served | Per rule 34 | Coverage stayed at 944 of 2,697 cells and the live series at 1,018. A reviewed pull request verifies licence, definition and release schedule before one is served (rules 7, 26, 34) |
+| BIS limits | Open | The BIS says to cite it, and its terms limit property-price sub-series (see the licence register); the BIS commercial property series stay unstaged. `BisClient` keeps its 1 s interval and stops after a 403 or 429 |
+| Classification of the OECD series | Open | Dimension and cycle copy the served OECD series (`growth`/`leading`, `sentiment`/`leading`); the owner reviews them before promotion |
+| The daily refresh loads 237 candidates | Open | Several more minutes a day at the suppliers' own pace (not timed). Split the staging step from the refresh if it crowds the run |
+

@@ -242,6 +242,8 @@ def _ingest_staged(args: argparse.Namespace) -> int:
             clients["eurostat"] = stack.enter_context(EurostatClient(raw=_raw_zone()))
         if "oecd" in needed:
             clients["oecd"] = stack.enter_context(OecdClient(raw=_raw_zone()))
+        if "bis" in needed:
+            clients["bis"] = stack.enter_context(BisClient(raw=_raw_zone()))
         if "bls" in needed:
             bls_key = settings.bls_api_key
             clients["bls"] = stack.enter_context(
@@ -547,6 +549,7 @@ def _coverage_matrix(args: argparse.Namespace) -> int:
 def _discover(args: argparse.Namespace) -> int:
     """The discovery probe (rule 34): what each source publishes, against what QuFin holds. It
     stores nothing."""
+    from app.connectors.bis import BisClient
     from app.connectors.eurostat import EurostatClient
     from app.connectors.oecd import OecdClient
     from app.jobs import discover
@@ -555,10 +558,11 @@ def _discover(args: argparse.Namespace) -> int:
     with (
         OecdClient(raw=_raw_zone()) as oecd,
         EurostatClient(raw=_raw_zone()) as eurostat,
+        BisClient(raw=_raw_zone()) as bis,
         session_scope() as session,
     ):
         findings = discover.sweep(
-            {"oecd": oecd, "eurostat": eurostat}, session, args.concept, _today()
+            {"oecd": oecd, "eurostat": eurostat, "bis": bis}, session, args.concept, _today()
         )
     print(discover.format_report(findings))
     if args.out:
@@ -797,7 +801,7 @@ def main(argv: list[str] | None = None) -> int:
         "ingest-staged", help="load candidate sources without serving them (rule 38)"
     )
     staged.add_argument(
-        "--source", choices=["imf", "fred", "bls", "eurostat", "oecd"], default=None
+        "--source", choices=["imf", "fred", "bls", "eurostat", "oecd", "bis"], default=None
     )
     staged.add_argument("--start", type=date.fromisoformat, default=DEFAULT_OBSERVATION_START)
     staged.set_defaults(func=_ingest_staged)
