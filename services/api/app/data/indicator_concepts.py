@@ -20,6 +20,7 @@ from app.data.gap_ids import (
     BCB_SERIES,
     EUROSTAT_SERIES,
     FRED_ADDITIONS,
+    OECD_FLOW_SERIES,
     ONS_SERIES,
     SINGSTAT_COUNTRY,
     SINGSTAT_SERIES,
@@ -653,6 +654,7 @@ SERIES_CONCEPTS |= {
 SERIES_CONCEPTS |= {(a.country, a.id): a.concept for a in FRED_ADDITIONS}
 SERIES_CONCEPTS |= {("GB", s.id): s.concept for s in ONS_SERIES}
 SERIES_CONCEPTS |= {(e.country, e.id): e.concept for e in EUROSTAT_SERIES}
+SERIES_CONCEPTS |= {(o.country, o.id): o.concept for o in OECD_FLOW_SERIES}
 SERIES_CONCEPTS |= {(w.iso2, w.id): w.indicator.concept for w in WB_SERIES}
 SERIES_CONCEPTS |= {(BCB_COUNTRY, b.id): b.concept for b in BCB_SERIES}
 SERIES_CONCEPTS |= {(SINGSTAT_COUNTRY, s.id): s.concept for s in SINGSTAT_SERIES}

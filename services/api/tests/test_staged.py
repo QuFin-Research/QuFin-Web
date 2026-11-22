@@ -3,6 +3,7 @@
 # Fixtures imported from test_macro_api are used by name, which ruff reads as redefinition.
 # ruff: noqa: F811
 
+from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
 from types import SimpleNamespace
 
@@ -522,7 +523,8 @@ def test_the_trade_current_account_and_gdp_candidates_describe_themselves_and_re
     from app.domain.source_selection import bloc_aggregator_of
 
     gaps = FLOW_GAP_CANDIDATES
-    assert len(gaps) == 96 and len({c.id for c in gaps}) == 96
+    # 96 until batch C (22 Nov 2026) served Eurostat's real GDP and current account
+    assert len(gaps) == 77 and len({c.id for c in gaps}) == 77
     held = {
         (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
     }
@@ -551,7 +553,10 @@ def test_a_quarterly_gap_candidate_is_read_by_quarter_and_dated_by_a_quarterly_r
             self.kwargs = kwargs
             return SimpleNamespace(observations=[(d(2026, 4, 1), 1.0)])
 
-    cand = next(c for c in FLOW_GAP_CANDIDATES if c.id == "CAND_ESTAT_GDP_CH")
+    cand = replace(
+        next(c for c in FLOW_GAP_CANDIDATES if c.id == "CAND_ESTAT_TRADE_SE"),
+        frequency="Quarterly",
+    )
     client = Eurostat()
     [r] = ingest({"eurostat": client}, db_session, [cand], today=TODAY)
     assert r.error is None and client.kwargs == {"quarterly": True}
@@ -560,3 +565,22 @@ def test_a_quarterly_gap_candidate_is_read_by_quarter_and_dated_by_a_quarterly_r
 
     assert quarterly_release(d(2026, 1, 1)) == d(2026, 6, 30)  # last weekday of June
     assert oecd_quarterly_release(d(2026, 1, 1)) == d(2026, 7, 15)
+
+
+def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_decision():
+    from app.data.gap_ids import EUROSTAT_SERIES, OECD_FLOW_SERIES
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+    from app.data.series_units import SERIES_UNITS
+    from app.data.source_baseline import BASELINE
+
+    new = [s for s in EUROSTAT_SERIES if s.id.startswith(("ESTAT_GDP_", "ESTAT_CA_"))]
+    # the OECD's 17 wait for rule 7: defined but not in the catalog
+    assert len(new) == 19 and OECD_FLOW_SERIES == ()
+    for s in new:
+        assert s.frequency == "Quarterly" and s.id in BY_ID
+        assert SERIES_CONCEPTS[(s.country, s.id)] == s.concept
+        kind, currency = SERIES_UNITS[s.id]
+        assert (currency is not None) == (kind == "amount_currency")
+    decided = {b.series_id: b for b in BASELINE}
+    for s in new:
+        assert decided[s.id].status == "confirmed" and decided[s.id].source == "eurostat"

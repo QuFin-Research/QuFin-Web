@@ -9,7 +9,13 @@ is loaded; `unknown` fails the tests until a person decides.
 """
 
 from app.data.bis_ids import BIS_SERIES
-from app.data.gap_ids import BCB_SERIES, EUROSTAT_SERIES, FRED_ADDITIONS, ONS_SERIES
+from app.data.gap_ids import (
+    BCB_SERIES,
+    EUROSTAT_SERIES,
+    FRED_ADDITIONS,
+    OECD_FLOW_SERIES,
+    ONS_SERIES,
+)
 from app.data.macro_ids import IMF_CPI, OECD_MACRO
 from app.data.reserves_ids import FRED_RESERVES, IMF_RESERVES
 from app.data.worldbank_ids import WB_SERIES
@@ -289,7 +295,8 @@ SERIES_UNITS |= {series_id: ("rate_percent", None) for series_id in OECD_MACRO} 
 # Coverage-gap series (Sprints 1-4): each source's own units text is in `gap_ids.py`.
 SERIES_UNITS |= {a.id: (a.unit_kind, a.currency) for a in FRED_ADDITIONS}
 SERIES_UNITS |= {s.id: (s.unit_kind, s.currency) for s in ONS_SERIES}
-SERIES_UNITS |= {e.id: (e.unit_kind, None) for e in EUROSTAT_SERIES}
+SERIES_UNITS |= {e.id: (e.unit_kind, e.currency) for e in EUROSTAT_SERIES}
+SERIES_UNITS |= {o.id: (o.unit_kind, o.currency) for o in OECD_FLOW_SERIES}
 SERIES_UNITS |= {w.id: (w.indicator.unit_kind, w.indicator.currency) for w in WB_SERIES}
 SERIES_UNITS |= {b.id: (b.unit_kind, b.currency) for b in BCB_SERIES}
 SERIES_UNITS["SINGSTAT_UNE"] = ("rate_percent", None)  # Per Cent

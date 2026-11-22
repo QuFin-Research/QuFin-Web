@@ -24,6 +24,7 @@ from app.data.gap_ids import (
     HISTORY_START,
     KUWAIT_POLICY,
     NEW_POLICY_AREAS,
+    OECD_FLOW_SERIES,
     ONS_COUNTRY,
     ONS_SERIES,
     SINGSTAT_COUNTRY,
@@ -520,6 +521,18 @@ _DECLARED: tuple[CatalogSeries, ...] = (
             history_start=HISTORY_START,
         )
         for e in EUROSTAT_SERIES
+    ),
+    *(
+        CatalogSeries(
+            o.id,
+            "oecd",
+            o.country,
+            o.dimension,
+            o.cycle,
+            change=o.change,
+            history_start=HISTORY_START,
+        )
+        for o in OECD_FLOW_SERIES
     ),
     *(
         CatalogSeries(
