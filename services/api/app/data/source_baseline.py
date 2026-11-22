@@ -15,7 +15,13 @@ from dataclasses import dataclass
 from datetime import date
 
 from app.data.bis_ids import BATCH_A, BIS_COUNTRY
-from app.data.gap_ids import BATCH_B_CORE, BATCH_B_IP, HICP_GEO
+from app.data.gap_ids import (
+    BATCH_B_CORE,
+    BATCH_B_IP,
+    BATCH_C_CA,
+    BATCH_C_GDP,
+    HICP_GEO,
+)
 from app.data.indicator_concepts import _OECD_CONCEPT, BIS_CONCEPT
 from app.data.macro_catalog import _OECD_BATCH_B, _OECD_ID, _OECD_ISO2
 from app.data.macro_ids import ISO3_TO_ISO2
@@ -171,6 +177,19 @@ def _batch_b_oecd(concept: str, series_id: str, country: str) -> BaselineDecisio
     )
 
 
+def _batch_c_eurostat(concept: str, series_id: str, country: str, quarter: str) -> BaselineDecision:
+    return BaselineDecision(
+        country,
+        concept,
+        series_id,
+        "eurostat",
+        BATCH_A_DATE,
+        "confirmed",
+        f"Bloc aggregator first (rule 38): Eurostat serves the pair whenever it publishes it; "
+        f"its latest quarter was {quarter} on 22 Nov 2026.",
+    )
+
+
 BASELINE: tuple[BaselineDecision, ...] = (
     *(_decision(i, g) for i, g in HICP_GEO.items()),
     _US_COMMERCIAL_PROPERTY,
@@ -187,6 +206,11 @@ BASELINE: tuple[BaselineDecision, ...] = (
         _batch_b_oecd(_OECD_CONCEPT[m], f"OECD_{_OECD_ID[m]}_{a}", _OECD_ISO2[a])
         for m, areas in _OECD_BATCH_B.items()
         for a in areas
+    ),
+    *(_batch_c_eurostat("real_gdp", f"ESTAT_GDP_{g}", g, "2026-Q2") for g in BATCH_C_GDP),
+    *(
+        _batch_c_eurostat("current_account_to_gdp", f"ESTAT_CA_{g}", g, "2026-Q2")
+        for g in BATCH_C_CA
     ),
 )
 

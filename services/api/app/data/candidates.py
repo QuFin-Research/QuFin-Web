@@ -360,31 +360,10 @@ CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
 # the others. Staged only, to be decided at the eligibility step: the OECD balances are the
 # quarterly balance of payments in US dollars and Eurostat's trade balance is monthly in euro,
 # unlike the monthly dollar series the trade concept holds today. The goods-and-services balance
-# of Eurostat's economies waits for a Eurostat probe of it.
+# of Eurostat's economies waits for a Eurostat probe of it. Real GDP and the current account were
+# promoted on 22 Nov 2026 for Eurostat's economies (batch C: `BATCH_C_*` in `gap_ids.py`); the
+# trade balances and the OECD's real GDP and current account (rule 7 open) stay here.
 _ESTAT_FLOWS = {
-    "real_gdp": {
-        "CH": "CH",
-        "NO": "NO",
-        "SE": "SE",
-        "DK": "DK",
-        "CZ": "CZ",
-        "HU": "HU",
-        "PL": "PL",
-        "TR": "TR",
-    },
-    "current_account_to_gdp": {
-        "DE": "DE",
-        "FR": "FR",
-        "IT": "IT",
-        "CH": "CH",
-        "NO": "NO",
-        "SE": "SE",
-        "DK": "DK",
-        "CZ": "CZ",
-        "HU": "HU",
-        "PL": "PL",
-        "TR": "TR",
-    },
     "merchandise_trade_balance": {
         "SE": "SE",
         "DK": "DK",

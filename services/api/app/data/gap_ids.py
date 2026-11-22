@@ -211,13 +211,15 @@ class EurostatSeries:
     units: str
     adjustment: str
     concept: str
-    dimension: Literal["growth", "inflation", "labour"]
+    dimension: Literal["growth", "inflation", "labour", "external"]
     unit_kind: str
     cycle: Literal["leading", "coincident", "lagging"]
     cycle_reason: str
     change: Literal["pct", "diff"]
     published_as_change: bool = False
     release: str = "Eurostat"
+    frequency: Literal["Monthly", "Quarterly"] = "Monthly"
+    currency: str | None = None  # for an amount in a currency
 
 
 # Industrial production (seasonally and calendar adjusted, 2021 = 100) for the euro area and its
@@ -471,7 +473,158 @@ EUROSTAT_SERIES = (
         for geo, iso2 in BATCH_B_CORE.items()
     ),
 )
+# Batch C, 22 Nov 2026: real GDP (chain linked volumes 2020, national currency, seasonally and
+# calendar adjusted, `namq_10_gdp`) and the current account (percent of GDP, `ei_bpm6ca_q`) for
+# the economies Eurostat serves that had none (rule 38, Bloc aggregator first). Both are
+# quarterly, each quarter dated at its first month. Each was staged and loaded over its full
+# history with no missing quarter. See docs/assumptions-register.md, section 5g.
+_GDP = {"freq": "Q", "unit": "CLV20_MNAC", "s_adj": "SCA", "na_item": "B1GQ"}
+_CA = {
+    "freq": "Q",
+    "unit": "PC_GDP",
+    "s_adj": "NSA",
+    "sector10": "S1",
+    "sectpart": "S1",
+    "partner": "WRL_REST",
+    "stk_flow": "BAL",
+    "bop_item": "CA",
+}
+BATCH_C_GDP: dict[str, str] = {  # Eurostat geo -> currency
+    "CH": "CHF", "NO": "NOK", "SE": "SEK", "DK": "DKK", "CZ": "CZK", "HU": "HUF", "PL": "PLN",
+    "TR": "TRY",
+}  # fmt: skip
+BATCH_C_CA: tuple[str, ...] = (
+    "DE", "FR", "IT", "CH", "NO", "SE", "DK", "CZ", "HU", "PL", "TR",
+)  # fmt: skip
+EUROSTAT_SERIES = (
+    *EUROSTAT_SERIES,
+    *(
+        EurostatSeries(
+            f"ESTAT_GDP_{geo}",
+            geo,
+            "namq_10_gdp",
+            {**_GDP, "geo": geo},
+            f"Real GDP, chain linked volumes (2020), seasonally and calendar adjusted, {geo}",
+            "National currency, chain linked volumes (2020)",
+            "Seasonally and Calendar Adjusted",
+            "real_gdp",
+            "growth",
+            "amount_currency",
+            "coincident",
+            "Output is the cycle itself: real GDP moves with it.",
+            "pct",
+            release="Eurostat National accounts",
+            frequency="Quarterly",
+            currency=currency,
+        )
+        for geo, currency in BATCH_C_GDP.items()
+    ),
+    *(
+        EurostatSeries(
+            f"ESTAT_CA_{geo}",
+            geo,
+            "ei_bpm6ca_q",
+            {**_CA, "geo": geo},
+            f"Current account balance with the rest of the world, percent of GDP, {geo}",
+            "Percent of GDP",
+            "Not Seasonally Adjusted",
+            "current_account_to_gdp",
+            "external",
+            "ratio",
+            "lagging",
+            "The external balance adjusts after the cycle has turned.",
+            "diff",
+            release="Eurostat Balance of payments",
+            frequency="Quarterly",
+        )
+        for geo in BATCH_C_CA
+    ),
+)
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}
+
+
+@dataclass(frozen=True)
+class OecdFlowSeries:
+    id: str  # QuFin id: OECD_<MEASURE>_<area>
+    country: str  # ISO2
+    flow: str
+    key: str  # fully specified: the OECD's partial keys return broken histories
+    title: str
+    units: str
+    adjustment: str
+    concept: str
+    dimension: Literal["growth", "external"]
+    unit_kind: str
+    currency: str | None
+    cycle: Literal["leading", "coincident", "lagging"]
+    cycle_reason: str
+    change: Literal["pct", "diff"]
+    release: str
+    frequency: Literal["Monthly", "Quarterly"] = "Quarterly"
+
+
+# Batch C, 22 Nov 2026: the OECD's quarterly national accounts (real GDP, chained volumes,
+# national currency, seasonally adjusted) and balance of payments (current account balance,
+# percent of GDP) for economies that had none and that Eurostat does not serve. Each was staged
+# and loaded over its full history first.
+_QNA_FLOW = "OECD.SDD.NAD,DSD_NAMAIN1@DF_QNA_EXPENDITURE_NATIO_CURR,"
+_BOP_FLOW = "OECD.SDD.TPS,DSD_BOP@DF_BOP,"
+BATCH_C_OECD_GDP: dict[str, tuple[str, str]] = {  # area -> (ISO2, currency)
+    "EA": ("EA", "EUR"), "NZL": ("NZ", "NZD"), "BRA": ("BR", "BRL"), "SAU": ("SA", "SAR"),
+    "COL": ("CO", "COP"),
+}  # fmt: skip
+BATCH_C_OECD_CA: dict[str, str] = {
+    "USA": "US", "EA": "EA", "GBR": "GB", "JPN": "JP", "CHN": "CN", "IND": "IN", "BRA": "BR",
+    "ZAF": "ZA", "ARG": "AR", "IDN": "ID", "SAU": "SA", "CHL": "CL",
+}  # fmt: skip
+_OECD_FLOW_READY: tuple[OecdFlowSeries, ...] = (
+    *(
+        OecdFlowSeries(
+            f"OECD_GDP_{area}",
+            iso2,
+            _QNA_FLOW,
+            ".".join(["Q", "Y", area, "S1", "S1", "B1GQ", "", "", "", "XDC", "L", "N", ""]),
+            f"Real GDP, chained volumes, national currency, seasonally adjusted, {area}",
+            "National currency, chained volumes",
+            "Seasonally Adjusted",
+            "real_gdp",
+            "growth",
+            "amount_currency",
+            currency,
+            "coincident",
+            "Output is the cycle itself: real GDP moves with it.",
+            "pct",
+            "OECD Quarterly national accounts",
+        )
+        for area, (iso2, currency) in BATCH_C_OECD_GDP.items()
+    ),
+    *(
+        OecdFlowSeries(
+            f"OECD_CA_{area}",
+            iso2,
+            _BOP_FLOW,
+            ".".join([area, "WXD", "CA", "B", "T", "Q", "PT_B1GQ", ""]),
+            f"Current account balance, percent of GDP, {area}",
+            "Percent of GDP",
+            "As published by the OECD",
+            "current_account_to_gdp",
+            "external",
+            "ratio",
+            None,
+            "lagging",
+            "The external balance adjusts after the cycle has turned.",
+            "diff",
+            "OECD Balance of payments",
+        )
+        for area, iso2 in BATCH_C_OECD_CA.items()
+    ),
+)
+# Not served yet: rule 7 needs the owner's confirmation of the OECD's terms (the licence register
+# says to confirm; the OECD terms page refused an automated read on 22 Nov 2026). Once confirmed,
+# the series above are the catalog's: `OECD_FLOW_SERIES = _OECD_FLOW_READY`, with their decisions
+# in `source_baseline.py`. Until then they stay staged candidates.
+OECD_FLOW_SERIES: tuple[OecdFlowSeries, ...] = ()
+OECD_FLOW_BY_ID = {s.id: s for s in OECD_FLOW_SERIES}
 
 
 @dataclass(frozen=True)

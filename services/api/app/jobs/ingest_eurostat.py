@@ -45,13 +45,16 @@ def ingest(
         if i:
             sleep(PAUSE_SECONDS)
         try:
-            fetched = client.series(spec.dataset, spec.filters, start_for(series_id, start))
+            extra = {"quarterly": True} if spec.frequency == "Quarterly" else {}
+            fetched = client.series(
+                spec.dataset, spec.filters, start_for(series_id, start), **extra
+            )
             meta = SeriesMeta(
                 id=series_id,
                 source="eurostat",
                 title=spec.title,
                 units=spec.units,
-                frequency="Monthly",
+                frequency=spec.frequency,
                 seasonal_adjustment=spec.adjustment,
                 country=entry.country,
                 dimension=entry.dimension,
