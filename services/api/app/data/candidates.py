@@ -362,7 +362,8 @@ CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
 # unlike the monthly dollar series the trade concept holds today. The goods-and-services balance
 # of Eurostat's economies waits for a Eurostat probe of it. Real GDP and the current account were
 # promoted on 22 Nov 2026 for Eurostat's economies (batch C: `BATCH_C_*` in `gap_ids.py`); the
-# trade balances and the OECD's real GDP and current account (rule 7 open) stay here.
+# trade balances stay here. The OECD's real GDP and current account were promoted on 22 Nov 2026
+# (batch D, `OECD_FLOW_SERIES` in `gap_ids.py`).
 _ESTAT_FLOWS = {
     "merchandise_trade_balance": {
         "SE": "SE",
@@ -392,21 +393,6 @@ _ESTAT_FLOWS = {
     },
 }
 _OECD_FLOWS = {
-    "real_gdp": {"EA": "EA", "NZ": "NZL", "BR": "BRA", "SA": "SAU", "CO": "COL"},
-    "current_account_to_gdp": {
-        "US": "USA",
-        "EA": "EA",
-        "GB": "GBR",
-        "JP": "JPN",
-        "CN": "CHN",
-        "IN": "IND",
-        "BR": "BRA",
-        "ZA": "ZAF",
-        "AR": "ARG",
-        "ID": "IDN",
-        "SA": "SAU",
-        "CL": "CHL",
-    },
     "merchandise_trade_balance": {
         "US": "USA",
         "EA": "EA",

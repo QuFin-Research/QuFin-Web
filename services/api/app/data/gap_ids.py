@@ -619,11 +619,10 @@ _OECD_FLOW_READY: tuple[OecdFlowSeries, ...] = (
         for area, iso2 in BATCH_C_OECD_CA.items()
     ),
 )
-# Not served yet: rule 7 needs the owner's confirmation of the OECD's terms (the licence register
-# says to confirm; the OECD terms page refused an automated read on 22 Nov 2026). Once confirmed,
-# the series above are the catalog's: `OECD_FLOW_SERIES = _OECD_FLOW_READY`, with their decisions
-# in `source_baseline.py`. Until then they stay staged candidates.
-OECD_FLOW_SERIES: tuple[OecdFlowSeries, ...] = ()
+# Served from 22 Nov 2026 (batch D): the OECD's terms of 1 July 2024 allow any use of its data,
+# commercial included, with credit, unless the dataset's metadata names third-party owners; the
+# two datasets name none (docs/assumptions-register.md, section 5h).
+OECD_FLOW_SERIES: tuple[OecdFlowSeries, ...] = _OECD_FLOW_READY
 OECD_FLOW_BY_ID = {s.id: s for s in OECD_FLOW_SERIES}
 
 

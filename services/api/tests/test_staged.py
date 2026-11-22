@@ -523,8 +523,8 @@ def test_the_trade_current_account_and_gdp_candidates_describe_themselves_and_re
     from app.domain.source_selection import bloc_aggregator_of
 
     gaps = FLOW_GAP_CANDIDATES
-    # 96 until batch C (22 Nov 2026) served Eurostat's real GDP and current account
-    assert len(gaps) == 77 and len({c.id for c in gaps}) == 77
+    # 96 until batches C and D (22 Nov 2026) served the real GDP and current account ones
+    assert len(gaps) == 60 and len({c.id for c in gaps}) == 60
     held = {
         (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
     }
@@ -574,9 +574,8 @@ def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_d
     from app.data.source_baseline import BASELINE
 
     new = [s for s in EUROSTAT_SERIES if s.id.startswith(("ESTAT_GDP_", "ESTAT_CA_"))]
-    # the OECD's 17 wait for rule 7: defined but not in the catalog
-    assert len(new) == 19 and OECD_FLOW_SERIES == ()
-    for s in new:
+    assert len(new) == 19 and len(OECD_FLOW_SERIES) == 17
+    for s in [*new, *OECD_FLOW_SERIES]:
         assert s.frequency == "Quarterly" and s.id in BY_ID
         assert SERIES_CONCEPTS[(s.country, s.id)] == s.concept
         kind, currency = SERIES_UNITS[s.id]
@@ -584,3 +583,15 @@ def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_d
     decided = {b.series_id: b for b in BASELINE}
     for s in new:
         assert decided[s.id].status == "confirmed" and decided[s.id].source == "eurostat"
+    for s in OECD_FLOW_SERIES:
+        assert decided[s.id].status == "provisional" and decided[s.id].source == "oecd"
+
+
+def test_a_quarterly_oecd_series_is_checked_for_missing_quarters_and_dated_by_a_quarterly_rule():
+    from app.connectors.sdmx import SdmxError
+    from app.jobs.ingest_oecd import _check_complete
+
+    whole = [(date(2025, 1, 1), 1.0), (date(2025, 4, 1), 1.0), (date(2025, 7, 1), 1.0)]
+    _check_complete("OECD_GDP_X", whole, 3)  # no quarter missing
+    with pytest.raises(SdmxError):
+        _check_complete("OECD_GDP_X", [whole[0], whole[2]], 3)

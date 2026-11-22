@@ -304,9 +304,9 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
         if b.predecessor:
             assert b.predecessor.series_id not in BY_ID  # no longer declared beside it
     # 37 until batch A (98 BIS pairs), batch B (62 Eurostat and 10 OECD pairs) and batch C (19
-    # Eurostat pairs), 22 Nov 2026;
+    # Eurostat pairs) and batch D (17 OECD pairs), 22 Nov 2026;
     # Kosovo, US property and those have no predecessor.
-    assert len(BASELINE) == 226 and len(PREDECESSORS) == 35
+    assert len(BASELINE) == 243 and len(PREDECESSORS) == 35
 
     put(db_session, "IMF_CPI_DEU", months(date(2020, 1, 1), 60), source="imf")
     put(db_session, "ESTAT_HICP_DE", months(date(2020, 1, 1), 62), source="eurostat")
@@ -314,8 +314,8 @@ def test_the_baseline_switches_every_eurostat_pair_once_and_keeps_the_old_series
     assert cli.main(["source-decision", "--baseline"]) == 0
     assert cli.main(["source-decision", "--baseline"]) == 0
     out = capsys.readouterr().out
-    assert "baseline: 226 decisions recorded, 0 already there" in out
-    assert "baseline: 0 decisions recorded, 226 already there" in out
+    assert "baseline: 243 decisions recorded, 0 already there" in out
+    assert "baseline: 0 decisions recorded, 243 already there" in out
 
     old, new = SourceStore(db_session).history("DE", "consumer_prices")
     assert old.series_id == "IMF_CPI_DEU" and old.effective_to == new.effective_from
@@ -383,7 +383,7 @@ def test_every_eurostat_pair_is_confirmed_by_bloc_aggregator_first_and_only_us_p
     waiting = [b.series_id for b in BASELINE if b.status != "confirmed"]
     # BIS commercial property of the US, the 98 BIS pairs of batch A and the 10 OECD pairs of batch
     # B: the measures still decide
-    assert waiting[0] == "BIS_CPP_US" and len(waiting) == 109
+    assert waiting[0] == "BIS_CPP_US" and len(waiting) == 126
     assert all(w.startswith(("BIS_", "OECD_")) for w in waiting)
     hicp = [b for b in BASELINE if b.source == "eurostat"]
     assert len(hicp) == 117 and all("Bloc aggregator first" in b.reason for b in hicp)
