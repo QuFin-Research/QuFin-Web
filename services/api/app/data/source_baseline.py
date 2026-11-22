@@ -21,6 +21,7 @@ from app.data.gap_ids import (
     BATCH_C_CA,
     BATCH_C_GDP,
     HICP_GEO,
+    OECD_FLOW_SERIES,
 )
 from app.data.indicator_concepts import _OECD_CONCEPT, BIS_CONCEPT
 from app.data.macro_catalog import _OECD_BATCH_B, _OECD_ID, _OECD_ISO2
@@ -190,6 +191,19 @@ def _batch_c_eurostat(concept: str, series_id: str, country: str, quarter: str) 
     )
 
 
+def _batch_d_oecd(concept: str, series_id: str, country: str) -> BaselineDecision:
+    return BaselineDecision(
+        country,
+        concept,
+        series_id,
+        "oecd",
+        BATCH_A_DATE,
+        "provisional",
+        "A new pair: the OECD is the only candidate with a current feed (probe of 21 Nov 2026), "
+        "so it serves from the start. Provisional until a release cycle is measured (rule 38).",
+    )
+
+
 BASELINE: tuple[BaselineDecision, ...] = (
     *(_decision(i, g) for i, g in HICP_GEO.items()),
     _US_COMMERCIAL_PROPERTY,
@@ -212,6 +226,7 @@ BASELINE: tuple[BaselineDecision, ...] = (
         _batch_c_eurostat("current_account_to_gdp", f"ESTAT_CA_{g}", g, "2026-Q2")
         for g in BATCH_C_CA
     ),
+    *(_batch_d_oecd(s.concept, s.id, s.country) for s in OECD_FLOW_SERIES),
 )
 
 # Series kept although they are no longer in the catalog: the pair's history stays readable as of
