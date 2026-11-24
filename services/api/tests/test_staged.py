@@ -523,7 +523,7 @@ def test_the_trade_current_account_and_gdp_candidates_describe_themselves_and_re
     from app.domain.source_selection import bloc_aggregator_of
 
     gaps = FLOW_GAP_CANDIDATES
-    # 96 until batches C and D (22 Nov 2026) served the real GDP and current account ones
+    # 60 remain staged; batch E declares 24 Eurostat trade series for the eligibility PR.
     assert len(gaps) == 60 and len({c.id for c in gaps}) == 60
     held = {
         (country, concept) for (country, sid), concept in SERIES_CONCEPTS.items() if sid in BY_ID
@@ -531,7 +531,9 @@ def test_the_trade_current_account_and_gdp_candidates_describe_themselves_and_re
     for c in gaps:
         assert c.serves == "" and c.id.startswith(PREFIX) and c.id not in BY_ID
         assert c.title and c.units and c.adjustment and c.dimension and c.cycle
-        assert (c.country, c.concept) not in held
+        if (c.country, c.concept) in held:
+            assert c.id.startswith("CAND_ESTAT_TRADE_")
+            assert f"ESTAT_TRADE_{c.area}" in BY_ID
         assert c.frequency == ("Monthly" if c.months == 1 else "Quarterly")
         assert "{" not in c.key
         if c.source == "oecd" and c.concept == "trade_balance":
@@ -578,6 +580,14 @@ def test_oecd_goods_trade_candidate_keeps_the_usd_million_scale():
     assert scale_of(candidate.units) == 1_000_000
 
 
+def test_eurostat_trade_candidate_keeps_working_day_adjustment():
+    from app.data.candidates import FLOW_GAP_CANDIDATES
+    from app.data.taxonomy import adjustment_code
+
+    candidate = next(c for c in FLOW_GAP_CANDIDATES if c.id == "CAND_ESTAT_TRADE_AT")
+    assert adjustment_code(candidate.adjustment) == "SWDA"
+
+
 def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_decision():
     from app.data.gap_ids import EUROSTAT_SERIES, OECD_FLOW_SERIES
     from app.data.indicator_concepts import SERIES_CONCEPTS
@@ -596,6 +606,39 @@ def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_d
         assert decided[s.id].status == "confirmed" and decided[s.id].source == "eurostat"
     for s in OECD_FLOW_SERIES:
         assert decided[s.id].status == "provisional" and decided[s.id].source == "oecd"
+
+
+def test_batch_e_eurostat_goods_balances_are_catalogued_with_reviewed_metadata():
+    from app.data.candidates import FLOW_GAP_CANDIDATES
+    from app.data.gap_ids import BATCH_E_TRADE, EUROSTAT_SERIES
+    from app.data.indicator_concepts import SERIES_CONCEPTS
+    from app.data.series_units import SERIES_UNITS
+    from app.data.source_baseline import BASELINE
+    from app.data.taxonomy import scale_of
+
+    candidates = [c for c in FLOW_GAP_CANDIDATES if c.id.startswith("CAND_ESTAT_TRADE_")]
+    series = [s for s in EUROSTAT_SERIES if s.id.startswith("ESTAT_TRADE_")]
+    assert len(candidates) == len(series) == len(BATCH_E_TRADE) == 24
+    by_geo = {s.filters["geo"]: s for s in series}
+    decisions = {b.series_id: b for b in BASELINE}
+
+    for candidate in candidates:
+        item = by_geo[candidate.area]
+        assert item.country == candidate.country
+        assert item.dataset == candidate.flow and item.filters["geo"] == candidate.area
+        assert item.frequency == "Monthly"
+        assert item.adjustment == "Seasonally and Working Day Adjusted"
+        assert item.units == "Million euro" and item.currency == "EUR"
+        assert item.unit_kind == "amount_currency"
+        assert scale_of(item.units) == 1_000_000
+        assert item.dimension == "external" and item.cycle == "lagging"
+        assert item.change == "diff"
+        assert item.id in BY_ID
+        assert BY_ID[item.id].dimension == "external" and BY_ID[item.id].cycle == "lagging"
+        assert SERIES_CONCEPTS[(item.country, item.id)] == "merchandise_trade_balance"
+        assert SERIES_UNITS[item.id] == ("amount_currency", "EUR")
+        assert decisions[item.id].status == "confirmed"
+        assert decisions[item.id].source == "eurostat"
 
 
 def test_a_quarterly_oecd_series_is_checked_for_missing_quarters_and_dated_by_a_quarterly_rule():
