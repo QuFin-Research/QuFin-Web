@@ -6,7 +6,7 @@ reports which frequencies are possible and why. The web app only renders it.
 """
 
 from datetime import date, timedelta
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -17,6 +17,7 @@ from app.data.macro_catalog import BY_ID
 from app.data.series_variants import variant_notice, variant_of
 from app.data.taxonomy import COUNTRY_BY_ISO2, COUNTRY_BY_ISO3
 from app.domain.comparability import concept_scales
+from app.domain.currency import ConversionResult, CurrencyService
 from app.domain.harmonize import (
     FREQUENCIES,
     LABEL,
@@ -52,6 +53,10 @@ FrequencyParam = Annotated[
     Query(description="Display frequency; omitted means the lowest frequency all series share"),
 ]
 MetricParam = Annotated[Metric, Query(description="actual value, or poc (percentage of change)")]
+CurrencyParam = Annotated[
+    Literal["USD"] | None,
+    Query(alias="convertTo", description="Convert monetary values to USD using catalogued FX"),
+]
 Years = Annotated[int, Query(ge=1, le=40, description="Years of history")]
 # A rate or spread moves in points whatever the catalog says about its source.
 _POINT_KINDS = frozenset({"rate_percent", "ratio"})
@@ -102,6 +107,7 @@ def _render(
     mode: str,
     name: str,
     group_axes: bool,
+    currency: Literal["USD"] | None = None,
 ) -> StudioResult:
     for item in selected:
         item.load(store)
@@ -137,9 +143,18 @@ def _render(
         classify(s.summary.meta.units, s.summary.meta.country, s.summary.meta.source)
         for s in selected
     ]
+    if currency and any(unit.kind != "amount_currency" or unit.currency is None for unit in units):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "USD conversion requires every selected series to be an amount "
+                "in a known currency"
+            ),
+        )
+    currency_service = CurrencyService(store) if currency else None
     if metric == "actual" and len(selected) > 1 and not group_axes:
         verdict = concept_scales({"x": units})["x"]
-        if not verdict.same_scale:
+        if not verdict.same_scale and currency is None:
             notices.append(
                 f"Actual values are not on one scale ({verdict.reason}); use PoC to compare them."
             )
@@ -149,8 +164,28 @@ def _render(
         meta = item.summary.meta
         how = aggregation_for(unit.kind, item.concept)
         shown = aggregate(item.points, item.frequency, chosen, how)
+        converted_by_period: dict[date, ConversionResult] = {}
+        if currency_service and unit.currency:
+            conversions = currency_service.convert_points(
+                [(point.period, point.value) for point in shown],
+                unit.currency,
+                chosen,
+                is_flow=how == "sum",
+                amount_scale=meta.scale,
+            )
+            converted_by_period = {result.period: result for result in conversions}
+            shown = [
+                Obs(result.period, result.value_usd)
+                for result in conversions
+                if result.value_usd is not None
+            ]
+            failures = sorted({result.reason for result in conversions if result.reason})
+            if failures:
+                notices.append(f"{item.label}: USD conversion unavailable: " + "; ".join(failures))
         changed = chosen != item.frequency
         unit_text, note = meta.units, None
+        if currency:
+            unit_text = currency
         if metric == "poc":
             shown, kind = poc(
                 shown,
@@ -169,9 +204,31 @@ def _render(
                     "so it is shown as published and not changed again",
                 }[kind]
             )
-        axis_key = (unit.kind, unit.currency, unit.basis if metric == "actual" else unit_text)
+        axis_key = (
+            (unit.kind, currency, "converted amount")
+            if currency
+            else (unit.kind, unit.currency, unit.basis if metric == "actual" else unit_text)
+        )
         axis = axes.setdefault(axis_key, len(axes))
         status = macro_status(meta, item.summary.last_period, releases.get(meta.id, {}), today)
+        rendered_points: list[StudioPoint] = []
+        for point in shown:
+            if point.value is None:
+                continue
+            conversion = converted_by_period.get(point.period)
+            native_value = conversion.native_value if conversion else None
+            rendered_points.append(
+                StudioPoint(
+                    period=point.period,
+                    value=round(point.value, 6),
+                    native_value=(
+                        round(native_value, 6) if native_value is not None else None
+                    ),
+                    fx_rate=conversion.fx_rate if conversion else None,
+                    fx_rate_date=conversion.fx_rate_date if conversion else None,
+                    fx_source=conversion.fx_source if conversion else None,
+                )
+            )
         series.append(
             StudioSeries(
                 series_id=meta.id,
@@ -185,6 +242,8 @@ def _render(
                 adjustment_text=meta.seasonal_adjustment,
                 units=meta.units,
                 display_unit=unit_text,
+                native_currency=unit.currency,
+                display_currency=currency,
                 aggregation=how if changed else None,
                 metric_note=note,
                 axis=axis if group_axes else 0,
@@ -193,7 +252,7 @@ def _render(
                 last_vintage=item.last_vintage,
                 usable=status.freshness.usable,
                 status_note=status.freshness.reason,
-                points=[StudioPoint(period=p.period, value=round(p.value, 6)) for p in shown],
+                points=rendered_points,
             )
         )
     return StudioResult(
@@ -268,6 +327,7 @@ def compare(
     frequency: FrequencyParam = None,
     metric: MetricParam = "actual",
     years: Years = 10,
+    currency: CurrencyParam = None,
 ) -> StudioResult:
     """One indicator for up to 10 countries, all on the same frequency (Rules 30, 22, 31, 32)."""
     if concept not in CONCEPTS:
@@ -296,7 +356,15 @@ def compare(
         if c in by_country
     ]
     result = _render(
-        selected, store, today, frequency, metric, "countries", CONCEPTS[concept].name, False
+        selected,
+        store,
+        today,
+        frequency,
+        metric,
+        "countries",
+        CONCEPTS[concept].name,
+        False,
+        currency,
     )
     missing = [COUNTRY_BY_ISO3[c].name for c in codes if c not in by_country]
     if missing:
@@ -317,6 +385,7 @@ def overlay(
     frequency: FrequencyParam = None,
     metric: MetricParam = "actual",
     years: Years = 10,
+    currency: CurrencyParam = None,
 ) -> StudioResult:
     """Several indicators for one country: actual values on separate axes by unit, or PoC."""
     place = COUNTRY_BY_ISO3.get(country)
@@ -335,4 +404,6 @@ def overlay(
             status_code=404, detail=f"Not a stored series of {place.name}: " + ", ".join(unknown)
         )
     selected = [_Native(found[i], place.iso3, place.name, today, years) for i in ids]
-    return _render(selected, store, today, frequency, metric, "indicators", place.name, True)
+    return _render(
+        selected, store, today, frequency, metric, "indicators", place.name, True, currency
+    )

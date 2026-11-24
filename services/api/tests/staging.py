@@ -1,8 +1,7 @@
 """A sample candidate for the staging tests.
 
-The registry (`app/data/candidates.py`) is empty since rule 38's Bloc aggregator first, so the
-staging, measurement and promotion tests build their own candidate: the IMF's consumer prices of
-Germany, timed against the Eurostat series that serves the pair.
+The staging, measurement and promotion tests use this synthetic IMF candidate: consumer prices
+for Germany, timed against the Eurostat series that serves the pair.
 """
 
 from app.data.candidates import CANDIDATE_BY_ID, Candidate

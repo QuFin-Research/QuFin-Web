@@ -513,7 +513,7 @@ _OECD_FLOW_SPEC = {
         "TRADE",
         _OECD_BOP_FLOW,
         _k("{a}", "WXD", "G", "B", "T", "Q", "USD_EXC", "N"),
-        "US dollars",
+        "Millions of US dollars, exchange-rate converted",
         "external",
         "lagging",
         "Balance of goods, balance of payments basis",

@@ -198,7 +198,16 @@ export type StudioSeries = {
   lastVintage: string | null;
   usable: boolean;
   statusNote: string;
-  points: { period: string; value: number }[];
+  nativeCurrency?: string | null;
+  displayCurrency?: string | null;
+  points: {
+    period: string;
+    value: number;
+    nativeValue?: number | null;
+    fxRate?: number | null;
+    fxRateDate?: string | null;
+    fxSource?: string | null;
+  }[];
 };
 
 export type StudioResult = {

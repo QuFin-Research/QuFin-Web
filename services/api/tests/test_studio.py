@@ -155,6 +155,72 @@ def test_unknown_inputs_are_refused(studio, client):
     assert get(client, concept="unemployment_rate", countries=[]).status_code == 422
 
 
+def test_usd_conversion_preserves_native_value_and_normalizes_source_scale(
+    studio, client, db_session
+):
+    month = month_starts(24)
+    put(
+        db_session,
+        "BOPGSTB",
+        "US",
+        "Millions of Dollars",
+        "Monthly",
+        "Not Seasonally Adjusted",
+        month,
+        [100.0] * len(month),
+    )
+    body = get(client, concept="trade_balance", countries="USA", convertTo="USD").json()
+    series = body["series"][0]
+    assert series["nativeCurrency"] == "USD"
+    assert series["displayCurrency"] == "USD"
+    assert series["displayUnit"] == "USD"
+    assert series["points"][0]["nativeValue"] == 100.0
+    assert series["points"][0]["value"] == 100_000_000.0
+
+
+def test_foreign_currency_flow_is_aggregated_before_fx_conversion(studio, client, db_session):
+    months = month_starts(24)
+    put(
+        db_session,
+        "BOPGSTB",
+        "US",
+        "Millions of Euros",
+        "Monthly",
+        "Not Seasonally Adjusted",
+        months,
+        [100.0] * len(months),
+    )
+    fx_periods = [date(month.year, month.month, 15) for month in months]
+    put(
+        db_session,
+        "DEXUSEU",
+        "US",
+        "U.S. Dollars to One Euro",
+        "Daily",
+        "Not Seasonally Adjusted",
+        fx_periods,
+        [1.0 + 0.2 * (index % 3) for index in range(len(fx_periods))],
+    )
+
+    body = get(
+        client, concept="trade_balance", countries="USA", frequency="quarterly", convertTo="USD"
+    ).json()
+    series = body["series"][0]
+    point = series["points"][0]
+    assert series["aggregation"] == "sum"
+    assert point["nativeValue"] == 300.0
+    assert point["fxRate"] == pytest.approx(1.2)
+    assert point["value"] == pytest.approx(360_000_000.0)
+
+
+def test_usd_conversion_refuses_non_monetary_series(studio, client):
+    response = get(
+        client, concept="unemployment_rate", countries="USA", convertTo="USD"
+    )
+    assert response.status_code == 422
+    assert "amount in a known currency" in response.json()["detail"]
+
+
 def test_overlay_puts_weekly_claims_down_to_monthly_sums_on_their_own_axis(studio, client):
     res = client.get(
         "/v1/studio/overlay",

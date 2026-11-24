@@ -567,6 +567,17 @@ def test_a_quarterly_gap_candidate_is_read_by_quarter_and_dated_by_a_quarterly_r
     assert oecd_quarterly_release(d(2026, 1, 1)) == d(2026, 7, 15)
 
 
+def test_oecd_goods_trade_candidate_keeps_the_usd_million_scale():
+    from app.data.candidates import FLOW_GAP_CANDIDATES
+    from app.data.taxonomy import scale_of
+    from app.domain.units import classify
+
+    candidate = next(c for c in FLOW_GAP_CANDIDATES if c.id == "CAND_OECD_TRADE_ARG")
+    unit = classify(candidate.units, candidate.country, candidate.source)
+    assert unit.kind == "amount_currency" and unit.currency == "USD"
+    assert scale_of(candidate.units) == 1_000_000
+
+
 def test_batch_c_series_are_in_the_catalog_with_a_unit_a_cycle_a_concept_and_a_decision():
     from app.data.gap_ids import EUROSTAT_SERIES, OECD_FLOW_SERIES
     from app.data.indicator_concepts import SERIES_CONCEPTS

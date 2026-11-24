@@ -55,6 +55,7 @@ FLOW_CONCEPTS = frozenset(
     {
         "initial_jobless_claims",
         "trade_balance",
+        "merchandise_trade_balance",
         "budget_balance",
         "government_interest_expense",
         "current_account",
