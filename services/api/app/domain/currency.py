@@ -68,9 +68,7 @@ def _period_bounds(period: date, frequency: str) -> tuple[date, date]:
         start = period.replace(month=((period.month - 1) // 3) * 3 + 1, day=1)
         end_month = start.month + 2
         next_quarter = (
-            date(start.year + 1, 1, 1)
-            if end_month == 12
-            else date(start.year, end_month + 1, 1)
+            date(start.year + 1, 1, 1) if end_month == 12 else date(start.year, end_month + 1, 1)
         )
         return start, next_quarter.fromordinal(next_quarter.toordinal() - 1)
     if freq in ("semi_annual", "semiannual", "s"):
@@ -154,8 +152,16 @@ class CurrencyService:
             if value is None:
                 results.append(
                     ConversionResult(
-                        period, None, None, native_currency, None, None, series_id,
-                        method, False, "native observation is missing"
+                        period,
+                        None,
+                        None,
+                        native_currency,
+                        None,
+                        None,
+                        series_id,
+                        method,
+                        False,
+                        "native observation is missing",
                     )
                 )
                 continue
@@ -175,9 +181,7 @@ class CurrencyService:
             if is_flow:
                 in_period = [(day, fx_rate) for day, fx_rate in eligible if start <= day <= end]
                 rate = (
-                    sum(fx_rate for _, fx_rate in in_period) / len(in_period)
-                    if in_period
-                    else None
+                    sum(fx_rate for _, fx_rate in in_period) / len(in_period) if in_period else None
                 )
                 rate_date = max((day for day, _ in in_period), default=None)
             else:

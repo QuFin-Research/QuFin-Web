@@ -147,8 +147,7 @@ def _render(
         raise HTTPException(
             status_code=422,
             detail=(
-                "USD conversion requires every selected series to be an amount "
-                "in a known currency"
+                "USD conversion requires every selected series to be an amount in a known currency"
             ),
         )
     currency_service = CurrencyService(store) if currency else None
@@ -221,9 +220,7 @@ def _render(
                 StudioPoint(
                     period=point.period,
                     value=round(point.value, 6),
-                    native_value=(
-                        round(native_value, 6) if native_value is not None else None
-                    ),
+                    native_value=(round(native_value, 6) if native_value is not None else None),
                     fx_rate=conversion.fx_rate if conversion else None,
                     fx_rate_date=conversion.fx_rate_date if conversion else None,
                     fx_source=conversion.fx_source if conversion else None,

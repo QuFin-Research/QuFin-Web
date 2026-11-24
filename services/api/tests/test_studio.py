@@ -214,9 +214,7 @@ def test_foreign_currency_flow_is_aggregated_before_fx_conversion(studio, client
 
 
 def test_usd_conversion_refuses_non_monetary_series(studio, client):
-    response = get(
-        client, concept="unemployment_rate", countries="USA", convertTo="USD"
-    )
+    response = get(client, concept="unemployment_rate", countries="USA", convertTo="USD")
     assert response.status_code == 422
     assert "amount in a known currency" in response.json()["detail"]
 
