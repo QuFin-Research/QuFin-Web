@@ -496,6 +496,13 @@ BATCH_C_GDP: dict[str, str] = {  # Eurostat geo -> currency
 BATCH_C_CA: tuple[str, ...] = (
     "DE", "FR", "IT", "CH", "NO", "SE", "DK", "CZ", "HU", "PL", "TR",
 )  # fmt: skip
+# Batch E, 25 Nov 2026: the 24 staged EU-country goods balances. Eurostat uses `EL` for Greece.
+BATCH_E_TRADE: dict[str, str] = {
+    "AT": "AT", "BE": "BE", "BG": "BG", "HR": "HR", "CY": "CY", "CZ": "CZ", "DK": "DK",
+    "EE": "EE", "EL": "GR", "ES": "ES", "FI": "FI", "HU": "HU", "IE": "IE",
+    "LT": "LT", "LU": "LU", "LV": "LV", "MT": "MT", "NL": "NL", "PL": "PL", "PT": "PT",
+    "RO": "RO", "SE": "SE", "SI": "SI", "SK": "SK",
+}  # fmt: skip
 EUROSTAT_SERIES = (
     *EUROSTAT_SERIES,
     *(
@@ -538,6 +545,34 @@ EUROSTAT_SERIES = (
             frequency="Quarterly",
         )
         for geo in BATCH_C_CA
+    ),
+    *(
+        EurostatSeries(
+            f"ESTAT_TRADE_{geo}",
+            country,
+            "ei_eteu27_2020_m",
+            {
+                "freq": "M",
+                "stk_flow": "BAL_RT",
+                "unit": "MIO-EUR-SA",
+                "partner": "WORLD",
+                "indic": "ET-T",
+                "geo": geo,
+            },
+            f"Goods trade balance with the world, {geo}",
+            "Million euro",
+            "Seasonally and Working Day Adjusted",
+            "merchandise_trade_balance",
+            "external",
+            "amount_currency",
+            "lagging",
+            "Trade balances adjust after the cycle has turned.",
+            "diff",
+            release="Eurostat International trade in goods",
+            frequency="Monthly",
+            currency="EUR",
+        )
+        for geo, country in BATCH_E_TRADE.items()
     ),
 )
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}

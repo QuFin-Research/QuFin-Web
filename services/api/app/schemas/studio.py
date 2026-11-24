@@ -11,6 +11,10 @@ Metric = Literal["actual", "poc"]
 class StudioPoint(ApiModel):
     period: date
     value: float
+    native_value: float | None = None
+    fx_rate: float | None = None
+    fx_rate_date: date | None = None
+    fx_source: str | None = None
 
 
 class StudioSeries(ApiModel):
@@ -27,6 +31,8 @@ class StudioSeries(ApiModel):
     adjustment_text: str
     units: str = Field(description="Units as the source states them")
     display_unit: str = Field(description="The unit of `points`: the source's, %, or pp")
+    native_currency: str | None = None
+    display_currency: str | None = None
     aggregation: Literal["end", "mean", "sum"] | None = Field(
         description="How a faster series was collapsed to the display frequency; null if it was not"
     )

@@ -68,6 +68,7 @@ Without that variable the web app keeps using its built-in mock, which returns t
 | `GET` | `/v1/macro/calendar?from=&to=&country=&pillar=` | Releases in a window: previous, first print, next due; consensus empty until licensed |
 | `GET` | `/v1/positioning?asOf=` | Latest CFTC speculative positioning for every asset |
 | `GET` | `/v1/positioning/{symbol}?weeks=&asOf=` | Weekly positioning history with the COT index |
+| `GET` | `/v1/studio/compare`, `/v1/studio/overlay` | Comparison views; `convertTo=USD` converts known monetary series using catalogued FX and returns the native value, applied rate, rate date and source. Unsupported currencies are reported, not guessed |
 
 Market data and scorecards are public for now (sample data); they move behind sign-in when
 licensed data arrives.

@@ -357,13 +357,13 @@ CANDIDATE_BY_ID = {c.id: c for c in CANDIDATES}
 
 # Trade, the current account and real GDP (probe of 21 Nov 2026, rule 34): economies QuFin holds
 # nothing for. Eurostat's economies are Eurostat's where it publishes (rule 38); the OECD fills
-# the others. Staged only, to be decided at the eligibility step: the OECD balances are the
-# quarterly balance of payments in US dollars and Eurostat's trade balance is monthly in euro,
-# unlike the monthly dollar series the trade concept holds today. The goods-and-services balance
-# of Eurostat's economies waits for a Eurostat probe of it. Real GDP and the current account were
-# promoted on 22 Nov 2026 for Eurostat's economies (batch C: `BATCH_C_*` in `gap_ids.py`); the
-# trade balances stay here. The OECD's real GDP and current account were promoted on 22 Nov 2026
-# (batch D, `OECD_FLOW_SERIES` in `gap_ids.py`).
+# the others. The OECD balances remain staged pending source and reuse review. Eurostat's 24 goods
+# balances are declared in batch E for the eligibility PR, but remain staged here until that PR is
+# reviewed and merged. The balances are monthly in euros for Eurostat and quarterly in
+# exchange-rate-converted US dollars for the OECD. The goods-and-services balance of Eurostat's
+# economies waits for a Eurostat probe. Real GDP and current account were promoted on 22 Nov 2026
+# (batch C: `BATCH_C_*` in `gap_ids.py`); OECD real GDP and current account were promoted on
+# 22 Nov 2026 (batch D, `OECD_FLOW_SERIES` in `gap_ids.py`).
 _ESTAT_FLOWS = {
     "merchandise_trade_balance": {
         "SE": "SE",
@@ -482,7 +482,7 @@ _ESTAT_FLOW_SPEC = {
             "indic": "ET-T",
         },
         "Million euro",
-        "Seasonally Adjusted",
+        "Seasonally and Working Day Adjusted",
         "external",
         "lagging",
         "Trade balance with the world",
@@ -513,7 +513,7 @@ _OECD_FLOW_SPEC = {
         "TRADE",
         _OECD_BOP_FLOW,
         _k("{a}", "WXD", "G", "B", "T", "Q", "USD_EXC", "N"),
-        "US dollars",
+        "Millions of US dollars, exchange-rate converted",
         "external",
         "lagging",
         "Balance of goods, balance of payments basis",

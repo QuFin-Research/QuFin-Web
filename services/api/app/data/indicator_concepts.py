@@ -307,7 +307,8 @@ CONCEPTS: dict[str, Concept] = {
     # --- External and fiscal -------------------------------------------------------------------
     "merchandise_trade_balance": Concept(
         "Trade Balance, Goods",
-        "Exports minus imports of goods only, in US dollars; a deficit means buying more abroad.",
+        "Exports minus imports of goods only, in the source's currency; a deficit means buying "
+        "more abroad.",
     ),
     "household_credit_to_gdp": Concept(
         "Household Debt to GDP",
@@ -682,8 +683,9 @@ COMPARED_AS: dict[str, str] = {
         "FRED's unit text for the US series omits the base"
     ),
     "merchandise_trade_balance": (
-        "Standardised against each series' own history: the UK balance is in pounds, the others in "
-        "US dollars (OECD figures converted at exchange rates)"
+        "Standardised against each series' own history: Eurostat values are in euros, the UK "
+        "series is in pounds, and OECD/BCB values are in US dollars (OECD figures converted at "
+        "exchange rates)"
     ),
     "industrial_production": (
         "Year-on-year change: the US index is 2017=100, Eurostat's is 2021=100"

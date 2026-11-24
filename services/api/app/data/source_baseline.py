@@ -20,6 +20,7 @@ from app.data.gap_ids import (
     BATCH_B_IP,
     BATCH_C_CA,
     BATCH_C_GDP,
+    BATCH_E_TRADE,
     HICP_GEO,
     OECD_FLOW_SERIES,
 )
@@ -135,6 +136,7 @@ _US_COMMERCIAL_PROPERTY = BaselineDecision(
 )
 
 BATCH_A_DATE = date(2026, 11, 22)
+BATCH_E_DATE = date(2026, 11, 25)
 
 
 def _batch_a(code: str, area: str) -> BaselineDecision:
@@ -191,6 +193,20 @@ def _batch_c_eurostat(concept: str, series_id: str, country: str, quarter: str) 
     )
 
 
+def _batch_e_eurostat_trade(geo: str, country: str) -> BaselineDecision:
+    return BaselineDecision(
+        country,
+        "merchandise_trade_balance",
+        f"ESTAT_TRADE_{geo}",
+        "eurostat",
+        BATCH_E_DATE,
+        "confirmed",
+        "Bloc aggregator first (rule 38): Eurostat is the priority source for this EU pair. "
+        "The owner accepted commercial reuse with attribution on 25 Nov 2026; serving remains "
+        "subject to the reviewed eligibility PR.",
+    )
+
+
 def _batch_d_oecd(concept: str, series_id: str, country: str) -> BaselineDecision:
     return BaselineDecision(
         country,
@@ -226,6 +242,7 @@ BASELINE: tuple[BaselineDecision, ...] = (
         _batch_c_eurostat("current_account_to_gdp", f"ESTAT_CA_{g}", g, "2026-Q2")
         for g in BATCH_C_CA
     ),
+    *(_batch_e_eurostat_trade(geo, country) for geo, country in BATCH_E_TRADE.items()),
     *(_batch_d_oecd(s.concept, s.id, s.country) for s in OECD_FLOW_SERIES),
 )
 
