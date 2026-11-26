@@ -201,7 +201,7 @@ def ingest(
             log.warning("staged load of %s failed: %s", c.id, exc)
             results.append(IngestResult(c.id, None, str(exc)))
             continue
-        log.info("Staged %s: %d new or revised months, %d first sightings", c.id, rows, new)
+        log.info("Staged %s: %d new or revised observations, %d first sightings", c.id, rows, new)
         results.append(IngestResult(c.id, rows))
     store.analyze()
     return results

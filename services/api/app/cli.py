@@ -256,7 +256,7 @@ def _ingest_staged(args: argparse.Namespace) -> int:
         session = stack.enter_context(session_scope())
         results = ingest_staged.ingest(clients, session, chosen, args.start)
     for r in results:
-        status = f"{r.rows} new or revised months" if r.error is None else f"FAILED: {r.error}"
+        status = f"{r.rows} new or revised observations" if r.error is None else f"FAILED: {r.error}"
         print(f"{r.series_id:<22} {status}")
     failed = sum(r.error is not None for r in results)
     print(f"staged: {len(results) - failed} of {len(results)} candidates loaded")

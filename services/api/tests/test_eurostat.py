@@ -10,7 +10,12 @@ import pytest
 
 from app.connectors.base import USER_AGENT
 from app.connectors.eurostat import EurostatClient, EurostatError, parse
-from app.data.eurostat_calendar import hicp_release, production_release
+from app.data.eurostat_calendar import (
+    hicp_release,
+    hpi_release,
+    production_release,
+    release_of,
+)
 from app.data.gap_ids import EUROSTAT_BY_ID, EUROSTAT_SERIES, HISTORY_START
 from app.data.macro_catalog import BY_ID
 from app.jobs import ingest_eurostat
@@ -108,6 +113,9 @@ def test_after_a_refusal_the_client_stops_asking_for_the_run():
 def test_release_dates_err_late():
     assert production_release(date(2026, 9, 1)) == date(2026, 11, 30)  # published 13 November
     assert hicp_release(date(2026, 10, 1)) == date(2026, 11, 30)
+    assert hpi_release(date(2026, 4, 1)) == date(2026, 10, 15)  # published 1 October
+    assert hpi_release(date(2026, 7, 1)) == date(2027, 1, 15)
+    assert release_of("prc_hpi_q") is hpi_release
 
 
 def test_the_catalog_declares_the_series_from_1990_with_the_right_change_kind():
@@ -117,6 +125,41 @@ def test_the_catalog_declares_the_series_from_1990_with_the_right_change_kind():
     assert BY_ID["ESTAT_CORE_DE"].published_as_change  # an annual rate: never changed again
     assert not BY_ID["ESTAT_IP_DE"].published_as_change and BY_ID["ESTAT_IP_DE"].change == "pct"
     assert EUROSTAT_BY_ID["ESTAT_IP_EA21"].country == "EA"
+
+
+def test_eurostat_residential_hpi_batch_is_live_catalogued_with_reviewed_metadata():
+    from app.data.candidates import CANDIDATES
+    from app.data.gap_ids import BATCH_F_HPI
+    from app.data.indicator_concepts import COMPARED_AS, SERIES_CONCEPTS
+    from app.data.series_units import SERIES_UNITS
+    from app.data.source_baseline import BASELINE
+
+    assert len(BATCH_F_HPI) == 20
+    assert not any(c.id.startswith("CAND_ESTAT_HPI_") for c in CANDIDATES)
+    decisions = {b.series_id: b for b in BASELINE}
+    for geo, country in BATCH_F_HPI.items():
+        series_id = f"ESTAT_HPI_{geo}"
+        spec = EUROSTAT_BY_ID[series_id]
+        catalog = BY_ID[series_id]
+        assert spec.country == country
+        assert spec.dataset == "prc_hpi_q"
+        assert spec.filters == {
+            "freq": "Q",
+            "purchase": "TOTAL",
+            "unit": "I15_Q",
+            "geo": geo,
+        }
+        assert (spec.frequency, spec.units, spec.adjustment) == (
+            "Quarterly",
+            "Index, 2015=100",
+            "Not Seasonally Adjusted",
+        )
+        assert (catalog.dimension, catalog.cycle, catalog.change) == ("housing", "leading", "pct")
+        assert SERIES_CONCEPTS[(country, series_id)] == "residential_property_prices"
+        assert SERIES_UNITS[series_id] == ("index", None)
+        assert decisions[series_id].status == "confirmed"
+        assert decisions[series_id].source == "eurostat"
+    assert "year-on-year change" in COMPARED_AS["residential_property_prices"]
 
 
 def test_ingest_stores_by_the_release_rule_and_reports_bad_ids(db_session):
