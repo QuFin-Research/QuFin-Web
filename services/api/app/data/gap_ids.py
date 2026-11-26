@@ -211,7 +211,7 @@ class EurostatSeries:
     units: str
     adjustment: str
     concept: str
-    dimension: Literal["growth", "inflation", "labour", "external"]
+    dimension: Literal["growth", "inflation", "labour", "external", "housing"]
     unit_kind: str
     cycle: Literal["leading", "coincident", "lagging"]
     cycle_reason: str
@@ -503,6 +503,12 @@ BATCH_E_TRADE: dict[str, str] = {
     "LT": "LT", "LU": "LU", "LV": "LV", "MT": "MT", "NL": "NL", "PL": "PL", "PT": "PT",
     "RO": "RO", "SE": "SE", "SI": "SI", "SK": "SK",
 }  # fmt: skip
+# Batch F, 26 Nov 2026: 20 residential house-price indices, including the EA21 aggregate.
+BATCH_F_HPI: dict[str, str] = {
+    "AT": "AT", "BE": "BE", "BG": "BG", "CY": "CY", "EE": "EE", "ES": "ES", "FI": "FI",
+    "HR": "HR", "IE": "IE", "IS": "IS", "LT": "LT", "LU": "LU", "LV": "LV", "MT": "MT",
+    "NL": "NL", "PT": "PT", "RO": "RO", "SI": "SI", "SK": "SK", "EA21": "EA",
+}  # fmt: skip
 EUROSTAT_SERIES = (
     *EUROSTAT_SERIES,
     *(
@@ -573,6 +579,26 @@ EUROSTAT_SERIES = (
             currency="EUR",
         )
         for geo, country in BATCH_E_TRADE.items()
+    ),
+    *(
+        EurostatSeries(
+            f"ESTAT_HPI_{geo}",
+            country,
+            "prc_hpi_q",
+            {"freq": "Q", "purchase": "TOTAL", "unit": "I15_Q", "geo": geo},
+            f"House price index, total purchases, 2015=100, {geo}",
+            "Index, 2015=100",
+            "Not Seasonally Adjusted",
+            "residential_property_prices",
+            "housing",
+            "index",
+            "leading",
+            "House prices are sensitive to interest rates and lead the spending cycle.",
+            "pct",
+            release="Eurostat Residential House Price Index",
+            frequency="Quarterly",
+        )
+        for geo, country in BATCH_F_HPI.items()
     ),
 )
 EUROSTAT_BY_ID = {s.id: s for s in EUROSTAT_SERIES}

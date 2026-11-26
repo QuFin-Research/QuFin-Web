@@ -87,6 +87,18 @@ def test_eurostat_is_asked_for_each_economy_it_serves_and_would_serve_them_first
     assert len(found) == 36  # the economies Eurostat serves
 
 
+def test_residential_property_probe_uses_eurostats_quarterly_total_hpi():
+    probe = next(
+        p for p in PROBES if p.concept == "residential_property_prices" and p.source == "eurostat"
+    )
+    assert probe.dataset == "prc_hpi_q"
+    assert probe.filters == {"freq": "Q", "purchase": "TOTAL", "unit": "I15_Q"}
+    assert probe.quarterly
+    client = FakeEurostat(last=date(2026, 4, 1))
+    found = discover.probe_eurostat(client, probe, {}, TODAY, time.monotonic() + 60)
+    assert len(found) == 36 and client.kwargs == {"quarterly": True}
+
+
 def test_a_sweep_out_of_time_marks_the_rest_pending_not_failed():
     found = discover.probe_eurostat(FakeEurostat(), EUROSTAT, {}, TODAY, time.monotonic() - 1)
     assert {f.status for f in found} == {"pending"}

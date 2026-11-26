@@ -42,9 +42,15 @@ def quarterly_release(period: date) -> date:
     return _last_weekday_before(_first_of(period.year, period.month + 6))
 
 
+def hpi_release(period: date) -> date:
+    """Date HPI conservatively on the 15th of the fourth month after the quarter."""
+    return _first_of(period.year, period.month + 6) + timedelta(days=14)
+
+
 RELEASES: dict[str, Callable[[date], date]] = {
     "namq_10_gdp": quarterly_release,
     "ei_bpm6ca_q": quarterly_release,
+    "prc_hpi_q": hpi_release,
     "ei_eteu27_2020_m": production_release,  # trade is out about six weeks after the month
     "sts_inpr_m": production_release,
     "prc_hicp_minr": hicp_release,

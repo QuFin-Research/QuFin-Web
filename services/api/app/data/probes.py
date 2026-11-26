@@ -132,6 +132,15 @@ _MACRO_FLOW_PROBES = (
         quarterly=True,
     ),
     Probe(
+        "residential_property_prices",
+        "eurostat",
+        "House price index, total purchases, 2015=100, quarterly",
+        dataset="prc_hpi_q",
+        filters={"freq": "Q", "purchase": "TOTAL", "unit": "I15_Q"},
+        months=_BIS_QUARTERLY_MONTHS,
+        quarterly=True,
+    ),
+    Probe(
         "merchandise_trade_balance",
         "eurostat",
         "Trade balance with the world, million euro, seasonally adjusted, monthly",

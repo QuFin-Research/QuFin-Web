@@ -357,7 +357,6 @@ def _gaps():
 
 def test_the_gap_candidates_are_the_probes_findings_and_describe_themselves():
     gaps = _gaps()
-    # 80 until batch B (22 Nov 2026) served Eurostat's core HICP and 29 of its 30 production series
     assert len(gaps) == 18 and len({c.id for c in gaps}) == 18
     by = {}
     for c in gaps:
@@ -388,10 +387,11 @@ class FakeEurostat:
     def __init__(self, fail=()):
         self.fail, self.asked = set(fail), []
 
-    def series(self, dataset, filters, start):
+    def series(self, dataset, filters, start, **kwargs):
         from app.connectors.eurostat import EurostatError
 
         self.asked.append((dataset, dict(filters)))
+        self.kwargs = kwargs
         if filters["geo"] in self.fail:
             raise EurostatError("Eurostat returned no observations")
         return SimpleNamespace(observations=[(date(2026, 8, 1), 1.5), (date(2026, 9, 1), 1.6)])

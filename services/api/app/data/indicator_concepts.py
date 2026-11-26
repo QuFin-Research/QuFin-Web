@@ -356,7 +356,7 @@ CONCEPTS: dict[str, Concept] = {
     ),
     "residential_property_prices": Concept(
         "Residential Property Prices",
-        "Nominal price index of homes (2010 = 100): housing is the most rate-sensitive spending.",
+        "Nominal home-price index; the base year varies by source, and housing is rate-sensitive.",
     ),
     "current_account_to_gdp": Concept(
         "Current Account Balance (% of GDP)",
@@ -701,6 +701,10 @@ COMPARED_AS: dict[str, str] = {
     "commercial_property_prices": (
         "Year-on-year change: each country's index has its own base year, property type "
         "(all commercial, offices, retail) and coverage (whole country or its big cities)"
+    ),
+    "residential_property_prices": (
+        "Compare on year-on-year change, not the index level: Eurostat HPI uses 2015=100, while "
+        "BIS nominal property indexes use 2010=100"
     ),
     "money_supply": (
         "Year-on-year change: the US amount is in dollars and the euro area's in euro"
