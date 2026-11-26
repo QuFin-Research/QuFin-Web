@@ -257,9 +257,7 @@ def _ingest_staged(args: argparse.Namespace) -> int:
         results = ingest_staged.ingest(clients, session, chosen, args.start)
     for r in results:
         status = (
-            f"{r.rows} new or revised observations"
-            if r.error is None
-            else f"FAILED: {r.error}"
+            f"{r.rows} new or revised observations" if r.error is None else f"FAILED: {r.error}"
         )
         print(f"{r.series_id:<22} {status}")
     failed = sum(r.error is not None for r in results)

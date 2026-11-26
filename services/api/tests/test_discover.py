@@ -95,9 +95,7 @@ def test_residential_property_probe_uses_eurostats_quarterly_total_hpi():
     assert probe.filters == {"freq": "Q", "purchase": "TOTAL", "unit": "I15_Q"}
     assert probe.quarterly
     client = FakeEurostat(last=date(2026, 4, 1))
-    found = discover.probe_eurostat(
-        client, probe, {}, TODAY, time.monotonic() + 60
-    )
+    found = discover.probe_eurostat(client, probe, {}, TODAY, time.monotonic() + 60)
     assert len(found) == 36 and client.kwargs == {"quarterly": True}
 
 
